@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: ficct-admision-app
+    env: php
+    plan: free
+    buildCommand: "composer install --optimize-autoloader --no-dev && npm install && npm run build"
+    startCommand: "heroku-php-apache2 public/"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
+      - key: DB_PORT
+        value: 5432
+      # Las siguientes variables deben llenarse en el panel de Render (son de tu Neon.tech)
+      - key: DB_HOST
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
