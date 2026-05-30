@@ -29,10 +29,36 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $modulos = [];
+        $user = $request->user();
+
+        if ($user) {
+            $rawModulos = \Illuminate\Support\Facades\DB::table('modulo')
+                ->join('funcion', 'modulo.id', '=', 'funcion.modulo_id')
+                ->join('rol_funcion', 'funcion.id', '=', 'rol_funcion.funcion_id')
+                ->where('rol_funcion.rol_id', $user->rol_id)
+                ->select('modulo.nombre as modulo_nombre', 'funcion.nombre as funcion_nombre', 'funcion.permiso', 'modulo.id as modulo_id')
+                ->orderBy('modulo_id')
+                ->get();
+
+            $modulos = $rawModulos->groupBy('modulo_nombre')->map(function ($items, $moduloNombre) {
+                return [
+                    'nombre' => $moduloNombre,
+                    'funciones' => $items->map(function ($item) {
+                        return [
+                            'nombre' => $item->funcion_nombre,
+                            'permiso' => $item->permiso
+                        ];
+                    })->values()
+                ];
+            })->values()->toArray();
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'modulos' => $modulos
             ],
         ];
     }

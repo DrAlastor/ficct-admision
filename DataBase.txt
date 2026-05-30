@@ -1,0 +1,464 @@
+-- 1. MÓDULOS Y FUNCIONES (SISTEMA DE PERMISOS DINÁMICOS)
+CREATE TABLE MODULO (
+    ID SERIAL PRIMARY KEY,
+    NOMBRE VARCHAR(100) NOT NULL,
+    DESCRIPCION TEXT
+);
+
+CREATE TABLE FUNCION (
+    ID SERIAL PRIMARY KEY,
+    MODULO_ID INT REFERENCES MODULO(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    NOMBRE VARCHAR(100) NOT NULL,
+    PERMISO VARCHAR(100) NOT NULL,
+    DESCRIPCION TEXT
+);
+
+CREATE TABLE ROL (
+    ID SERIAL PRIMARY KEY,
+    NOMBRE VARCHAR(50) NOT NULL,
+    DESCRIPCION TEXT
+);
+
+CREATE TABLE ROL_FUNCION (
+    ROL_ID INT REFERENCES ROL(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FUNCION_ID INT REFERENCES FUNCION(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY (ROL_ID, FUNCION_ID)
+);
+
+-- 2. AUTENTICACIÓN Y SEGURIDAD
+CREATE TABLE USUARIO (
+    ID SERIAL PRIMARY KEY,
+    ROL_ID INT REFERENCES ROL(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    CORREO VARCHAR(150) UNIQUE NOT NULL, 
+    PASSWORD VARCHAR(255) NOT NULL,
+    ESTADO VARCHAR(20) DEFAULT 'Activo'
+);
+
+CREATE TABLE TOKEN_RECUPERACION (
+    ID SERIAL PRIMARY KEY,
+    USUARIO_ID INT REFERENCES USUARIO(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    TOKEN VARCHAR(255) NOT NULL,
+    FECHA_CREACION DATE NOT NULL,
+    FECHA_EXPIRACION DATE NOT NULL,
+    USADO BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE BITACORA (
+    ID SERIAL PRIMARY KEY,
+    USUARIO_ID INT REFERENCES USUARIO(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    ACCION VARCHAR(255) NOT NULL,
+    FECHA DATE NOT NULL,
+    HORA TIME NOT NULL,
+    IP VARCHAR(45)
+);
+
+-- 3. PERFIL Y SUBCLASES (ACTORES)
+CREATE TABLE PERFIL (
+    ID SERIAL PRIMARY KEY,
+    USUARIO_ID INT UNIQUE REFERENCES USUARIO(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    CODIGO VARCHAR(50) UNIQUE NOT NULL,
+    CI VARCHAR(20) UNIQUE NOT NULL,
+    NOMBRES VARCHAR(100) NOT NULL,
+    APELLIDO_PATERNO VARCHAR(100) NOT NULL,
+    APELLIDO_MATERNO VARCHAR(100),
+    FECHA_NACIMIENTO DATE,
+    NACIONALIDAD VARCHAR(50),
+    SEXO VARCHAR(1),
+    DIRECCION TEXT,
+    TELEFONO VARCHAR(20),
+    EMAIL VARCHAR(150) UNIQUE NOT NULL
+);
+
+CREATE TABLE ADMINISTRACION (
+    ID INT PRIMARY KEY REFERENCES PERFIL(ID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE POSTULANTE (
+    ID INT PRIMARY KEY REFERENCES PERFIL(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    COLEGIO_PROCEDENCIA VARCHAR(150),
+    CIUDAD VARCHAR(100)
+);
+
+CREATE TABLE DOCENTE (
+    ID INT PRIMARY KEY REFERENCES PERFIL(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    PROFESION VARCHAR(100),
+    AREA_PROFESIONAL VARCHAR(100),
+    GRADO_ACADEMICO VARCHAR(100),
+    MAESTRIA VARCHAR(2) DEFAULT 'No', 
+    DIPLOMADO_EDUCACION_SUPERIOR VARCHAR(2) DEFAULT 'No',
+    EXPERIENCIA_ANOS INT,
+    GRUPOS_MAXIMOS INT DEFAULT 4
+);
+
+-- 4. ESTRUCTURA ACADÉMICA Y POSTULACIÓN
+CREATE TABLE FACULTAD (
+    ID SERIAL PRIMARY KEY,
+    NOMBRE VARCHAR(150) NOT NULL
+);
+
+CREATE TABLE GESTION (
+    ID SERIAL PRIMARY KEY,
+    SEMESTRE INT NOT NULL,
+    AÑO INT NOT NULL
+);
+
+CREATE TABLE CARRERA (
+    CODIGO SERIAL PRIMARY KEY,
+    FACULTAD_ID INT REFERENCES FACULTAD(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    NOMBRE VARCHAR(150) NOT NULL,
+    CUPO_MAXIMO INT NOT NULL
+);
+
+CREATE TABLE POSTULACION (
+    CODIGO SERIAL PRIMARY KEY,
+    POSTULANTE_ID INT REFERENCES POSTULANTE(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    GESTION_ID INT REFERENCES GESTION(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FECHA DATE NOT NULL,
+    HORA TIME NOT NULL,
+    ESTADO VARCHAR(50)
+);
+
+CREATE TABLE POSTULACION_CARRERA (
+    POSTULACION_CODIGO INT REFERENCES POSTULACION(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    CARRERA_CODIGO INT REFERENCES CARRERA(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIORIDAD INT NOT NULL, 
+    PRIMARY KEY (POSTULACION_CODIGO, CARRERA_CODIGO)
+);
+
+CREATE TABLE PAGO (
+    ID SERIAL PRIMARY KEY,
+    POSTULACION_CODIGO INT REFERENCES POSTULACION(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    NRO_RECIBO VARCHAR(100) UNIQUE NOT NULL,
+    MONTO DECIMAL(10,2) NOT NULL,
+    METODO_PAGO VARCHAR(50) NOT NULL,
+    TRANSACCION_ID VARCHAR(100),
+    ESTADO VARCHAR(50),
+    FECHA DATE NOT NULL
+);
+
+CREATE TABLE DOCUMENTOS (
+    ID SERIAL PRIMARY KEY,
+    POSTULACION_CODIGO INT REFERENCES POSTULACION(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    TIPO_DOCUMENTO VARCHAR(100) NOT NULL,
+    URL_ARCHIVO TEXT NOT NULL,
+    ESTADO_VALIDACION VARCHAR(50) DEFAULT 'PENDIENTE'
+);
+
+-- 5. MÓDULO DE MATERIAS, GRUPOS Y HORARIOS
+CREATE TABLE MATERIA (
+    ID SERIAL PRIMARY KEY,
+    NOMBRE VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE AULA (
+    ID SERIAL PRIMARY KEY,
+    NRO_AULA VARCHAR(20) NOT NULL,
+    CAPACIDAD INT NOT NULL
+);
+
+CREATE TABLE TURNO (
+    ID SERIAL PRIMARY KEY,
+    DESCRIPCION VARCHAR(50) NOT NULL 
+);
+
+CREATE TABLE GRUPO (
+    CODIGO SERIAL PRIMARY KEY,
+    MATERIA_ID INT REFERENCES MATERIA(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    NOMBRE VARCHAR(50) NOT NULL,
+    INSCRITOS_ACTUALES INT DEFAULT 0,
+    CUPO INT NOT NULL,
+    MODALIDAD VARCHAR(50) 
+);
+
+CREATE TABLE HORARIO (
+    ID SERIAL PRIMARY KEY,
+    GRUPO_CODIGO INT REFERENCES GRUPO(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    AULA_ID INT REFERENCES AULA(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    TURNO_ID INT REFERENCES TURNO(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    DIA VARCHAR(20) NOT NULL,
+    HORA_INICIO TIME NOT NULL,
+    HORA_FIN TIME NOT NULL
+);
+
+CREATE TABLE CARGA_HORARIA (
+    DOCENTE_ID INT REFERENCES DOCENTE(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    GRUPO_CODIGO INT REFERENCES GRUPO(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY (DOCENTE_ID, GRUPO_CODIGO)
+);
+
+CREATE TABLE INSCRIPCIONES_CUP (
+    ID SERIAL PRIMARY KEY,
+    POSTULACION_CODIGO INT REFERENCES POSTULACION(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    GRUPO_CODIGO INT REFERENCES GRUPO(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    FECHA_INSCRIPCION DATE NOT NULL,
+    ESTADO VARCHAR(50)
+);
+
+CREATE TABLE EVALUACIONES (
+    ID SERIAL PRIMARY KEY,
+    INSCRIPCION_ID INT REFERENCES INSCRIPCIONES_CUP(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    NOTA_P1 DECIMAL(5,2) DEFAULT 0,
+    NOTA_P2 DECIMAL(5,2) DEFAULT 0,
+    NOTA_P3 DECIMAL(5,2) DEFAULT 0,
+    PROMEDIO_FINAL DECIMAL(5,2) DEFAULT 0,
+    ESTADO_MATERIA VARCHAR(50)
+);
+
+-- =================================================================
+-- 1. POBLACIÓN DE MÓDULOS Y FUNCIONES
+-- =================================================================
+INSERT INTO MODULO (ID, NOMBRE, DESCRIPCION) VALUES 
+(1, 'Seguridad y Administración', 'Gestión de accesos, roles, bitácora y dashboard'),
+(2, 'Admisión y Pagos', 'Registro de postulantes, documentos y pasarela de pagos'),
+(3, 'Gestión Académica y Grupos', 'Gestión de docentes, grupos, carga horaria y asignaciones'),
+(4, 'Aula Virtual y Evaluaciones', 'Material académico, horarios, exámenes y calificaciones'),
+(5, 'Selección y Reportes', 'Algoritmo de admisión, reportes estadísticos e IA');
+
+INSERT INTO FUNCION (ID, MODULO_ID, NOMBRE, PERMISO, DESCRIPCION) VALUES 
+(1, 1, 'CU-01: Iniciar Sesión', 'auth.login', 'Validación con Código de Usuario y CI'),
+(2, 1, 'CU-02: Cerrar Sesión', 'auth.logout', 'Finalizar sesión del usuario en el sistema'),
+(3, 1, 'CU-03: Recuperar/Cambiar Contraseña', 'auth.recover', 'Generación de TOKEN_RECUPERACION'),
+(4, 1, 'CU-04: Gestionar Módulos, Funciones y Roles', 'admin.roles', 'Administración dinámica de permisos'),
+(5, 1, 'CU-05: Consultar Bitácora de Auditoría', 'admin.bitacora', 'Filtro por IP, acción, fecha y hora'),
+(6, 1, 'CU-06: Visualizar Dashboard', 'admin.dashboard', 'Visualización de indicadores globales'),
+(7, 2, 'CU-07: Registrar Perfil de Postulante', 'admision.registro', 'Captura de datos personales y correo'),
+(8, 2, 'CU-08: Cargar documentos de respaldo', 'admision.documentos', 'Subida de CI y Certificado de Bachiller'),
+(9, 2, 'CU-09: Seleccionar preferencias', 'admision.preferencias', 'Elección de 1ra y 2da opción de carrera'),
+(10, 2, 'CU-10: Procesar pago en línea', 'admision.pagos', 'Pasarela de pago y habilitación'),
+(11, 3, 'CU-11: Gestionar Docentes', 'academico.docentes', 'Registro de perfil docente'),
+(12, 3, 'CU-12: Generar Grupos paramétricos', 'academico.grupos', 'Creación de aulas, cupos y modalidad'),
+(13, 3, 'CU-13: Asignar Carga Horaria a Docentes', 'academico.carga', 'Límite de 1 a 4 grupos máximo'),
+(14, 3, 'CU-14: Asignar Postulantes a Grupos', 'academico.asignar_alumnos', 'Distribución automática según turno'),
+(15, 3, 'CU-15: Ejecutar Carga Masiva', 'academico.cargamasiva', 'Importación de usuarios por Excel/CSV'),
+(16, 4, 'CU-16: Consultar horarios', 'aula.horarios', 'Visualización del cronograma asignado'),
+(17, 4, 'CU-17: Gestionar Material Académico', 'aula.material', 'Subida y descarga de material'),
+(18, 4, 'CU-18: Realizar Evaluaciones en línea', 'aula.evaluaciones', 'Resolución de cuestionarios híbridos'),
+(19, 4, 'CU-19: Registrar Calificaciones', 'aula.calificaciones', 'Registro de P1, P2, Final'),
+(20, 5, 'CU-20: Ejecutar Algoritmo de Admisión', 'reportes.algoritmo', 'Filtro >= 60 pts y asignación'),
+(21, 5, 'CU-21: Generar reportes y actas', 'reportes.pdf', 'Documentos PDF de la gestión'),
+(22, 5, 'CU-22: Consultar reportes con IA', 'reportes.ia', 'Uso de prompt por voz para consultas');
+
+-- =================================================================
+-- 2. ROLES Y ASIGNACIÓN DE FUNCIONES
+-- =================================================================
+INSERT INTO ROL (ID, NOMBRE, DESCRIPCION) VALUES 
+(1, 'Administrador', 'Control total del sistema'), 
+(2, 'Docente', 'Imparte clases y califica'), 
+(3, 'Postulante', 'Aspirante al CUP FICCT');
+
+INSERT INTO ROL_FUNCION (ROL_ID, FUNCION_ID) VALUES 
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 11), (1, 12), (1, 13), (1, 14), (1, 15), (1, 20), (1, 21), (1, 22),
+(2, 1), (2, 2), (2, 3), (2, 16), (2, 17), (2, 19),
+(3, 1), (3, 2), (3, 3), (3, 7), (3, 8), (3, 9), (3, 10), (3, 16), (3, 17), (3, 18);
+
+-- =================================================================
+-- 3. USUARIOS (Autenticación - CI con un 0 extra y Admin Especial)
+-- =================================================================
+INSERT INTO USUARIO (ID, ROL_ID, CORREO, PASSWORD, ESTADO) VALUES 
+(1, 1, 'ADM001', '16051072', 'Activo'),
+(2, 2, 'DOC0001', '80000001', 'Activo'),
+(3, 2, 'DOC0002', '80000002', 'Activo'),
+(4, 2, 'DOC0003', '80000003', 'Activo'),
+(5, 2, 'DOC0004', '80000004', 'Activo'),
+(6, 3, 'POS2250001', '90000001', 'Activo'),
+(7, 3, 'POS2250002', '90000002', 'Activo'),
+(8, 3, 'POS2250003', '90000003', 'Activo'),
+(9, 3, 'POS2250004', '90000004', 'Activo'),
+(10, 3, 'POS2250005', '90000005', 'Activo'),
+(11, 3, 'POS2250006', '90000006', 'Activo'),
+(12, 3, 'POS2250007', '90000007', 'Activo'),
+(13, 3, 'POS2250008', '90000008', 'Activo'),
+(14, 3, 'POS2250009', '90000009', 'Activo'),
+(15, 3, 'POS2250010', '90000010', 'Activo'),
+(16, 3, 'POS2250011', '90000011', 'Activo'),
+(17, 3, 'POS2250012', '90000012', 'Activo'),
+(18, 3, 'POS2250013', '90000013', 'Activo'),
+(19, 3, 'POS2250014', '90000014', 'Activo'),
+(20, 3, 'POS2250015', '90000015', 'Activo');
+
+-- =================================================================
+-- 4. PERFILES DEMOGRÁFICOS EXACTOS
+-- =================================================================
+INSERT INTO PERFIL (ID, USUARIO_ID, CODIGO, CI, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, FECHA_NACIMIENTO, NACIONALIDAD, SEXO, DIRECCION, TELEFONO, EMAIL) VALUES 
+(1, 1, 'ADM001', '16051072', 'Alessandro', 'Yevara', 'Ponce', '2004-07-01', 'Boliviana', 'M', 'Villa 1ro de Mayo', '76023052', 'yevaraponcealessandro@gmail.com'),
+(2, 2, 'DOC0001', '80000001', 'Carlos', 'Mendez', 'Rojas', '1980-05-15', 'Boliviana', 'M', 'Calle 1', '70012345', 'carlos.mendez@gmail.com'),
+(3, 3, 'DOC0002', '80000002', 'Ana', 'Perez', 'Suarez', '1985-08-20', 'Boliviana', 'F', 'Calle 2', '70012346', 'ana.perez@gmail.com'),
+(4, 4, 'DOC0003', '80000003', 'Roberto', 'Gomez', 'Vaca', '1975-11-10', 'Boliviana', 'M', 'Calle 3', '70012347', 'roberto.gomez@gmail.com'),
+(5, 5, 'DOC0004', '80000004', 'Lucia', 'Salazar', 'Gil', '1982-03-25', 'Boliviana', 'F', 'Calle 4', '70012348', 'lucia.salazar@gmail.com'),
+(6, 6, 'POS2250001', '90000001', 'Luis', 'Torres', 'Paz', '2008-01-10', 'Boliviana', 'M', 'Barrio X', '71000001', 'luis.torres@gmail.com'),
+(7, 7, 'POS2250002', '90000002', 'Maria', 'Lopez', 'Gil', '2008-02-15', 'Boliviana', 'F', 'Barrio Y', '71000002', 'maria.lopez@gmail.com'),
+(8, 8, 'POS2250003', '90000003', 'Jose', 'Fernandez', 'Cruz', '2008-03-20', 'Boliviana', 'M', 'Barrio Z', '71000003', 'jose.fernandez@gmail.com'),
+(9, 9, 'POS2250004', '90000004', 'Camila', 'Vargas', 'Rios', '2007-12-05', 'Boliviana', 'F', 'Barrio A', '71000004', 'camila.vargas@gmail.com'),
+(10, 10, 'POS2250005', '90000005', 'Andres', 'Rios', 'Pinto', '2008-05-25', 'Boliviana', 'M', 'Barrio B', '71000005', 'andres.rios@gmail.com'),
+(11, 11, 'POS2250006', '90000006', 'Sofia', 'Mendoza', 'Solares', '2008-06-30', 'Boliviana', 'F', 'Barrio C', '71000006', 'sofia.mendoza@gmail.com'),
+(12, 12, 'POS2250007', '90000007', 'Diego', 'Salazar', 'Guzman', '2008-07-11', 'Boliviana', 'M', 'Barrio D', '71000007', 'diego.salazar@gmail.com'),
+(13, 13, 'POS2250008', '90000008', 'Valeria', 'Camacho', 'Rioja', '2008-08-22', 'Boliviana', 'F', 'Barrio E', '71000008', 'valeria.camacho@gmail.com'),
+(14, 14, 'POS2250009', '90000009', 'Sebastian', 'Guzman', 'Flores', '2008-09-03', 'Boliviana', 'M', 'Barrio F', '71000009', 'sebastian.guzman@gmail.com'),
+(15, 15, 'POS2250010', '9000010', 'Daniela', 'Flores', 'Torres', '2008-10-14', 'Boliviana', 'F', 'Barrio G', '71000010', 'daniela.flores@gmail.com'),
+(16, 16, 'POS2250011', '90000011', 'Mateo', 'Rojas', 'Lopez', '2008-11-20', 'Boliviana', 'M', 'Barrio H', '71000011', 'mateo.rojas@gmail.com'),
+(17, 17, 'POS2250012', '90000012', 'Valentina', 'Cruz', 'Fernandez', '2008-12-01', 'Boliviana', 'F', 'Barrio I', '71000012', 'valentina.cruz@gmail.com'),
+(18, 18, 'POS2250013', '90000013', 'Joaquin', 'Pinto', 'Vargas', '2009-01-15', 'Boliviana', 'M', 'Barrio J', '71000013', 'joaquin.pinto@gmail.com'),
+(19, 19, 'POS2250014', '90000014', 'Martina', 'Solares', 'Rios', '2008-04-18', 'Boliviana', 'F', 'Barrio K', '71000014', 'martina.solares@gmail.com'),
+(20, 20, 'POS2250015', '90000015', 'Emilio', 'Rioja', 'Mendoza', '2008-07-25', 'Boliviana', 'M', 'Barrio L', '71000015', 'emilio.rioja@gmail.com');
+
+-- =================================================================
+-- 5. SUBCLASES
+-- =================================================================
+INSERT INTO ADMINISTRACION (ID) VALUES (1);
+
+INSERT INTO DOCENTE (ID, PROFESION, AREA_PROFESIONAL, GRADO_ACADEMICO, MAESTRIA, DIPLOMADO_EDUCACION_SUPERIOR, EXPERIENCIA_ANOS, GRUPOS_MAXIMOS) VALUES 
+(2, 'Ingeniero Informático', 'Tecnología', 'Licenciatura', 'Si', 'Si', 10, 4),
+(3, 'Licenciada en Matemáticas', 'Ciencias Exactas', 'Licenciatura', 'No', 'Si', 5, 4),
+(4, 'Físico', 'Ciencias Exactas', 'Doctorado', 'Si', 'Si', 8, 4),
+(5, 'Licenciada en Filología', 'Idiomas', 'Maestría', 'Si', 'Si', 6, 4);
+
+INSERT INTO POSTULANTE (ID, COLEGIO_PROCEDENCIA, CIUDAD) VALUES 
+(6, 'Nacional Florida', 'Santa Cruz'), (7, 'Marista', 'Santa Cruz'), (8, 'La Salle', 'Santa Cruz'),
+(9, 'Don Bosco', 'Santa Cruz'), (10, 'San Agustin', 'Santa Cruz'), (11, 'Cristo Rey', 'Santa Cruz'),
+(12, 'Nacional Florida', 'Santa Cruz'), (13, 'Eagles', 'Santa Cruz'), (14, 'Franco Boliviano', 'Santa Cruz'),
+(15, 'Uboldi', 'Santa Cruz'), (16, 'Saint George', 'Santa Cruz'), (17, 'Cambridge', 'Santa Cruz'),
+(18, 'Espíritu Santo', 'Santa Cruz'), (19, 'Bautista', 'Santa Cruz'), (20, 'Nacional', 'Santa Cruz');
+
+-- BITACORA Y TOKEN_RECUPERACION DEBEN QUEDAR VACÍAS HASTA EL USO REAL
+
+-- =================================================================
+-- 6. FACULTAD, GESTIÓN, CARRERAS Y POSTULACIÓN
+-- =================================================================
+INSERT INTO FACULTAD (ID, NOMBRE) VALUES (1, 'Facultad de Ingeniería en Ciencias de la Computación y Telecomunicaciones');
+INSERT INTO GESTION (ID, SEMESTRE, AÑO) VALUES (1, 1, 2026);
+INSERT INTO CARRERA (CODIGO, FACULTAD_ID, NOMBRE, CUPO_MAXIMO) VALUES 
+(1, 1, 'Ingeniería Informática', 300), (2, 1, 'Ingeniería en Sistemas', 200),
+(3, 1, 'Ingeniería en Redes y Telecomunicaciones', 250), (4, 1, 'Ingeniería Robótica', 50);
+
+-- Generar Postulación para los 15 estudiantes
+INSERT INTO POSTULACION (CODIGO, POSTULANTE_ID, GESTION_ID, FECHA, HORA, ESTADO) VALUES 
+(1, 6, 1, '2026-01-15', '08:00:00', 'Habilitado'), (2, 7, 1, '2026-01-15', '08:15:00', 'Habilitado'),
+(3, 8, 1, '2026-01-15', '08:30:00', 'Habilitado'), (4, 9, 1, '2026-01-15', '08:45:00', 'Habilitado'),
+(5, 10, 1, '2026-01-15', '09:00:00', 'Habilitado'), (6, 11, 1, '2026-01-15', '09:15:00', 'Habilitado'),
+(7, 12, 1, '2026-01-15', '09:30:00', 'Habilitado'), (8, 13, 1, '2026-01-15', '09:45:00', 'Habilitado'),
+(9, 14, 1, '2026-01-15', '10:00:00', 'Habilitado'), (10, 15, 1, '2026-01-15', '10:15:00', 'Habilitado'),
+(11, 16, 1, '2026-01-15', '10:30:00', 'Habilitado'), (12, 17, 1, '2026-01-15', '10:45:00', 'Habilitado'),
+(13, 18, 1, '2026-01-15', '11:00:00', 'Habilitado'), (14, 19, 1, '2026-01-15', '11:15:00', 'Habilitado'),
+(15, 20, 1, '2026-01-15', '11:30:00', 'Habilitado');
+
+INSERT INTO POSTULACION_CARRERA (POSTULACION_CODIGO, CARRERA_CODIGO, PRIORIDAD) VALUES 
+(1, 1, 1), (1, 2, 2), (2, 2, 1), (2, 3, 2), (3, 4, 1), (3, 1, 2),
+(4, 3, 1), (4, 2, 2), (5, 1, 1), (5, 4, 2), (6, 2, 1), (6, 1, 2),
+(7, 4, 1), (7, 2, 2), (8, 1, 1), (8, 3, 2), (9, 3, 1), (9, 1, 2),
+(10, 2, 1), (10, 4, 2), (11, 1, 1), (11, 2, 2), (12, 2, 1), (12, 3, 2),
+(13, 4, 1), (13, 1, 2), (14, 3, 1), (14, 2, 2), (15, 1, 1), (15, 4, 2);
+
+INSERT INTO PAGO (POSTULACION_CODIGO, NRO_RECIBO, MONTO, METODO_PAGO, TRANSACCION_ID, ESTADO, FECHA) VALUES 
+(1, 'REC-001', 300.00, 'PayPal', 'TXN_001', 'Completado', '2026-01-16'), (2, 'REC-002', 300.00, 'Stripe', 'TXN_002', 'Completado', '2026-01-16'),
+(3, 'REC-003', 300.00, 'PayPal', 'TXN_003', 'Completado', '2026-01-16'), (4, 'REC-004', 300.00, 'Stripe', 'TXN_004', 'Completado', '2026-01-16'),
+(5, 'REC-005', 300.00, 'PayPal', 'TXN_005', 'Completado', '2026-01-16'), (6, 'REC-006', 300.00, 'Stripe', 'TXN_006', 'Completado', '2026-01-16'),
+(7, 'REC-007', 300.00, 'PayPal', 'TXN_007', 'Completado', '2026-01-16'), (8, 'REC-008', 300.00, 'Stripe', 'TXN_008', 'Completado', '2026-01-16'),
+(9, 'REC-009', 300.00, 'PayPal', 'TXN_009', 'Completado', '2026-01-16'), (10, 'REC-010', 300.00, 'Stripe', 'TXN_010', 'Completado', '2026-01-16'),
+(11, 'REC-011', 300.00, 'PayPal', 'TXN_011', 'Completado', '2026-01-16'), (12, 'REC-012', 300.00, 'Stripe', 'TXN_012', 'Completado', '2026-01-16'),
+(13, 'REC-013', 300.00, 'PayPal', 'TXN_013', 'Completado', '2026-01-16'), (14, 'REC-014', 300.00, 'Stripe', 'TXN_014', 'Completado', '2026-01-16'),
+(15, 'REC-015', 300.00, 'PayPal', 'TXN_015', 'Completado', '2026-01-16');
+
+INSERT INTO DOCUMENTOS (POSTULACION_CODIGO, TIPO_DOCUMENTO, URL_ARCHIVO, ESTADO_VALIDACION) VALUES 
+(1, 'Carnet', 'url.com/ci1', 'Validado'), (2, 'Carnet', 'url.com/ci2', 'Validado'),
+(3, 'Carnet', 'url.com/ci3', 'Validado'), (4, 'Carnet', 'url.com/ci4', 'Validado'),
+(5, 'Carnet', 'url.com/ci5', 'Validado'), (6, 'Carnet', 'url.com/ci6', 'Validado'),
+(7, 'Carnet', 'url.com/ci7', 'Validado'), (8, 'Carnet', 'url.com/ci8', 'Validado'),
+(9, 'Carnet', 'url.com/ci9', 'Validado'), (10, 'Carnet', 'url.com/ci10', 'Validado'),
+(11, 'Carnet', 'url.com/ci11', 'Validado'), (12, 'Carnet', 'url.com/ci12', 'Validado'),
+(13, 'Carnet', 'url.com/ci13', 'Validado'), (14, 'Carnet', 'url.com/ci14', 'Validado'),
+(15, 'Carnet', 'url.com/ci15', 'Validado');
+
+-- =================================================================
+-- 7. MATERIAS, AULAS, TURNOS Y GRUPOS (LÓGICA DE COHORTES)
+-- =================================================================
+INSERT INTO MATERIA (ID, NOMBRE) VALUES 
+(1, 'Computación'), (2, 'Matemáticas'), (3, 'Física'), (4, 'Inglés');
+
+INSERT INTO TURNO (ID, DESCRIPCION) VALUES 
+(1, 'Mañana'), (2, 'Tarde');
+
+INSERT INTO AULA (ID, NRO_AULA, CAPACIDAD) VALUES 
+(1, 'Aula 1-236', 70), (2, 'Aula 2-236', 70), (3, 'Aula 3-236', 70), (4, 'Aula 4-236', 70), (5, 'Aula 5-236', 70),
+(6, 'Aula 6-236', 70), (7, 'Aula 7-236', 70), (8, 'Aula 8-236', 70), (9, 'Aula 9-236', 70), (10, 'Aula 10-236', 70),
+(11, 'Aula 11-236', 70), (12, 'Aula 12-236', 70), (13, 'Aula 13-236', 70), (14, 'Aula 14-236', 70), (15, 'Aula 15-236', 70),
+(16, 'Aula 16-236', 70), (17, 'Aula 17-236', 70), (18, 'Aula 18-236', 70), (19, 'Aula 19-236', 70), (20, 'Aula 20-236', 70),
+(21, 'Aula 21-236', 70), (22, 'Aula 22-236', 70), (23, 'Aula 23-236', 70), (24, 'Aula 24-236', 70), (25, 'Aula 25-236', 70),
+(26, 'Aula 26-236', 70), (27, 'Aula 27-236', 70), (28, 'Aula 28-236', 70), (29, 'Aula 29-236', 70), (30, 'Aula 30-236', 70),
+(31, 'Aula 31-236', 70), (32, 'Aula 32-236', 70), (33, 'Aula 33-236', 70), (34, 'Aula 34-236', 70), (35, 'Aula 35-236', 70),
+(36, 'Aula 36-236', 70), (37, 'Aula 37-236', 70), (38, 'Aula 38-236', 70), (39, 'Aula 39-236', 70), (40, 'Aula 40-236', 70),
+(41, 'Aula 41-236', 70), (42, 'Aula 42-236', 70), (43, 'Aula 43-236', 70), (44, 'Aula 44-236', 70), (45, 'Aula 45-236', 70);
+
+-- Un "Grupo" (Cohorte) pasa las 4 materias. 
+-- Registraremos 4 registros en la tabla GRUPO compartiendo el nombre "M001" (Mañana) y "T001" (Tarde)
+INSERT INTO GRUPO (CODIGO, MATERIA_ID, NOMBRE, INSCRITOS_ACTUALES, CUPO, MODALIDAD) VALUES 
+(1, 2, 'M001', 8, 70, 'Presencial'),  -- Matemáticas M001
+(2, 4, 'M001', 8, 70, 'Presencial'),  -- Inglés M001
+(3, 3, 'M001', 8, 70, 'Presencial'),  -- Física M001
+(4, 1, 'M001', 8, 70, 'Presencial'),  -- Computación M001
+
+(5, 2, 'T001', 7, 70, 'Presencial'),  -- Matemáticas T001
+(6, 4, 'T001', 7, 70, 'Presencial'),  -- Inglés T001
+(7, 3, 'T001', 7, 70, 'Presencial'),  -- Física T001
+(8, 1, 'T001', 7, 70, 'Presencial');  -- Computación T001
+
+-- Horarios consecutivos de 90 mins en un mismo aula por cohorte
+-- M001 ocupa el Aula 1-236. T001 ocupa el Aula 2-236.
+INSERT INTO HORARIO (GRUPO_CODIGO, AULA_ID, TURNO_ID, DIA, HORA_INICIO, HORA_FIN) VALUES 
+(1, 1, 1, 'Lunes', '07:00:00', '08:30:00'), -- M001 Matemáticas
+(2, 1, 1, 'Lunes', '08:30:00', '10:00:00'), -- M001 Inglés
+(3, 1, 1, 'Lunes', '10:00:00', '11:30:00'), -- M001 Física
+(4, 1, 1, 'Lunes', '11:30:00', '13:00:00'), -- M001 Computación
+
+(5, 2, 2, 'Lunes', '12:00:00', '13:30:00'), -- T001 Matemáticas
+(6, 2, 2, 'Lunes', '13:30:00', '15:00:00'), -- T001 Inglés
+(7, 2, 2, 'Lunes', '15:00:00', '16:30:00'), -- T001 Física
+(8, 2, 2, 'Lunes', '16:30:00', '18:00:00'); -- T001 Computación
+
+-- Asignación de docentes. Cada docente toma la misma materia en ambos turnos (2 grupos, max permitido 4)
+-- No hay cruces de horario para el mismo docente
+INSERT INTO CARGA_HORARIA (DOCENTE_ID, GRUPO_CODIGO) VALUES 
+(3, 1), (3, 5), -- Docente 3 (Ana Perez, Matemáticas) enseña de 07:00 a 08:30 y de 12:00 a 13:30
+(5, 2), (5, 6), -- Docente 5 (Lucia Salazar, Inglés) enseña de 08:30 a 10:00 y de 13:30 a 15:00
+(4, 3), (4, 7), -- Docente 4 (Roberto Gomez, Física) enseña de 10:00 a 11:30 y de 15:00 a 16:30
+(2, 4), (2, 8); -- Docente 2 (Carlos Mendez, Computación) enseña de 11:30 a 13:00 y de 16:30 a 18:00
+
+-- =================================================================
+-- 8. INSCRIPCIONES (COHORTES)
+-- =================================================================
+-- Los 8 primeros alumnos van a la cohorte de la mañana (M001) - Inscriben los 4 grupos de M001
+INSERT INTO INSCRIPCIONES_CUP (POSTULACION_CODIGO, GRUPO_CODIGO, FECHA_INSCRIPCION, ESTADO) VALUES 
+(1,1,'2026-01-20','Inscrito'), (1,2,'2026-01-20','Inscrito'), (1,3,'2026-01-20','Inscrito'), (1,4,'2026-01-20','Inscrito'),
+(2,1,'2026-01-20','Inscrito'), (2,2,'2026-01-20','Inscrito'), (2,3,'2026-01-20','Inscrito'), (2,4,'2026-01-20','Inscrito'),
+(3,1,'2026-01-20','Inscrito'), (3,2,'2026-01-20','Inscrito'), (3,3,'2026-01-20','Inscrito'), (3,4,'2026-01-20','Inscrito'),
+(4,1,'2026-01-20','Inscrito'), (4,2,'2026-01-20','Inscrito'), (4,3,'2026-01-20','Inscrito'), (4,4,'2026-01-20','Inscrito'),
+(5,1,'2026-01-20','Inscrito'), (5,2,'2026-01-20','Inscrito'), (5,3,'2026-01-20','Inscrito'), (5,4,'2026-01-20','Inscrito'),
+(6,1,'2026-01-20','Inscrito'), (6,2,'2026-01-20','Inscrito'), (6,3,'2026-01-20','Inscrito'), (6,4,'2026-01-20','Inscrito'),
+(7,1,'2026-01-20','Inscrito'), (7,2,'2026-01-20','Inscrito'), (7,3,'2026-01-20','Inscrito'), (7,4,'2026-01-20','Inscrito'),
+(8,1,'2026-01-20','Inscrito'), (8,2,'2026-01-20','Inscrito'), (8,3,'2026-01-20','Inscrito'), (8,4,'2026-01-20','Inscrito');
+
+-- Los 7 alumnos restantes van a la cohorte de la tarde (T001) - Inscriben los 4 grupos de T001
+INSERT INTO INSCRIPCIONES_CUP (POSTULACION_CODIGO, GRUPO_CODIGO, FECHA_INSCRIPCION, ESTADO) VALUES 
+(9,5,'2026-01-20','Inscrito'), (9,6,'2026-01-20','Inscrito'), (9,7,'2026-01-20','Inscrito'), (9,8,'2026-01-20','Inscrito'),
+(10,5,'2026-01-20','Inscrito'), (10,6,'2026-01-20','Inscrito'), (10,7,'2026-01-20','Inscrito'), (10,8,'2026-01-20','Inscrito'),
+(11,5,'2026-01-20','Inscrito'), (11,6,'2026-01-20','Inscrito'), (11,7,'2026-01-20','Inscrito'), (11,8,'2026-01-20','Inscrito'),
+(12,5,'2026-01-20','Inscrito'), (12,6,'2026-01-20','Inscrito'), (12,7,'2026-01-20','Inscrito'), (12,8,'2026-01-20','Inscrito'),
+(13,5,'2026-01-20','Inscrito'), (13,6,'2026-01-20','Inscrito'), (13,7,'2026-01-20','Inscrito'), (13,8,'2026-01-20','Inscrito'),
+(14,5,'2026-01-20','Inscrito'), (14,6,'2026-01-20','Inscrito'), (14,7,'2026-01-20','Inscrito'), (14,8,'2026-01-20','Inscrito'),
+(15,5,'2026-01-20','Inscrito'), (15,6,'2026-01-20','Inscrito'), (15,7,'2026-01-20','Inscrito'), (15,8,'2026-01-20','Inscrito');
+
+-- =================================================================
+-- 9. EVALUACIONES (60 Inicios en estado 0)
+-- =================================================================
+INSERT INTO EVALUACIONES (INSCRIPCION_ID, NOTA_P1, NOTA_P2, NOTA_P3, PROMEDIO_FINAL, ESTADO_MATERIA) VALUES 
+(1,0,0,0,0,'Cursando'), (2,0,0,0,0,'Cursando'), (3,0,0,0,0,'Cursando'), (4,0,0,0,0,'Cursando'), (5,0,0,0,0,'Cursando'),
+(6,0,0,0,0,'Cursando'), (7,0,0,0,0,'Cursando'), (8,0,0,0,0,'Cursando'), (9,0,0,0,0,'Cursando'), (10,0,0,0,0,'Cursando'),
+(11,0,0,0,0,'Cursando'), (12,0,0,0,0,'Cursando'), (13,0,0,0,0,'Cursando'), (14,0,0,0,0,'Cursando'), (15,0,0,0,0,'Cursando'),
+(16,0,0,0,0,'Cursando'), (17,0,0,0,0,'Cursando'), (18,0,0,0,0,'Cursando'), (19,0,0,0,0,'Cursando'), (20,0,0,0,0,'Cursando'),
+(21,0,0,0,0,'Cursando'), (22,0,0,0,0,'Cursando'), (23,0,0,0,0,'Cursando'), (24,0,0,0,0,'Cursando'), (25,0,0,0,0,'Cursando'),
+(26,0,0,0,0,'Cursando'), (27,0,0,0,0,'Cursando'), (28,0,0,0,0,'Cursando'), (29,0,0,0,0,'Cursando'), (30,0,0,0,0,'Cursando'),
+(31,0,0,0,0,'Cursando'), (32,0,0,0,0,'Cursando'), (33,0,0,0,0,'Cursando'), (34,0,0,0,0,'Cursando'), (35,0,0,0,0,'Cursando'),
+(36,0,0,0,0,'Cursando'), (37,0,0,0,0,'Cursando'), (38,0,0,0,0,'Cursando'), (39,0,0,0,0,'Cursando'), (40,0,0,0,0,'Cursando'),
+(41,0,0,0,0,'Cursando'), (42,0,0,0,0,'Cursando'), (43,0,0,0,0,'Cursando'), (44,0,0,0,0,'Cursando'), (45,0,0,0,0,'Cursando'),
+(46,0,0,0,0,'Cursando'), (47,0,0,0,0,'Cursando'), (48,0,0,0,0,'Cursando'), (49,0,0,0,0,'Cursando'), (50,0,0,0,0,'Cursando'),
+(51,0,0,0,0,'Cursando'), (52,0,0,0,0,'Cursando'), (53,0,0,0,0,'Cursando'), (54,0,0,0,0,'Cursando'), (55,0,0,0,0,'Cursando'),
+(56,0,0,0,0,'Cursando'), (57,0,0,0,0,'Cursando'), (58,0,0,0,0,'Cursando'), (59,0,0,0,0,'Cursando'), (60,0,0,0,0,'Cursando');
