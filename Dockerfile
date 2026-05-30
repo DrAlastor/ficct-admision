@@ -26,7 +26,7 @@ COPY . /app
 
 # Instalar dependencias de PHP y Node, y compilar el frontend
 RUN composer install --optimize-autoloader --no-dev
-RUN npm install
+RUN npm install --legacy-peer-deps
 RUN npm run build
 
 # Comando para iniciar Laravel usando el puerto que asigne Render
