@@ -34,7 +34,7 @@ class DashboardController extends Controller
                 ->join('rol', 'usuario.rol_id', '=', 'rol.id')
                 ->leftJoin('perfil', 'usuario.id', '=', 'perfil.usuario_id')
                 ->get();
-                return Inertia::render('Paneles/Admin/AdminDashboard', ['user' => $user, 'usuarios' => $usuarios]);
+                return Inertia::render('Paneles/Administrador/AdminDashboard', ['user' => $user, 'usuarios' => $usuarios]);
             case 2:
                 // Fetch docente's assigned classes
                 $perfil = \Backend\Modulo1_Seguridad\Models\Perfil::where('usuario_id', $user->id)->first();
