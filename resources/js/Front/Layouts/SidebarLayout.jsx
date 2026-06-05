@@ -53,8 +53,14 @@ export default function SidebarLayout({ children, title, subtitle }) {
         return <FiFolder />;
     };
 
-    // Iniciales
-    const initials = user.codigo_inicio ? user.codigo_inicio.substring(0, 2).toUpperCase() : 'US';
+    // Iniciales y nombre a mostrar
+    const initials = user.perfil?.nombres 
+        ? user.perfil.nombres.substring(0, 1).toUpperCase() + (user.perfil.apellido_paterno ? user.perfil.apellido_paterno.substring(0, 1).toUpperCase() : '')
+        : user.codigo_inicio ? user.codigo_inicio.substring(0, 2).toUpperCase() : 'US';
+
+    const displayName = user.perfil?.nombres 
+        ? `${user.perfil.nombres} ${user.perfil.apellido_paterno || ''}`.trim()
+        : user.codigo_inicio;
 
     return (
         <div className="flex h-screen bg-[#F4F6FB] font-sans">
@@ -135,13 +141,13 @@ export default function SidebarLayout({ children, title, subtitle }) {
                     <div className="flex items-center space-x-6">
                         <div className="text-right hidden md:block">
                             <div className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-                                {user.codigo_inicio}
+                                {displayName}
                             </div>
                             <div className={`text-xs font-bold ${getRoleColor(user.rol_id)} tracking-wider`}>
                                 {getRoleName(user.rol_id)}
                             </div>
                         </div>
-                        <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm uppercase">
                             {initials}
                         </div>
                         <button 

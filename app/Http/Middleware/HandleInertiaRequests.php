@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         if ($user) {
+            $user->load('perfil');
             $rawModulos = \Illuminate\Support\Facades\DB::table('modulo')
                 ->join('funcion', 'modulo.id', '=', 'funcion.modulo_id')
                 ->join('rol_funcion', 'funcion.id', '=', 'rol_funcion.funcion_id')

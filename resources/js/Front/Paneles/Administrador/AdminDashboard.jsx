@@ -1,7 +1,7 @@
 import React from 'react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head } from '@inertiajs/react';
-import { FiSearch, FiUsers, FiShield, FiActivity, FiUserPlus } from 'react-icons/fi';
+import { FiSearch, FiUsers, FiShield, FiActivity, FiUserPlus, FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 
 export default function AdminDashboard({ auth, usuarios = [] }) {
     // Helper para obtener el nombre completo o un texto por defecto
@@ -38,7 +38,7 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
             <div className="bg-gradient-to-r from-gray-900 via-slate-800 to-black rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-red-600 opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
                 <div className="relative z-10">
-                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.codigo_inicio}!</h2>
+                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
                     <p className="text-gray-300 font-medium max-w-2xl text-lg">
                         Estás en el centro de control. Desde aquí puedes monitorear y gestionar todos los usuarios, docentes y postulantes registrados en el sistema.
                     </p>
@@ -113,6 +113,7 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
                                 <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">DOCUMENTO CI</th>
                                 <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">POSICIÓN / CARGO</th>
                                 <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">ACCESO A SISTEMA</th>
+                                <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">ACCIONES</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -146,6 +147,19 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
                                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                                                 {u.estado || 'Desconocido'}
                                             </span>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 text-center">
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver detalle">
+                                                <FiEye size={18} />
+                                            </button>
+                                            <button className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors" title="Editar">
+                                                <FiEdit size={18} />
+                                            </button>
+                                            <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                                                <FiTrash2 size={18} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

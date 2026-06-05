@@ -53,9 +53,9 @@ class PostulanteRegistroController extends Controller
             'documento_bachiller' => 'required|file|mimes:pdf,jpg,png|max:2048',
         ]);
 
-        // 2. Guardar los documentos en el servidor (temporal/público)
-        $rutaCI = $request->file('documento_ci')->store('documentos/ci', 'public');
-        $rutaBachiller = $request->file('documento_bachiller')->store('documentos/bachiller', 'public');
+        // 2. Guardar los documentos directamente en AWS S3 (Bucket de archivos)
+        $rutaCI = $request->file('documento_ci')->store('postulantes-ficct/ci', 's3_archivos');
+        $rutaBachiller = $request->file('documento_bachiller')->store('postulantes-ficct/bachiller', 's3_archivos');
 
         // 3. Guardar los datos en la sesión temporalmente mientras el usuario paga
         $datosPostulante = $request->except(['documento_ci', 'documento_bachiller']);
