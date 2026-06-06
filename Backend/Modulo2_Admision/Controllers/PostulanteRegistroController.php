@@ -49,6 +49,7 @@ class PostulanteRegistroController extends Controller
             'carrera_opcion1' => 'required|integer',
             'carrera_opcion2' => 'required|integer|different:carrera_opcion1',
             'turno_sugerido' => 'required|string',
+            'tipo_colegio' => 'required|string|in:Fiscal,Convenio,Privado,CEA / Alternativo',
             'documento_ci' => 'required|file|mimes:pdf,jpg,png|max:2048',
             'documento_bachiller' => 'required|file|mimes:pdf,jpg,png|max:2048',
         ]);
@@ -77,8 +78,8 @@ class PostulanteRegistroController extends Controller
                         'name' => 'Inscripción CUP - FICCT',
                         'description' => 'Pago de postulación para el Curso Preuniversitario',
                     ],
-                    // Stripe maneja todo en centavos. 300 Bs = 30000 centavos
-                    'unit_amount' => 30000, 
+                    // Stripe maneja todo en centavos. 700 Bs = 70000 centavos
+                    'unit_amount' => 70000, 
                 ],
                 'quantity' => 1,
             ]],
@@ -148,7 +149,7 @@ class PostulanteRegistroController extends Controller
             // 3.1 Crear el registro específico de Postulante
             $postulante = Postulante::create([
                 'id' => $perfil->id,
-                'colegio_procedencia' => null,
+                'colegio_procedencia' => $datosPostulante['tipo_colegio'] ?? null,
                 'ciudad' => null
             ]);
 
@@ -194,7 +195,7 @@ class PostulanteRegistroController extends Controller
             Pago::create([
                 'postulacion_codigo' => $postulacion->codigo,
                 'nro_recibo' => 'REC-' . rand(10000, 99999),
-                'monto' => 300.00,
+                'monto' => 700.00,
                 'metodo_pago' => 'Stripe',
                 'transaccion_id' => $sessionStripe->payment_intent,
                 'estado' => 'Completado',

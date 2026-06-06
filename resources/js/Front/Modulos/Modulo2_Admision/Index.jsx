@@ -23,6 +23,7 @@ export default function RegistroIndex() {
         carrera_opcion1: '',
         carrera_opcion2: '',
         turno_sugerido: '',
+        tipo_colegio: '',
         documento_ci: null,
         documento_bachiller: null,
     });
@@ -32,9 +33,9 @@ export default function RegistroIndex() {
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        setData(prevData => ({
+        setData((prevData) => ({
             ...prevData,
-            [name]: files ? files[0] : value
+            [name]: files ? files[0] : value,
         }));
     };
 
@@ -44,13 +45,13 @@ export default function RegistroIndex() {
         setErrores({});
 
         const formData = new FormData();
-        Object.keys(data).forEach(key => {
+        Object.keys(data).forEach((key) => {
             formData.append(key, data[key]);
         });
 
         try {
             const response = await axios.post('/registro-cup/pago', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             if (response.data.url) {
@@ -60,72 +61,120 @@ export default function RegistroIndex() {
             if (error.response && error.response.status === 422) {
                 setErrores(error.response.data.errors);
             } else {
-                alert("Ocurrió un error inesperado al procesar tu solicitud.");
+                alert('Ocurrio un error inesperado al procesar tu solicitud.');
             }
             setProcesando(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-[#f4f8fc] px-4 py-12 sm:px-6 lg:px-8">
             <Head title="Registro de Postulantes CUP" />
 
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="px-8 py-10 bg-gradient-to-r from-blue-900 to-indigo-800">
-                    <h2 className="text-3xl font-extrabold text-white text-center">
-                        Admisión CUP - FICCT
-                    </h2>
-                    <p className="text-blue-100 text-center mt-3 text-lg">
-                        Sube tu documentación e inicia tu camino en la facultad
-                    </p>
+            <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-blue-950/10 bg-white shadow-2xl shadow-blue-950/10">
+                <div className="relative overflow-hidden bg-[#063f7c] px-8 py-10">
+                    <div className="absolute left-8 top-8 h-20 w-20 rounded-full border-8 border-[#f59e0b]/25" />
+                    <div className="absolute bottom-6 right-10 h-28 w-28 rounded-full bg-[#ef172f]/20 blur-2xl" />
+                    <div className="relative flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                        <img
+                            src="/ficct-logo.png"
+                            alt="Logo FICCT"
+                            className="h-24 w-auto object-contain drop-shadow-xl"
+                        />
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-wide text-[#fbbf24]">
+                                Facultad de Ingenieria en Ciencias de la Computacion y Telecomunicaciones
+                            </p>
+                            <h2 className="mt-2 text-3xl font-extrabold text-white">
+                                Preinscripcion CUP - FICCT
+                            </h2>
+                            <p className="mt-3 text-lg text-blue-50">
+                                Sube tu documentacion e inicia tu camino en la facultad
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {globalErrors.error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mx-8 mt-6" role="alert">
+                    <div
+                        className="relative mx-8 mt-6 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+                        role="alert"
+                    >
                         <span className="block sm:inline">{globalErrors.error}</span>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="p-8 sm:p-10 space-y-8">
-
-                    <section>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">1. Datos Personales</h3>
+                <form onSubmit={handleSubmit} className="space-y-8 p-8 sm:p-10">
+                    <section className="rounded-xl border border-blue-950/10 bg-white p-6 shadow-sm">
+                        <h3 className="mb-5 border-b border-blue-950/10 pb-3 text-xl font-bold text-[#063f7c]">
+                            1. Datos Personales
+                        </h3>
                         <FormDatosPersonales data={data} handleChange={handleChange} errores={errores} />
                     </section>
 
-                    <section>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">2. Preferencias de Carrera (CU-09)</h3>
+                    <section className="rounded-xl border border-blue-950/10 bg-white p-6 shadow-sm">
+                        <h3 className="mb-5 border-b border-blue-950/10 pb-3 text-xl font-bold text-[#063f7c]">
+                            2. Preferencias de Carrera
+                        </h3>
                         <FormPreferencias data={data} handleChange={handleChange} errores={errores} />
                     </section>
 
-                    <section>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">3. Documentación Respaldo</h3>
+                    <section className="rounded-xl border border-blue-950/10 bg-white p-6 shadow-sm">
+                        <h3 className="mb-5 border-b border-blue-950/10 pb-3 text-xl font-bold text-[#063f7c]">
+                            3. Documentacion Respaldo
+                        </h3>
                         <FormDocumentos handleChange={handleChange} errores={errores} />
                     </section>
 
-                    <div className="pt-6 border-t border-gray-200">
-                        <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
-                            <h4 className="text-lg font-bold text-gray-800 mb-2">Resumen de Inscripción</h4>
-                            <div className="flex justify-between items-center text-gray-700">
-                                <span>Matrícula Preuniversitaria (CUP)</span>
-                                <span className="font-semibold text-lg">300.00 Bs</span>
+                    <div className="border-t border-blue-950/10 pt-6">
+                        <div className="mb-6 rounded-xl border border-blue-950/10 bg-[#f4f8fc] p-6">
+                            <h4 className="mb-2 text-lg font-bold text-[#063f7c]">
+                                Resumen de Inscripcion
+                            </h4>
+                            <div className="flex items-center justify-between gap-4 text-gray-700">
+                                <span>Matricula Preuniversitaria (CUP)</span>
+                                <span className="rounded-md bg-[#ef172f] px-4 py-2 text-lg font-bold text-white">
+                                    700.00 Bs
+                                </span>
                             </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={procesando}
-                            className={`w-full flex justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-lg font-bold text-white transition duration-150 ease-in-out ${procesando ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}`}
+                            className={`flex w-full justify-center rounded-lg border border-transparent px-4 py-4 text-lg font-bold text-white shadow-lg transition duration-150 ease-in-out ${
+                                procesando
+                                    ? 'cursor-not-allowed bg-blue-300'
+                                    : 'bg-[#063f7c] shadow-blue-950/20 hover:bg-[#052f5d] focus:outline-none focus:ring-2 focus:ring-[#ef172f] focus:ring-offset-2'
+                            }`}
                         >
                             {procesando ? (
                                 <span className="flex items-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <svg
+                                        className="-ml-1 mr-3 h-5 w-5 animate-spin text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
                                     </svg>
                                     Procesando pago...
                                 </span>
-                            ) : 'Proceder al Pago Seguro'}
+                            ) : (
+                                'Proceder al Pago Seguro'
+                            )}
                         </button>
                     </div>
                 </form>

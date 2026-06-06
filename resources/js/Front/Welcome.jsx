@@ -1,157 +1,460 @@
 import { Head, Link } from '@inertiajs/react';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import {
+    FaBookOpen,
+    FaChevronRight,
+    FaComments,
+    FaLaptopCode,
+    FaMapMarkerAlt,
+    FaNetworkWired,
+    FaQuestionCircle,
+    FaRobot,
+} from 'react-icons/fa';
+
+const carreras = [
+    {
+        titulo: 'Ingenieria Informatica',
+        inicial: 'I',
+        descripcion:
+            'Enfoque en construccion de software, modelado, diseno de algoritmos y aplicacion etica de tecnologia computacional.',
+        duracion: '9 semestres',
+        modalidad: 'Presencial con soporte virtual',
+        titulos: 'Tec. Medio, Tec. Superior y Licenciatura',
+        director: 'MSc. Ing. Jose Junior Villagomez Melgar',
+        ubicacion: 'Modulo 236, 2do Piso, Ciudad Universitaria, UAGRM',
+        plan: 'Plan vigente 187-6',
+        malla:
+            '9 semestres y 53 materias obligatorias. Incluye programacion, bases de datos, redes, sistemas operativos, ingenieria de software, inteligencia artificial y modalidad de graduacion.',
+        perfil: [
+            'Desarrollo de software y aplicaciones web/moviles',
+            'Gestion de bases de datos y sistemas de informacion',
+            'Arquitectura de software e inteligencia artificial',
+        ],
+        campo: [
+            'Desarrollador full-stack',
+            'Ingeniero de datos',
+            'Consultor TI',
+            'Emprendedor tecnologico',
+        ],
+        icono: FaLaptopCode,
+    },
+    {
+        titulo: 'Ingenieria de Sistemas',
+        inicial: 'S',
+        descripcion:
+            'Forma profesionales que aplican TI para mejorar la gestion industrial y empresarial, modelando y optimizando sistemas complejos.',
+        duracion: '9 semestres + modo de graduacion',
+        modalidad: 'Presencial con soporte virtual',
+        titulos: 'Tec. Medio, Tec. Superior y Licenciatura',
+        director: 'MSc. Ing. Leonardo Vargas Pena',
+        ubicacion: 'Modulo 236, Ciudad Universitaria, UAGRM',
+        plan: 'Plan 187-4',
+        malla:
+            '10 semestres en el plan interactivo y 45 materias obligatorias. Contempla administracion, programacion, bases de datos, procesos, redes, auditoria, tecnologia web y modalidad de titulacion.',
+        perfil: [
+            'Analisis y diseno de sistemas de informacion',
+            'Gestion de procesos de negocio',
+            'Liderazgo de proyectos tecnologicos',
+        ],
+        campo: [
+            'Gerente de tecnologia',
+            'Analista de sistemas',
+            'Gerente de proyectos TI',
+            'Arquitecto de soluciones',
+        ],
+        icono: FaBookOpen,
+    },
+    {
+        titulo: 'Ingenieria en Redes y Telecomunicaciones',
+        inicial: 'R',
+        descripcion:
+            'Especialistas en conectividad, procesamiento de senales, seguridad de redes y regulacion de telecomunicaciones.',
+        duracion: '9 semestres',
+        modalidad: 'Presencial',
+        titulos: 'Tec. Medio, Tec. Superior y Licenciatura',
+        director: 'MSc. Ing. Jorge Rosales',
+        ubicacion: 'Modulo 236, Ciudad Universitaria, UAGRM',
+        plan: 'Carrera creada el 20 de abril de 2005',
+        malla:
+            'Plan con enfasis en redes de datos, telecomunicaciones, electronica, seguridad, gestion de infraestructura y modalidad de titulacion.',
+        perfil: [
+            'Diseno e implementacion de redes corporativas',
+            'Administracion de servidores y servicios de red',
+            'Seguridad informatica y telecomunicaciones',
+        ],
+        campo: [
+            'Administrador de redes',
+            'Ingeniero de seguridad informatica',
+            'Especialista en telecomunicaciones',
+            'Auditor de seguridad de redes',
+        ],
+        icono: FaNetworkWired,
+    },
+    {
+        titulo: 'Ingenieria en Robotica',
+        inicial: 'B',
+        descripcion:
+            'Programa frontera orientado a mecanica, electronica, IA y sistemas de control para resolver problemas industriales y sociales.',
+        duracion: '9 semestres',
+        modalidad: 'Presencial',
+        titulos: 'Tec. Medio, Tec. Superior y Licenciatura',
+        director: 'MSc. Ing. Jose Junior Villagomez Melgar',
+        ubicacion: 'Modulo 236, Ciudad Universitaria, UAGRM',
+        plan: 'Programa en desarrollo - Industria 4.0',
+        malla:
+            '9 semestres con materias de programacion, fisica, robotica, CAD, circuitos, IA, sistemas embebidos, control, IoT y modalidad de titulacion.',
+        perfil: [
+            'Automatizacion industrial',
+            'Mecatronica y diseno CAD/CAM',
+            'IA embebida y vision computacional',
+        ],
+        campo: [
+            'Ingeniero en automatizacion',
+            'Disenador de sistemas roboticos',
+            'Investigador en robotica e IA',
+            'Ingeniero en Industria 4.0',
+        ],
+        icono: FaRobot,
+    },
+];
+
+const tabs = ['Resumen', 'Director', 'Ubicacion'];
+
+const preguntas = [
+    {
+        pregunta: 'El formulario cambia?',
+        respuesta: 'No. El formulario CUP se mantiene y ahi se elige la carrera.',
+    },
+    {
+        pregunta: 'Donde pago la matricula?',
+        respuesta: 'En Caja Facultativa, Modulo 236, planta baja.',
+    },
+    {
+        pregunta: 'Que costo tiene el CUP?',
+        respuesta: 'La matricula unica indicada para el CUP es de 700 Bs.',
+    },
+];
 
 export default function Welcome({ auth }) {
-    const carreras = [
-        {
-            titulo: 'Ingeniería Informática',
-            descripcion: 'Domina el desarrollo de software, algoritmos e inteligencia artificial para crear soluciones tecnológicas innovadoras.',
-            icono: (
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-            )
-        },
-        {
-            titulo: 'Ingeniería en Sistemas',
-            descripcion: 'Gestiona la información y optimiza procesos organizacionales integrando tecnología y negocios a gran escala.',
-            icono: (
-                <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-            )
-        },
-        {
-            titulo: 'Redes y Telecomunicaciones',
-            descripcion: 'Diseña y administra la infraestructura de conectividad global, desde redes locales hasta telecomunicaciones satelitales.',
-            icono: (
-                <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                </svg>
-            )
-        },
-        {
-            titulo: 'Ingeniería Robótica',
-            descripcion: 'Crea el futuro mediante la integración de mecánica, electrónica y sistemas computacionales para automatización.',
-            icono: (
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-            )
-        }
-    ];
+    const [carreraSeleccionada, setCarreraSeleccionada] = useState(carreras[0]);
+    const [tabActiva, setTabActiva] = useState('Resumen');
+    const IconoSeleccionado = carreraSeleccionada.icono;
+
+    const mensajeIa = useMemo(
+        () =>
+            `Sobre ${carreraSeleccionada.titulo}: revisa la pestana de malla y ubicacion. Para el CUP, el pago referencial es 700 Bs. en Caja Facultativa del Modulo 236.`,
+        [carreraSeleccionada],
+    );
+
+    const seleccionarCarrera = (carrera) => {
+        setCarreraSeleccionada(carrera);
+        setTabActiva('Resumen');
+    };
+
+    const contenidoTab = {
+        Resumen: (
+            <>
+                <p className="text-sm leading-6 text-slate-600">{carreraSeleccionada.descripcion}</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <Dato titulo="Duracion" valor={carreraSeleccionada.duracion} />
+                    <Dato titulo="Modalidad" valor={carreraSeleccionada.modalidad} />
+                    <Dato titulo="Titulos" valor={carreraSeleccionada.titulos} />
+                </div>
+                <Lista titulo="Perfil profesional" items={carreraSeleccionada.perfil} />
+                <Lista titulo="Campo laboral" items={carreraSeleccionada.campo} />
+            </>
+        ),
+        Director: (
+            <div className="rounded-lg bg-blue-50 p-5">
+                <p className="text-sm font-semibold text-blue-900">Director de carrera</p>
+                <h4 className="mt-2 text-2xl font-bold text-slate-950">
+                    {carreraSeleccionada.director}
+                </h4>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                    Atencion academica y orientacion de la carrera en la FICCT, Ciudad Universitaria UAGRM.
+                </p>
+            </div>
+        ),
+        Ubicacion: (
+            <div>
+                <h4 className="text-xl font-bold text-slate-950">Centro interno y atencion</h4>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{carreraSeleccionada.ubicacion}</p>
+                <a
+                    href="https://www.google.com/maps/search/?api=1&query=FICCT+UAGRM+Modulo+236"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-5 inline-flex rounded-md border border-blue-200 px-4 py-2 text-sm font-bold text-blue-900 hover:bg-blue-50"
+                >
+                    Ver ubicacion
+                </a>
+            </div>
+        ),
+    };
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans selection:bg-blue-600 selection:text-white">
-            <Head title="Bienvenido - FICCT" />
+        <div className="min-h-screen bg-[#f4f8fc] text-slate-900">
+            <Head title="FICCT - Preinscripcion CUP" />
 
-            {/* Navbar */}
-            <nav className="absolute top-0 w-full z-50 px-6 py-4 flex justify-between items-center border-b border-white/10 bg-black/10 backdrop-blur-md">
-                <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-white tracking-tight">FICCT</span>
-                </div>
-                <div className="flex gap-4">
-                    {auth.user ? (
-                        <Link href={route('dashboard')} className="text-white hover:text-blue-200 transition font-medium">
-                            Dashboard
-                        </Link>
-                    ) : (
-                        <Link href={route('login')} className="text-white hover:text-blue-200 transition font-medium">
-                            Iniciar Sesión
-                        </Link>
-                    )}
-                </div>
-            </nav>
+            <header className="border-b border-blue-950/10 bg-white/95 shadow-sm">
+                <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-3">
+                        <img
+                            src="/ficct-logo.png"
+                            alt="Logo oficial FICCT"
+                            className="h-16 w-14 object-contain"
+                        />
+                        <div>
+                            <p className="text-lg font-bold text-[#063f7c]">FICCT</p>
+                            <p className="max-w-md text-sm text-slate-600">
+                                Facultad de Ingenieria en Ciencias de la Computacion y Telecomunicaciones
+                            </p>
+                        </div>
+                    </div>
 
-            {/* Hero Section */}
-            <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900">
-                <div className="absolute inset-0 bg-[url('https://laravel.com/assets/img/welcome/background.svg')] opacity-20 object-cover object-center mix-blend-overlay"></div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg">
-                        Facultad de Ingeniería en Ciencias de <br className="hidden md:block" /> la Computación y Telecomunicaciones
-                    </h1>
-                    <p className="mt-4 max-w-2xl text-xl text-blue-100 mx-auto mb-10">
-                        Formando a los líderes tecnológicos del mañana. Descubre tu pasión y construye el futuro con nosotros.
-                    </p>
-                    <div className="flex justify-center gap-4">
-                        <a href="#carreras" className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-3 rounded-full font-semibold transition backdrop-blur-sm">
-                            Explorar Carreras
+                    <div className="flex items-center gap-3">
+                        <a
+                            href="#carreras"
+                            className="hidden rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:inline-flex"
+                        >
+                            Carreras
                         </a>
-                        <Link href={route('registro.create')} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-full font-semibold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-1">
-                            Inscripción CUP
-                        </Link>
+                        {auth.user ? (
+                            <Link
+                                href={route('dashboard')}
+                            className="rounded-md bg-[#063f7c] px-4 py-2 text-sm font-semibold text-white hover:bg-[#052f5d]"
+                            >
+                                Dashboard
+                            </Link>
+                        ) : (
+                            <Link
+                                href={route('login')}
+                                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                            >
+                                Iniciar sesion
+                            </Link>
+                        )}
                     </div>
-                </div>
-                
-                {/* Decorative shape */}
-                <div className="absolute bottom-0 w-full overflow-hidden leading-none rotate-180">
-                    <svg className="relative block w-full h-[50px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                        <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="#f9fafb"></path>
-                    </svg>
-                </div>
-            </section>
+                </nav>
+            </header>
 
-            {/* Carreras Section */}
-            <section id="carreras" className="py-20 bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-gray-900 tracking-tight sm:text-4xl">
-                            Nuestra Oferta Académica
-                        </h2>
-                        <p className="mt-4 text-lg text-gray-600">
-                            Programas diseñados para la innovación y la excelencia tecnológica.
-                        </p>
+            <main>
+                <section className="relative overflow-hidden bg-[#063f7c]">
+                    <div className="absolute left-8 top-8 h-24 w-24 rounded-full border-8 border-[#f59e0b]/30" />
+                    <div className="absolute bottom-10 right-16 h-32 w-32 rounded-full bg-[#ef172f]/20 blur-2xl" />
+                    <div className="absolute right-1/3 top-20 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+
+                    <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8">
+                        <div className="flex flex-col justify-center">
+                            <p className="mb-3 text-sm font-bold uppercase tracking-wide text-[#fbbf24]">
+                                Preinscripcion CUP
+                            </p>
+                            <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl">
+                                Conoce las carreras de la FICCT antes de llenar tu formulario
+                            </h1>
+                            <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-50">
+                                Revisa informacion de cada carrera, malla, director, plan academico, ubicacion y datos de pago del CUP.
+                            </p>
+                            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                                <a
+                                    href="#carreras"
+                                    className="inline-flex items-center justify-center rounded-md border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/20"
+                                >
+                                    Ver carreras
+                                </a>
+                                <Link
+                                    href={route('registro.create')}
+                                    className="inline-flex items-center justify-center rounded-md bg-[#ef172f] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-red-950/20 hover:bg-[#c8102a]"
+                                >
+                                    Ir al formulario CUP
+                                    <FaChevronRight className="ml-2 h-3 w-3" />
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-center">
+                            <img
+                                src="/ficct-logo.png"
+                                alt="Logo oficial de la Facultad de Ingenieria en Ciencias de la Computacion y Telecomunicaciones"
+                                className="h-72 w-auto object-contain drop-shadow-2xl"
+                            />
+                        </div>
                     </div>
+                </section>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {carreras.map((carrera, index) => (
-                            <div key={index} className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group">
-                                <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                    {carrera.icono}
+                <section id="carreras" className="relative overflow-hidden border-y border-blue-950/10 bg-[#f4f8fc] py-12">
+                    <div className="absolute left-0 top-0 h-full w-2 bg-[#ef172f]" />
+                    <div className="absolute right-8 top-8 h-20 w-20 rounded-full bg-[#f59e0b]/20" />
+                    <div className="absolute bottom-10 left-10 h-28 w-28 rounded-full bg-[#6ee76a]/15" />
+                    <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="mb-8">
+                            <h2 className="text-3xl font-bold text-[#063f7c]">Carreras FICCT</h2>
+                            <p className="mt-2 text-slate-600">
+                                Selecciona una tarjeta para abrir la pestana informativa de la carrera.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+                            <div className="grid gap-4">
+                                {carreras.map((carrera) => {
+                                    const Icono = carrera.icono;
+                                    const activa = carrera.titulo === carreraSeleccionada.titulo;
+
+                                    return (
+                                        <button
+                                            key={carrera.titulo}
+                                            type="button"
+                                            onClick={() => seleccionarCarrera(carrera)}
+                                            className={`rounded-lg border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                                                activa
+                                                    ? 'border-[#ef172f] ring-2 ring-red-100'
+                                                    : 'border-blue-950/10'
+                                            }`}
+                                        >
+                                            <div className="flex items-start gap-4">
+                                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#063f7c] text-white">
+                                                    <Icono className="h-6 w-6" />
+                                                </span>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-950">
+                                                        {carrera.titulo}
+                                                    </h3>
+                                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                                        {carrera.descripcion}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <aside className="rounded-lg border border-blue-950/10 bg-white shadow-lg shadow-blue-950/5">
+                                <div className="border-b border-blue-950/10 bg-gradient-to-r from-[#063f7c] to-[#0a5aa7] p-6 text-white">
+                                    <div className="flex items-center gap-4">
+                                        <span className="flex h-14 w-14 items-center justify-center rounded-md bg-white text-xl font-bold text-[#063f7c]">
+                                            {carreraSeleccionada.inicial}
+                                        </span>
+                                        <div>
+                                            <p className="text-sm font-semibold text-blue-100">
+                                                Pestana de informacion
+                                            </p>
+                                            <h3 className="text-2xl font-bold text-white">
+                                                {carreraSeleccionada.titulo}
+                                            </h3>
+                                        </div>
+                                    </div>
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-3">{carrera.titulo}</h3>
-                                <p className="text-gray-600 leading-relaxed text-sm">
-                                    {carrera.descripcion}
+
+                                <div className="flex gap-2 overflow-x-auto border-b border-slate-200 px-4 py-3">
+                                    {tabs.map((tab) => (
+                                        <button
+                                            key={tab}
+                                            type="button"
+                                            onClick={() => setTabActiva(tab)}
+                                            className={`shrink-0 rounded-md px-3 py-2 text-sm font-bold ${
+                                                tabActiva === tab
+                                                    ? 'bg-[#ef172f] text-white'
+                                                    : 'text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            {tab}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="p-6">{contenidoTab[tabActiva]}</div>
+                            </aside>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="relative overflow-hidden bg-white py-12">
+                    <div className="absolute right-8 top-8 h-20 w-20 rounded-full border-8 border-[#f59e0b]/20" />
+                    <div className="absolute bottom-8 left-8 h-24 w-24 rounded-full bg-[#6ee76a]/10" />
+                    <div className="relative mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+                        <div className="rounded-lg border border-blue-950/10 bg-[#f4f8fc] p-6 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <FaMapMarkerAlt className="h-6 w-6 text-red-700" />
+                                <h2 className="text-2xl font-bold">Ubicacion de la facultad</h2>
+                            </div>
+                            <p className="mt-4 text-sm leading-6 text-slate-600">
+                                Av. Busch, Ciudad Universitaria, Modulo 236, Santa Cruz de la Sierra, Bolivia.
+                            </p>
+                            <a
+                                href="https://www.google.com/maps/search/?api=1&query=FICCT+UAGRM+Modulo+236"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-5 inline-flex rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-100"
+                            >
+                                Abrir en Google Maps
+                            </a>
+                        </div>
+
+                        <div className="rounded-lg border border-blue-950/10 bg-[#f4f8fc] p-6 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <FaQuestionCircle className="h-6 w-6 text-blue-900" />
+                                <h2 className="text-2xl font-bold">Preguntas frecuentes</h2>
+                            </div>
+                            <div className="mt-5 space-y-4">
+                                {preguntas.map((item) => (
+                                    <div key={item.pregunta}>
+                                        <h3 className="text-sm font-bold text-slate-950">
+                                            {item.pregunta}
+                                        </h3>
+                                        <p className="mt-1 text-sm text-slate-600">
+                                            {item.respuesta}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="bg-[#063f7c] py-10 text-white">
+                    <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+                        <div className="flex items-start gap-3">
+                            <FaComments className="mt-1 h-6 w-6 text-blue-200" />
+                            <div>
+                                <h2 className="text-2xl font-bold">Chat de orientacion</h2>
+                                <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-100">
+                                    {mensajeIa}
                                 </p>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Call to Action Section */}
-            <section className="py-24 bg-white relative overflow-hidden">
-                <div className="absolute inset-y-0 left-0 w-1/2 bg-blue-50 rounded-r-full opacity-50"></div>
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-10 sm:p-16 text-center shadow-2xl transform hover:scale-[1.02] transition duration-300">
-                        <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-6">
-                            ¿Estás interesado en algunas de nuestras carreras?
-                        </h2>
-                        <p className="text-blue-100 text-lg sm:text-xl mb-10 max-w-2xl mx-auto">
-                            Regístrate y postula a alguna de nuestras carreras. El proceso de admisión (CUP) es tu primer paso hacia el éxito profesional.
-                        </p>
+                        </div>
                         <Link
                             href={route('registro.create')}
-                            className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-full text-indigo-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-xl transition-transform transform hover:-translate-y-1"
+                            className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-bold text-blue-950 hover:bg-blue-50"
                         >
-                            ¡Registrarme al CUP Ahora!
-                            <svg className="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path>
-                            </svg>
+                            Continuar al formulario CUP
                         </Link>
                     </div>
-                </div>
-            </section>
+                </section>
+            </main>
+        </div>
+    );
+}
 
-            {/* Footer */}
-            <footer className="bg-gray-900 py-12 text-center">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <p className="text-gray-400 text-sm">
-                        &copy; 2026 Facultad de Ingeniería en Ciencias de la Computación y Telecomunicaciones. Todos los derechos reservados.
-                    </p>
-                </div>
-            </footer>
+function Dato({ titulo, valor }) {
+    return (
+        <div className="rounded-md bg-white p-3 shadow-sm">
+            <dt className="text-xs font-bold uppercase text-slate-500">{titulo}</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900">{valor}</dd>
+        </div>
+    );
+}
+
+function Lista({ titulo, items }) {
+    return (
+        <div className="mt-5">
+            <h4 className="text-sm font-bold text-slate-950">{titulo}</h4>
+            <ul className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                {items.map((item) => (
+                    <li key={item} className="rounded-md bg-slate-50 px-3 py-2">
+                        {item}
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }
