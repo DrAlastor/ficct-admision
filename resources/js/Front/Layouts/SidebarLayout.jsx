@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { 
-    FiLogOut, 
-    FiMenu, 
-    FiX, 
-    FiChevronDown, 
-    FiFolder, 
+import {
+    FiLogOut,
+    FiMenu,
+    FiX,
+    FiChevronDown,
+    FiFolder,
     FiLayout,
     FiUsers,
     FiSettings,
@@ -54,71 +54,74 @@ export default function SidebarLayout({ children, title, subtitle }) {
     };
 
     // Iniciales y nombre a mostrar
-    const initials = user.perfil?.nombres 
+    const initials = user.perfil?.nombres
         ? user.perfil.nombres.substring(0, 1).toUpperCase() + (user.perfil.apellido_paterno ? user.perfil.apellido_paterno.substring(0, 1).toUpperCase() : '')
         : user.codigo_inicio ? user.codigo_inicio.substring(0, 2).toUpperCase() : 'US';
 
-    const displayName = user.perfil?.nombres 
+    const displayName = user.perfil?.nombres
         ? `${user.perfil.nombres} ${user.perfil.apellido_paterno || ''}`.trim()
         : user.codigo_inicio;
 
     return (
         <div className="flex h-screen bg-[#F4F6FB] font-sans">
             {/* Sidebar */}
-            <aside 
-                className={`bg-[#0F172A] text-white flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-0 -translate-x-full lg:w-72 lg:translate-x-0'}`}
+            {/* Puedes cambiar el color del panel izquierdo modificando bg-[#0F1458] en la linea de abajo */}
+            <aside
+                className={`bg-[#07074E] text-white flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full overflow-hidden'}`}
             >
-                {/* Logo Area */}
-                <div className="h-16 flex items-center px-6 bg-[#0B1121] border-b border-gray-800">
-                    <div className="bg-red-600 rounded p-2 mr-3">
-                        <FiLayout className="text-white font-bold" />
-                    </div>
-                    <span className="font-bold text-lg tracking-wider">
-                        FICCT<span className="font-light text-gray-400"> SYSTEM</span>
-                    </span>
-                </div>
-
-                {/* Dashboard Menu Item */}
-                <div className="px-4 py-4">
-                    <Link 
-                        href={route('dashboard')}
-                        className="flex items-center px-4 py-3 bg-red-600 rounded-lg text-white font-semibold transition hover:bg-red-700 shadow-md"
-                    >
-                        <FiLayout className="mr-3" />
-                        Dashboard
-                    </Link>
-                </div>
-
-                {/* Dynamic Modules Menu */}
-                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
-                    {modulos && modulos.map((modulo, idx) => (
-                        <div key={idx} className="mb-2">
-                            <button 
-                                onClick={() => toggleModule(modulo.nombre)}
-                                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-lg transition"
-                            >
-                                <div className="flex items-center font-medium">
-                                    <span className="mr-3 text-gray-400">{getModuleIcon(modulo.nombre)}</span>
-                                    {modulo.nombre}
-                                </div>
-                                <FiChevronDown className={`transition-transform ${openModules[modulo.nombre] ? 'rotate-180' : ''}`} />
-                            </button>
-                            
-                            {/* Functions / Sub-items */}
-                            <div className={`mt-1 pl-11 space-y-1 overflow-hidden transition-all duration-200 ${openModules[modulo.nombre] ? 'max-h-96' : 'max-h-0'}`}>
-                                {modulo.funciones.map((func, fIdx) => (
-                                    <Link 
-                                        key={fIdx}
-                                        href="#"
-                                        className="block py-2 text-xs text-gray-400 hover:text-white hover:translate-x-1 transition-transform"
-                                    >
-                                        <span className="mr-2 text-red-500">•</span>
-                                        {func.nombre}
-                                    </Link>
-                                ))}
-                            </div>
+                <div className="w-72 flex flex-col h-full">
+                    {/* Logo Area */}
+                    <div className="h-16 flex items-center px-6 bg-[#07074E] border-b border-blue-900/50">
+                        <div className="bg-[#ef172f] rounded p-2 mr-3">
+                            <FiLayout className="text-white font-bold" />
                         </div>
-                    ))}
+                        <span className="font-bold text-lg tracking-wider">
+                            FICCT<span className="font-light text-blue-200"> SYSTEM</span>
+                        </span>
+                    </div>
+
+                    {/* Dashboard Menu Item */}
+                    <div className="px-4 py-4">
+                        <Link
+                            href={route('dashboard')}
+                            className="flex items-center px-4 py-3 bg-[#24337A] rounded-lg text-white font-semibold transition hover:bg-[#084886] shadow-md"
+                        >
+                            <FiLayout className="mr-3" />
+                            Dashboard
+                        </Link>
+                    </div>
+
+                    {/* Dynamic Modules Menu */}
+                    <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+                        {modulos && modulos.map((modulo, idx) => (
+                            <div key={idx} className="mb-2">
+                                <button
+                                    onClick={() => toggleModule(modulo.nombre)}
+                                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition"
+                                >
+                                    <div className="flex items-center font-medium">
+                                        <span className="mr-3 text-gray-400">{getModuleIcon(modulo.nombre)}</span>
+                                        {modulo.nombre}
+                                    </div>
+                                    <FiChevronDown className={`transition-transform ${openModules[modulo.nombre] ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {/* Functions / Sub-items */}
+                                <div className={`mt-1 pl-11 space-y-1 overflow-hidden transition-all duration-200 ${openModules[modulo.nombre] ? 'max-h-96' : 'max-h-0'}`}>
+                                    {modulo.funciones.map((func, fIdx) => (
+                                        <Link
+                                            key={fIdx}
+                                            href="#"
+                                            className="block py-2 text-xs text-blue-200 hover:text-white hover:translate-x-1 transition-transform"
+                                        >
+                                            <span className="mr-2 text-[#ef172f]">•</span>
+                                            {func.nombre}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </aside>
 
@@ -127,9 +130,9 @@ export default function SidebarLayout({ children, title, subtitle }) {
                 {/* Topbar */}
                 <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0">
                     <div className="flex items-center">
-                        <button 
+                        <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="text-gray-500 hover:text-gray-700 lg:hidden focus:outline-none"
+                            className="text-gray-500 hover:text-gray-700 focus:outline-none"
                         >
                             <FiMenu size={24} />
                         </button>
@@ -150,9 +153,9 @@ export default function SidebarLayout({ children, title, subtitle }) {
                         <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm uppercase">
                             {initials}
                         </div>
-                        <button 
+                        <button
                             onClick={handleLogout}
-                            className="bg-[#0F172A] hover:bg-black text-white px-5 py-2 rounded-full text-xs font-bold tracking-wide flex items-center transition shadow-md"
+                            className="bg-[#07074E] hover:bg-[#0a0d3b] text-white px-5 py-2 rounded-full text-xs font-bold tracking-wide flex items-center transition shadow-md"
                         >
                             <FiLogOut className="mr-2" />
                             CERRAR SESIÓN
@@ -164,10 +167,11 @@ export default function SidebarLayout({ children, title, subtitle }) {
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     {/* Banner Dark */}
                     {title && (
-                        <div className="bg-[#0F172A] rounded-2xl p-8 mb-8 shadow-lg flex justify-between items-center bg-gradient-to-r from-[#0F172A] to-[#1E293B]">
+                        <div className="rounded-2xl p-8 mb-8 shadow-lg flex justify-between items-center bg-[#07074E]">
+                            {/* Puedes cambiar el color del panel de control superior modificando el bg-[#0F1458] en la linea de arriba */}
                             <div>
                                 <h1 className="text-white text-3xl font-black italic tracking-wide uppercase">
-                                    BIENVENIDO, <span className="text-red-500">{getRoleName(user.rol_id)}</span>
+                                    BIENVENIDO, <span className="text-red-600">{getRoleName(user.rol_id)}</span>
                                 </h1>
                                 {subtitle && (
                                     <p className="text-gray-400 font-medium tracking-widest text-xs mt-2 uppercase">
@@ -180,7 +184,7 @@ export default function SidebarLayout({ children, title, subtitle }) {
                             </div>
                         </div>
                     )}
-                    
+
                     {children}
                 </main>
             </div>

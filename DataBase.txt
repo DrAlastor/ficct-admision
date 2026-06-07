@@ -378,15 +378,16 @@ INSERT INTO TURNO (ID, DESCRIPCION) VALUES
 (1, 'Mañana'), (2, 'Tarde');
 
 INSERT INTO AULA (ID, NRO_AULA, CAPACIDAD) VALUES 
-(1, 'Aula 1-236', 70), (2, 'Aula 2-236', 70), (3, 'Aula 3-236', 70), (4, 'Aula 4-236', 70), (5, 'Aula 5-236', 70),
-(6, 'Aula 6-236', 70), (7, 'Aula 7-236', 70), (8, 'Aula 8-236', 70), (9, 'Aula 9-236', 70), (10, 'Aula 10-236', 70),
-(11, 'Aula 11-236', 70), (12, 'Aula 12-236', 70), (13, 'Aula 13-236', 70), (14, 'Aula 14-236', 70), (15, 'Aula 15-236', 70),
-(16, 'Aula 16-236', 70), (17, 'Aula 17-236', 70), (18, 'Aula 18-236', 70), (19, 'Aula 19-236', 70), (20, 'Aula 20-236', 70),
-(21, 'Aula 21-236', 70), (22, 'Aula 22-236', 70), (23, 'Aula 23-236', 70), (24, 'Aula 24-236', 70), (25, 'Aula 25-236', 70),
-(26, 'Aula 26-236', 70), (27, 'Aula 27-236', 70), (28, 'Aula 28-236', 70), (29, 'Aula 29-236', 70), (30, 'Aula 30-236', 70),
-(31, 'Aula 31-236', 70), (32, 'Aula 32-236', 70), (33, 'Aula 33-236', 70), (34, 'Aula 34-236', 70), (35, 'Aula 35-236', 70),
-(36, 'Aula 36-236', 70), (37, 'Aula 37-236', 70), (38, 'Aula 38-236', 70), (39, 'Aula 39-236', 70), (40, 'Aula 40-236', 70),
-(41, 'Aula 41-236', 70), (42, 'Aula 42-236', 70), (43, 'Aula 43-236', 70), (44, 'Aula 44-236', 70), (45, 'Aula 45-236', 70);
+(1, 'Aula 01 - Piso 1', 70), (2, 'Aula 02 - Piso 1', 70), (3, 'Aula 03 - Piso 1', 70), (4, 'Aula 04 - Piso 1', 70), (5, 'Aula 05 - Piso 1', 70),
+(6, 'Aula 06 - Piso 1', 70), (7, 'Aula 07 - Piso 1', 70), (8, 'Aula 08 - Piso 1', 70), (9, 'Aula 09 - Piso 1', 70), (10, 'Aula 10 - Piso 1', 70),
+(11, 'Aula 11 - Piso 1', 70), (12, 'Aula 12 - Piso 1', 70), (13, 'Aula 13 - Piso 1', 70), (14, 'Aula 14 - Piso 1', 70), (15, 'Aula 15 - Piso 1', 70),
+(16, 'Aula 16 - Piso 2', 70), (17, 'Aula 17 - Piso 2', 70), (18, 'Aula 18 - Piso 2', 70), (19, 'Aula 19 - Piso 2', 70), (20, 'Aula 20 - Piso 2', 70),
+(21, 'Aula 21 - Piso 2', 70), (22, 'Aula 22 - Piso 2', 70), (23, 'Aula 23 - Piso 2', 70), (24, 'Aula 24 - Piso 2', 70), (25, 'Aula 25 - Piso 2', 70),
+(26, 'Aula 26 - Piso 2', 70), (27, 'Aula 27 - Piso 2', 70), (28, 'Aula 28 - Piso 2', 70), (29, 'Aula 29 - Piso 2', 70), (30, 'Aula 30 - Piso 2', 70),
+(31, 'Aula 31 - Piso 3', 70), (32, 'Aula 32 - Piso 3', 70), (33, 'Aula 33 - Piso 3', 70), (34, 'Aula 34 - Piso 3', 70), (35, 'Aula 35 - Piso 3', 70),
+(36, 'Aula 36 - Piso 3', 70), (37, 'Aula 37 - Piso 3', 70), (38, 'Aula 38 - Piso 3', 70), (39, 'Aula 39 - Piso 3', 70), (40, 'Aula 40 - Piso 3', 70),
+(41, 'Aula 41 - Piso 3', 70), (42, 'Aula 42 - Piso 3', 70), (43, 'Aula 43 - Piso 3', 70), (44, 'Aula 44 - Piso 3', 70), (45, 'Aula 45 - Piso 3', 70),
+(46, 'Laboratorio 1 - Piso 4', 40), (47, 'Laboratorio 2 - Piso 4', 40), (48, 'Laboratorio 3 - Piso 4', 40), (49, 'Laboratorio 4 - Piso 4', 40), (50, 'Laboratorio 5 - Piso 4', 40);
 
 -- Un "Grupo" (Cohorte) pasa las 4 materias. 
 -- Registraremos 4 registros en la tabla GRUPO compartiendo el nombre "M001" (Mañana) y "T001" (Tarde)
@@ -401,18 +402,23 @@ INSERT INTO GRUPO (CODIGO, MATERIA_ID, NOMBRE, INSCRITOS_ACTUALES, CUPO, MODALID
 (7, 3, 'T001', 7, 70, 'Presencial'),  -- Física T001
 (8, 1, 'T001', 7, 70, 'Presencial');  -- Computación T001
 
--- Horarios consecutivos de 90 mins en un mismo aula por cohorte
--- M001 ocupa el Aula 1-236. T001 ocupa el Aula 2-236.
+-- Horarios consecutivos de 90 mins de Lunes a Viernes
+-- Computación (Grupo 4 y 8) pasa clases en los Laboratorios del Piso 4 (Aula 46 y 47).
+-- Los otros pasan en Aulas normales (Aula 1 para Mañana, Aula 16 para Tarde).
 INSERT INTO HORARIO (GRUPO_CODIGO, AULA_ID, TURNO_ID, DIA, HORA_INICIO, HORA_FIN) VALUES 
-(1, 1, 1, 'Lunes', '07:00:00', '08:30:00'), -- M001 Matemáticas
-(2, 1, 1, 'Lunes', '08:30:00', '10:00:00'), -- M001 Inglés
-(3, 1, 1, 'Lunes', '10:00:00', '11:30:00'), -- M001 Física
-(4, 1, 1, 'Lunes', '11:30:00', '13:00:00'), -- M001 Computación
+-- M001 (Mañana) - Lunes a Viernes
+(1, 1, 1, 'Lunes', '07:00:00', '08:30:00'), (2, 1, 1, 'Lunes', '08:30:00', '10:00:00'), (3, 1, 1, 'Lunes', '10:00:00', '11:30:00'), (4, 46, 1, 'Lunes', '11:30:00', '13:00:00'),
+(1, 1, 1, 'Martes', '07:00:00', '08:30:00'), (2, 1, 1, 'Martes', '08:30:00', '10:00:00'), (3, 1, 1, 'Martes', '10:00:00', '11:30:00'), (4, 46, 1, 'Martes', '11:30:00', '13:00:00'),
+(1, 1, 1, 'Miércoles', '07:00:00', '08:30:00'), (2, 1, 1, 'Miércoles', '08:30:00', '10:00:00'), (3, 1, 1, 'Miércoles', '10:00:00', '11:30:00'), (4, 46, 1, 'Miércoles', '11:30:00', '13:00:00'),
+(1, 1, 1, 'Jueves', '07:00:00', '08:30:00'), (2, 1, 1, 'Jueves', '08:30:00', '10:00:00'), (3, 1, 1, 'Jueves', '10:00:00', '11:30:00'), (4, 46, 1, 'Jueves', '11:30:00', '13:00:00'),
+(1, 1, 1, 'Viernes', '07:00:00', '08:30:00'), (2, 1, 1, 'Viernes', '08:30:00', '10:00:00'), (3, 1, 1, 'Viernes', '10:00:00', '11:30:00'), (4, 46, 1, 'Viernes', '11:30:00', '13:00:00'),
 
-(5, 2, 2, 'Lunes', '12:00:00', '13:30:00'), -- T001 Matemáticas
-(6, 2, 2, 'Lunes', '13:30:00', '15:00:00'), -- T001 Inglés
-(7, 2, 2, 'Lunes', '15:00:00', '16:30:00'), -- T001 Física
-(8, 2, 2, 'Lunes', '16:30:00', '18:00:00'); -- T001 Computación
+-- T001 (Tarde) - Lunes a Viernes
+(5, 16, 2, 'Lunes', '12:00:00', '13:30:00'), (6, 16, 2, 'Lunes', '13:30:00', '15:00:00'), (7, 16, 2, 'Lunes', '15:00:00', '16:30:00'), (8, 47, 2, 'Lunes', '16:30:00', '18:00:00'),
+(5, 16, 2, 'Martes', '12:00:00', '13:30:00'), (6, 16, 2, 'Martes', '13:30:00', '15:00:00'), (7, 16, 2, 'Martes', '15:00:00', '16:30:00'), (8, 47, 2, 'Martes', '16:30:00', '18:00:00'),
+(5, 16, 2, 'Miércoles', '12:00:00', '13:30:00'), (6, 16, 2, 'Miércoles', '13:30:00', '15:00:00'), (7, 16, 2, 'Miércoles', '15:00:00', '16:30:00'), (8, 47, 2, 'Miércoles', '16:30:00', '18:00:00'),
+(5, 16, 2, 'Jueves', '12:00:00', '13:30:00'), (6, 16, 2, 'Jueves', '13:30:00', '15:00:00'), (7, 16, 2, 'Jueves', '15:00:00', '16:30:00'), (8, 47, 2, 'Jueves', '16:30:00', '18:00:00'),
+(5, 16, 2, 'Viernes', '12:00:00', '13:30:00'), (6, 16, 2, 'Viernes', '13:30:00', '15:00:00'), (7, 16, 2, 'Viernes', '15:00:00', '16:30:00'), (8, 47, 2, 'Viernes', '16:30:00', '18:00:00');
 
 -- Asignación de docentes. Cada docente toma la misma materia en ambos turnos (2 grupos, max permitido 4)
 -- No hay cruces de horario para el mismo docente

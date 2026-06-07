@@ -18,10 +18,11 @@ export default function DocenteDashboard({ auth, perfil, materias = [] }) {
             <Head title="Docente - Dashboard" />
 
             {/* Banner de Bienvenida */}
-            <div className="bg-gradient-to-r from-[#0F172A] to-indigo-900 rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mt-20 -mr-20"></div>
+            {/* Puedes cambiar el color del banner donde dice Bienvenido modificando bg-[#24337A] */}
+            <div className="bg-[#24337A] rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
                 <div className="relative z-10">
-                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, Profesor {perfil?.apellido_paterno}!</h2>
+                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
                     <p className="text-indigo-200 font-medium max-w-2xl text-lg">
                         Administra tus grupos, registra calificaciones y gestiona el material académico para el semestre actual.
                     </p>
@@ -75,7 +76,7 @@ export default function DocenteDashboard({ auth, perfil, materias = [] }) {
                 <div className="lg:col-span-4">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
                         <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide border-b border-gray-100 pb-3 mb-4 flex items-center">
-                            <span className="w-2 h-6 bg-indigo-500 rounded-full mr-3"></span>
+                            <span className="w-2 h-6 bg-[#07074E] rounded-full mr-3"></span>
                             Mis Materias
                         </h3>
                         

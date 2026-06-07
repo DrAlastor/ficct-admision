@@ -35,8 +35,9 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
             <Head title="Administrador - Dashboard" />
 
             {/* Banner de Bienvenida Premium */}
-            <div className="bg-gradient-to-r from-gray-900 via-slate-800 to-black rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-red-600 opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
+            {/* Puedes cambiar el color del banner donde dice Bienvenido modificando bg-[#24338A] */}
+            <div className="bg-[#24337A] rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
                 <div className="relative z-10">
                     <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
                     <p className="text-gray-300 font-medium max-w-2xl text-lg">
@@ -89,7 +90,7 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide flex items-center">
-                        <span className="w-2 h-6 bg-red-500 rounded-full mr-3"></span>
+                        <span className="w-2 h-6 bg-[#0F1458] rounded-full mr-3"></span>
                         Gestión de Usuarios
                     </h3>
                 </div>
@@ -98,9 +99,9 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <FiSearch className="text-gray-400" />
                     </div>
-                    <input 
-                        type="text" 
-                        placeholder="Buscar por CI, nombre, cargo o correo..." 
+                    <input
+                        type="text"
+                        placeholder="Buscar por CI, nombre, cargo o correo..."
                         className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm transition-shadow shadow-sm"
                     />
                 </div>
@@ -121,7 +122,7 @@ export default function AdminDashboard({ auth, usuarios = [] }) {
                                 <tr key={u.id} className="hover:bg-gray-50/80 transition-colors group">
                                     <td className="py-4">
                                         <div className="flex items-center">
-                                            <div className="w-10 h-10 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-bold text-sm shadow-md group-hover:bg-red-600 transition-colors">
+                                            <div className="w-10 h-10 rounded-xl bg-[#24337A] text-white flex items-center justify-center font-bold text-sm shadow-md group-hover:bg-[#07074E] transition-colors">
                                                 {u.nombres ? u.nombres.substring(0, 1).toUpperCase() : u.codigo_inicio.substring(0, 1).toUpperCase()}
                                             </div>
                                             <div className="ml-4">

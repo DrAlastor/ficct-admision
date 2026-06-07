@@ -14,10 +14,11 @@ export default function EstudianteDashboard({ auth, materias = [], grupoAsignado
             <Head title="Estudiante - Dashboard" />
 
             {/* Banner de Bienvenida Premium */}
-            <div className="bg-gradient-to-r from-blue-900 via-indigo-800 to-indigo-900 rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mt-20 -mr-20"></div>
+            {/* Puedes cambiar el color del banner donde dice Bienvenido modificando bg-[#24337A] */}
+            <div className="bg-[#24337A] rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
                 <div className="relative z-10">
-                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Hola, {auth.user.codigo_inicio}!</h2>
+                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
                     <p className="text-indigo-200 font-medium max-w-2xl text-lg">
                         Bienvenido a tu panel de estudiante. Aquí podrás revisar tus materias asignadas, conocer a tus docentes y ver tus horarios.
                     </p>
@@ -71,7 +72,7 @@ export default function EstudianteDashboard({ auth, materias = [], grupoAsignado
                 <div className="lg:col-span-4">
                     <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
                         <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide border-b border-gray-100 pb-3 mb-4 flex items-center">
-                            <span className="w-2 h-6 bg-blue-500 rounded-full mr-3"></span>
+                            <span className="w-2 h-6 bg-[#07074E] rounded-full mr-3"></span>
                             Mi Cohorte
                         </h3>
                         
@@ -98,7 +99,7 @@ export default function EstudianteDashboard({ auth, materias = [], grupoAsignado
                 <div className="lg:col-span-8">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide border-b border-gray-100 pb-3 mb-6 flex items-center">
-                            <span className="w-2 h-6 bg-indigo-500 rounded-full mr-3"></span>
+                            <span className="w-2 h-6 bg-[#07074E] rounded-full mr-3"></span>
                             Mis Materias y Horarios
                         </h3>
                         
