@@ -4,8 +4,16 @@ import { Head, Link } from '@inertiajs/react';
 import { FiCalendar, FiMapPin, FiCheckCircle, FiClock, FiUserCheck, FiBook, FiAward, FiAlertCircle } from 'react-icons/fi';
 
 export default function EstudianteDashboard({ auth, materias = [], grupoAsignado }) {
-    // Calculamos algunas estadísticas para las tarjetas superiores
-    const totalMaterias = materias.length;
+    // Agrupar materias para evitar repeticiones por días
+    const materiasUnicasMap = new Map();
+    materias.forEach(mat => {
+        if (!materiasUnicasMap.has(mat.materia)) {
+            materiasUnicasMap.set(mat.materia, { ...mat, dia: 'Lun - Vie' });
+        }
+    });
+    const materiasUnicas = Array.from(materiasUnicasMap.values());
+
+    const totalMaterias = materiasUnicas.length;
     // Simulación de promedios para UI (esto vendría del backend en un caso real)
     const promedioGeneral = 85; 
 
@@ -104,8 +112,8 @@ export default function EstudianteDashboard({ auth, materias = [], grupoAsignado
                         </h3>
                         
                         <div className="space-y-4">
-                            {materias && materias.length > 0 ? (
-                                materias.map((mat, index) => (
+                            {materiasUnicas && materiasUnicas.length > 0 ? (
+                                materiasUnicas.map((mat, index) => (
                                     <div key={index} className="group flex flex-col sm:flex-row items-start sm:items-center p-5 border border-gray-100 rounded-2xl hover:border-indigo-300 hover:bg-indigo-50/30 hover:shadow-md transition-all duration-300 relative overflow-hidden">
                                         {/* Accent bar */}
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-indigo-500 transition-colors"></div>

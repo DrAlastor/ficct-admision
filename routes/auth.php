@@ -1,14 +1,14 @@
 <?php
 
-use Backend\Modulo1_Seguridad\Controllers\Auth\AuthenticatedSessionController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\ConfirmablePasswordController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\EmailVerificationNotificationController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\EmailVerificationPromptController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\NewPasswordController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\PasswordController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\PasswordResetLinkController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\RegisteredUserController;
-use Backend\Modulo1_Seguridad\Controllers\Auth\VerifyEmailController;
+use Backend\usuario_seguridad\Controllers\Auth\AuthenticatedSessionController;
+use Backend\usuario_seguridad\Controllers\Auth\ConfirmablePasswordController;
+use Backend\usuario_seguridad\Controllers\Auth\EmailVerificationNotificationController;
+use Backend\usuario_seguridad\Controllers\Auth\EmailVerificationPromptController;
+use Backend\usuario_seguridad\Controllers\Auth\NewPasswordController;
+use Backend\usuario_seguridad\Controllers\Auth\PasswordController;
+use Backend\usuario_seguridad\Controllers\Auth\PasswordResetLinkController;
+use Backend\usuario_seguridad\Controllers\Auth\RegisteredUserController;
+use Backend\usuario_seguridad\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -22,16 +22,16 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    Route::get('forgot-password', [\Backend\Modulo1_Seguridad\Controllers\Auth\PasswordResetController::class, 'create'])
+    Route::get('forgot-password', [\Backend\usuario_seguridad\Controllers\Auth\PasswordResetController::class, 'create'])
         ->name('password.request');
 
-    Route::post('forgot-password', [\Backend\Modulo1_Seguridad\Controllers\Auth\PasswordResetController::class, 'store'])
+    Route::post('forgot-password', [\Backend\usuario_seguridad\Controllers\Auth\PasswordResetController::class, 'store'])
         ->name('password.email');
 
-    Route::get('login-with-token', [\Backend\Modulo1_Seguridad\Controllers\Auth\PasswordResetController::class, 'showTokenForm'])
+    Route::get('login-with-token', [\Backend\usuario_seguridad\Controllers\Auth\PasswordResetController::class, 'showTokenForm'])
         ->name('password.token.view');
 
-    Route::post('login-with-token', [\Backend\Modulo1_Seguridad\Controllers\Auth\PasswordResetController::class, 'verifyToken'])
+    Route::post('login-with-token', [\Backend\usuario_seguridad\Controllers\Auth\PasswordResetController::class, 'verifyToken'])
         ->name('password.token.verify');
 });
 

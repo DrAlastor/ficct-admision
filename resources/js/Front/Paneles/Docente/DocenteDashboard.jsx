@@ -7,11 +7,23 @@ import ListaAlumnos from './ListaAlumnos';
 export default function DocenteDashboard({ auth, perfil, materias = [] }) {
     const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
 
+    // Agrupar materias para evitar repeticiones de días
+    const materiasUnicasMap = new Map();
+    materias.forEach(mat => {
+        if (!materiasUnicasMap.has(mat.grupo_codigo)) {
+            // Extraer la hora (asume formato "Lunes 11:30 - 13:00")
+            const partes = mat.horario ? mat.horario.split(' ') : [];
+            const horaStr = partes.length > 1 ? partes.slice(1).join(' ') : mat.horario;
+            materiasUnicasMap.set(mat.grupo_codigo, { ...mat, horario: 'Lun - Vie ' + horaStr });
+        }
+    });
+    const materiasUnicas = Array.from(materiasUnicasMap.values());
+
     // Calcular estadísticas
-    const totalMaterias = materias.length;
-    const totalAlumnos = materias.reduce((acc, curr) => acc + curr.inscritos, 0);
-    // Asumimos 3 horas (2 clases de 1.5h) por grupo a la semana como ejemplo
-    const horasSemana = totalMaterias * 3; 
+    const totalMaterias = materiasUnicas.length;
+    const totalAlumnos = materiasUnicas.reduce((acc, curr) => acc + curr.inscritos, 0);
+    // Cada grupo/materia implica 1.5 horas al día por 5 días (Lunes a Viernes) = 7.5 horas por grupo a la semana
+    const horasSemana = totalMaterias * 7.5; 
 
     return (
         <SidebarLayout title="PORTAL DOCENTE" subtitle="GESTIÓN ACADÉMICA Y CONTROL DE ALUMNOS">
@@ -80,11 +92,11 @@ export default function DocenteDashboard({ auth, perfil, materias = [] }) {
                             Mis Materias
                         </h3>
                         
-                        {materias.length === 0 ? (
+                        {materiasUnicas.length === 0 ? (
                             <p className="text-gray-500 italic text-sm">No tienes materias asignadas este semestre.</p>
                         ) : (
                             <div className="space-y-3">
-                                {materias.map((materia) => (
+                                {materiasUnicas.map((materia) => (
                                     <div 
                                         key={materia.grupo_codigo}
                                         onClick={() => setGrupoSeleccionado(materia)}

@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Backend\Modulo1_Seguridad\Models\Bitacora;
+use Backend\usuario_seguridad\Models\Bitacora;
 use Illuminate\Support\Facades\Auth;
 
 class LogBitacora

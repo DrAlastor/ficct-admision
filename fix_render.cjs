@@ -7,14 +7,14 @@ function replaceInFile(filePath) {
     let content = fs.readFileSync(filePath, 'utf8');
     let original = content;
 
-    content = content.replace(/'Auth\/Login'/g, "'Modulos/Modulo1_Seguridad/Login'");
-    content = content.replace(/'Auth\/Register'/g, "'Modulos/Modulo1_Seguridad/Register'");
-    content = content.replace(/'Auth\/ForgotPassword'/g, "'Modulos/Modulo1_Seguridad/ForgotPassword'");
-    content = content.replace(/'Auth\/EnterToken'/g, "'Modulos/Modulo1_Seguridad/EnterToken'");
-    content = content.replace(/'Auth\/ResetPassword'/g, "'Modulos/Modulo1_Seguridad/ResetPassword'");
-    content = content.replace(/'Auth\/VerifyEmail'/g, "'Modulos/Modulo1_Seguridad/VerifyEmail'");
-    content = content.replace(/'Auth\/ConfirmPassword'/g, "'Modulos/Modulo1_Seguridad/ConfirmPassword'");
-    content = content.replace(/'Profile\/Edit'/g, "'Modulos/Modulo1_Seguridad/Edit'");
+    content = content.replace(/'Auth\/Login'/g, "'Modulos/usuario_seguridad/Login'");
+    content = content.replace(/'Auth\/Register'/g, "'Modulos/usuario_seguridad/Register'");
+    content = content.replace(/'Auth\/ForgotPassword'/g, "'Modulos/usuario_seguridad/ForgotPassword'");
+    content = content.replace(/'Auth\/EnterToken'/g, "'Modulos/usuario_seguridad/EnterToken'");
+    content = content.replace(/'Auth\/ResetPassword'/g, "'Modulos/usuario_seguridad/ResetPassword'");
+    content = content.replace(/'Auth\/VerifyEmail'/g, "'Modulos/usuario_seguridad/VerifyEmail'");
+    content = content.replace(/'Auth\/ConfirmPassword'/g, "'Modulos/usuario_seguridad/ConfirmPassword'");
+    content = content.replace(/'Profile\/Edit'/g, "'Modulos/usuario_seguridad/Edit'");
 
     if (content !== original) {
         fs.writeFileSync(filePath, content, 'utf8');
