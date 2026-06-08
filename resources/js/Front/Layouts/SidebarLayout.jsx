@@ -47,9 +47,11 @@ export default function SidebarLayout({ children, title, subtitle }) {
     // Helper para obtener iconos según el nombre del módulo
     const getModuleIcon = (name) => {
         const lowerName = name.toLowerCase();
-        if (lowerName.includes('usuario')) return <FiUsers />;
-        if (lowerName.includes('configuracion')) return <FiSettings />;
-        if (lowerName.includes('reporte') || lowerName.includes('bitacora')) return <FiActivity />;
+        if (lowerName.includes('seguridad')) return <FiSettings />;
+        if (lowerName.includes('admisión') || lowerName.includes('admision')) return <FiUsers />;
+        if (lowerName.includes('académica') || lowerName.includes('academica')) return <FiFolder />;
+        if (lowerName.includes('aula virtual')) return <FiLayout />;
+        if (lowerName.includes('reporte') || lowerName.includes('selección')) return <FiActivity />;
         return <FiFolder />;
     };
 
@@ -93,7 +95,7 @@ export default function SidebarLayout({ children, title, subtitle }) {
 
                     {/* Dynamic Modules Menu */}
                     <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
-                        {modulos && modulos.map((modulo, idx) => (
+                        {modulos && modulos.map((modulo, idx) => ( // Modulos del panel
                             <div key={idx} className="mb-2">
                                 <button
                                     onClick={() => toggleModule(modulo.nombre)}
@@ -108,7 +110,7 @@ export default function SidebarLayout({ children, title, subtitle }) {
 
                                 {/* Functions / Sub-items */}
                                 <div className={`mt-1 pl-11 space-y-1 overflow-hidden transition-all duration-200 ${openModules[modulo.nombre] ? 'max-h-96' : 'max-h-0'}`}>
-                                    {modulo.funciones.map((func, fIdx) => (
+                                    {modulo.funciones.map((func, fIdx) => ( // Nombre de los modulos
                                         <Link
                                             key={fIdx}
                                             href="#"
