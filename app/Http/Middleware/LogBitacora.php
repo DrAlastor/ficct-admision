@@ -25,22 +25,10 @@ class LogBitacora
         $isLogin = $request->is('login') && $method === 'POST';
         $isLogout = $request->is('logout') && $method === 'POST';
 
-        if (Auth::check() && ($method !== 'GET' || $isLogin || $isLogout)) {
-            $accion = "Método: {$method} | Ruta: /{$request->path()}";
-            
-            if ($isLogin) {
-                $accion = "Inicio de Sesión";
-            } elseif ($isLogout) {
-                $accion = "Cierre de Sesión";
-            }
+        if (Auth::check() && ($isLogin || $isLogout)) {
+            $accion = $isLogin ? "Inicio de Sesión" : "Cierre de Sesión";
 
-            Bitacora::create([
-                'usuario_id' => Auth::id(),
-                'accion' => substr($accion, 0, 255),
-                'fecha' => now()->toDateString(),
-                'hora' => now()->toTimeString(),
-                'ip' => $request->ip() ?? '127.0.0.1'
-            ]);
+            \Backend\usuario_seguridad\Services\AuditService::log($accion, null);
         }
 
         return $response;

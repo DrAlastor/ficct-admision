@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import {
     FiLogOut,
@@ -16,7 +16,14 @@ export default function SidebarLayout({ children, title, subtitle }) {
     const { auth } = usePage().props;
     const { user, modulos } = auth;
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [openModules, setOpenModules] = useState({});
+    const [openModules, setOpenModules] = useState(() => {
+        const saved = localStorage.getItem('sidebar_open_modules');
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    useEffect(() => {
+        localStorage.setItem('sidebar_open_modules', JSON.stringify(openModules));
+    }, [openModules]);
 
     const toggleModule = (moduleName) => {
         setOpenModules(prev => ({
@@ -110,16 +117,27 @@ export default function SidebarLayout({ children, title, subtitle }) {
 
                                 {/* Functions / Sub-items */}
                                 <div className={`mt-1 pl-11 space-y-1 overflow-hidden transition-all duration-200 ${openModules[modulo.nombre] ? 'max-h-96' : 'max-h-0'}`}>
-                                    {modulo.funciones.map((func, fIdx) => ( // Nombre de los modulos
-                                        <Link
-                                            key={fIdx}
-                                            href="#"
-                                            className="block py-2 text-xs text-blue-200 hover:text-white hover:translate-x-1 transition-transform"
-                                        >
-                                            <span className="mr-2 text-[#ef172f]">•</span>
-                                            {func.nombre}
-                                        </Link>
-                                    ))}
+                                    {modulo.funciones.map((func, fIdx) => {
+                                        // Definimos un mapa de rutas basado en el nombre de la función (el caso de uso)
+                                        const routeMap = {
+                                            'Gestionar Usuarios': 'usuarios.index',
+                                            'Roles y Permisos': 'roles.index',
+                                            'Auditoría y Bitácora': 'bitacora.index'
+                                        };
+                                        const routeName = routeMap[func.nombre];
+                                        const hrefUrl = routeName ? route(routeName) : '#';
+
+                                        return (
+                                            <Link
+                                                key={fIdx}
+                                                href={hrefUrl}
+                                                className="block py-2 text-xs text-blue-200 hover:text-white hover:translate-x-1 transition-transform"
+                                            >
+                                                <span className="mr-2 text-[#ef172f]">•</span>
+                                                {func.nombre}
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}

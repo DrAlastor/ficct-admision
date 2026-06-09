@@ -37,6 +37,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [Backend\usuario_seguridad\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [Backend\usuario_seguridad\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [Backend\usuario_seguridad\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Gestión de Usuarios
+    Route::resource('usuarios', Backend\usuario_seguridad\Controllers\UsuarioController::class);
+    
+    // Gestión de Roles y Permisos
+    Route::resource('roles', Backend\usuario_seguridad\Controllers\RolController::class);
+
+    // Auditoría y Bitácora
+    Route::get('/bitacora', [Backend\usuario_seguridad\Controllers\BitacoraController::class, 'index'])->name('bitacora.index');
 });
 
 use Backend\aula_virtual\Controllers\DocenteController;

@@ -12,10 +12,17 @@ class Bitacora extends Model
     protected $fillable = [
         'usuario_id',
         'accion',
-        'fecha',
-        'hora',
-        'ip'
+        'detalle',
+        'ip',
+        'fecha_hora'
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'fecha_hora' => 'datetime',
+        ];
+    }
 
     public function usuario()
     {

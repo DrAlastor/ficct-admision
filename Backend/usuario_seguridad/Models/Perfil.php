@@ -21,7 +21,8 @@ class Perfil extends Model
         'sexo',
         'direccion',
         'telefono',
-        'email'
+        'email',
+        'cargo'
     ];
 
     public function usuario()
