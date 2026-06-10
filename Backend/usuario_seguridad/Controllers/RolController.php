@@ -12,6 +12,14 @@ use Backend\usuario_seguridad\Services\AuditService;
 
 class RolController extends Controller
 {
+    /**
+     * Muestra la lista de roles del sistema.
+     * Soporta búsqueda por nombre y descripción. También devuelve los módulos
+     * y sus funciones asociadas para el formulario de permisos.
+     *
+     * @param Request $request Petición HTTP con posibles filtros de búsqueda.
+     * @return \Inertia\Response
+     */
     public function index(Request $request)
     {
         $query = Rol::with('funciones')
@@ -33,6 +41,13 @@ class RolController extends Controller
         ]);
     }
 
+    /**
+     * Crea un nuevo rol en la base de datos y le asigna los permisos especificados.
+     *
+     * @param Request $request Contiene el 'nombre', 'descripcion' y un arreglo 'permisos'
+     *                         (donde clave es funcion_id y valor es id_accion).
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -72,6 +87,14 @@ class RolController extends Controller
         }
     }
 
+    /**
+     * Actualiza el nombre, descripción y los permisos de un rol existente.
+     * Sincroniza la tabla pivote `rol_funcion` para reflejar los nuevos permisos.
+     *
+     * @param Request $request Petición HTTP con los nuevos datos.
+     * @param int $id ID del rol a modificar.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, $id)
     {
         $rol = Rol::findOrFail($id);
@@ -111,6 +134,13 @@ class RolController extends Controller
         }
     }
 
+    /**
+     * Elimina lógicamente un rol (lo marca como 'Inactivo').
+     * Solo permite eliminar el rol si no tiene usuarios asociados.
+     *
+     * @param int $id ID del rol a eliminar.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy($id)
     {
         $rol = Rol::findOrFail($id);

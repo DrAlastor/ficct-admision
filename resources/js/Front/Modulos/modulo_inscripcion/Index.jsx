@@ -5,6 +5,13 @@ import FormDatosPersonales from '@/Components/Registro/FormDatosPersonales';
 import FormPreferencias from '@/Components/Registro/FormPreferencias';
 import FormDocumentos from '@/Components/Registro/FormDocumentos';
 
+/**
+ * Componente público de Registro para nuevos postulantes.
+ * Recopila datos personales, de contacto, preferencias de carrera y 
+ * documentos (CI, Bachiller) para luego iniciar el proceso de pago.
+ *
+ * @returns {JSX.Element}
+ */
 export default function RegistroIndex() {
     const { props } = usePage();
     const globalErrors = props.errors || {};

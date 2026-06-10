@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
+import { useForm, usePage, router } from '@inertiajs/react';
 import { FiX, FiMail, FiUser, FiShield } from 'react-icons/fi';
 
 export default function UsuarioModal({ isOpen, onClose, usuario = null, roles = [], nextId = 1 }) {
@@ -33,8 +33,38 @@ export default function UsuarioModal({ isOpen, onClose, usuario = null, roles = 
                 reset();
             }
             clearErrors();
+            setIsRestoring(false);
         }
     }, [isOpen, usuario]);
+
+    const { flash } = usePage().props;
+    const [isRestoring, setIsRestoring] = useState(false);
+
+    useEffect(() => {
+        if (flash?.conflict_user && !usuario && isOpen) {
+            setIsRestoring(true);
+        } else {
+            setIsRestoring(false);
+        }
+    }, [flash, usuario, isOpen]);
+
+    const handleRestore = () => {
+        if (flash?.conflict_user) {
+            post(route('usuarios.restore', flash.conflict_user), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsRestoring(false);
+                    reset();
+                    onClose();
+                }
+            });
+        }
+    };
+
+    const cancelRestore = () => {
+        setIsRestoring(false);
+        clearErrors();
+    };
 
     const getPredictedCodigo = () => {
         if (!data.rol_id) return 'Seleccione un rol...';
@@ -91,6 +121,34 @@ export default function UsuarioModal({ isOpen, onClose, usuario = null, roles = 
 
                     {/* Body - Scrollable */}
                     <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
+                        {isRestoring ? (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center">
+                                <div className="text-yellow-600 mb-4 flex justify-center">
+                                    <FiUser size={48} />
+                                </div>
+                                <h4 className="text-xl font-black text-gray-900 mb-2">Usuario Encontrado</h4>
+                                <p className="text-gray-600 mb-6">
+                                    {flash?.conflict_message || 'Este usuario ya existió en el sistema y fue eliminado. ¿Deseas volver a crearlo (reactivarlo)?'}
+                                </p>
+                                <div className="flex justify-center space-x-4">
+                                    <button
+                                        type="button"
+                                        onClick={cancelRestore}
+                                        className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
+                                    >
+                                        No, Cancelar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleRestore}
+                                        disabled={processing}
+                                        className="px-6 py-2.5 bg-[#07074E] text-white font-bold rounded-xl hover:bg-[#06063b] transition-colors"
+                                    >
+                                        {processing ? 'Reactivando...' : 'Sí, Reactivar Usuario'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
                         <form id="usuario-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             
                             {/* Error General */}
@@ -247,9 +305,11 @@ export default function UsuarioModal({ isOpen, onClose, usuario = null, roles = 
                                 </div>
                             </div>
                         </form>
+                        )}
                     </div>
 
                     {/* Footer */}
+                    {!isRestoring && (
                     <div className="flex items-center justify-end p-6 border-t border-gray-100 rounded-b-3xl shrink-0">
                         <button
                             type="button"
@@ -267,6 +327,7 @@ export default function UsuarioModal({ isOpen, onClose, usuario = null, roles = 
                             {processing ? 'Guardando...' : (usuario ? 'Actualizar Usuario' : 'Registrar Usuario')}
                         </button>
                     </div>
+                    )}
                 </div>
             </div>
         </div>

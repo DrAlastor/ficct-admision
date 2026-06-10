@@ -42,6 +42,15 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        $user = \Backend\usuario_seguridad\Models\Usuario::where('codigo_inicio', $this->input('codigo_inicio'))->first();
+
+        if ($user && $user->eliminado) {
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'codigo_inicio' => 'Este usuario ha sido bloqueado o eliminado del sistema.',
+            ]);
+        }
+
         $credentials = [
             'codigo_inicio' => $this->input('codigo_inicio'),
             'password' => $this->input('password')

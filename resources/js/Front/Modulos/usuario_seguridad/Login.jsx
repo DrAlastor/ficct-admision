@@ -5,6 +5,14 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
+/**
+ * Componente para el inicio de sesión de todos los usuarios (Administradores, Docentes, Postulantes).
+ *
+ * @param {Object} props
+ * @param {string} props.status Estado opcional devuelto tras intentar login.
+ * @param {boolean} props.canResetPassword Indica si la ruta de reseteo está activa.
+ * @returns {JSX.Element}
+ */
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         codigo_inicio: '',

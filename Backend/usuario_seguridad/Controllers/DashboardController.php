@@ -9,6 +9,14 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    /**
+     * Muestra el panel principal (Dashboard) correspondiente al rol del usuario.
+     * - Administrador (1): Ve estadísticas globales (cantidad de usuarios, activos, inactivos) y bitácora reciente.
+     * - Docente (2): Ve un resumen de las materias y grupos que dicta (incluyendo cupos y horarios).
+     * - Postulante (3): Ve su grupo asignado y su propio horario de clases.
+     *
+     * @return \Inertia\Response
+     */
     public function index()
     {
         $user = Auth::user();
@@ -20,23 +28,36 @@ class DashboardController extends Controller
         
         switch ($user->rol_id) {
             case 1:
-                $usuarios = \Backend\usuario_seguridad\Models\Usuario::select(
-                    'usuario.id',
-                    'usuario.codigo_inicio',
-                    'usuario.estado',
-                    'rol.nombre as rol_nombre',
-                    'perfil.ci',
-                    'perfil.nombres',
-                    'perfil.apellido_paterno',
-                    'perfil.apellido_materno',
-                    'perfil.telefono'
-                )
-                ->join('rol', 'usuario.rol_id', '=', 'rol.id')
-                ->leftJoin('perfil', 'usuario.id', '=', 'perfil.usuario_id')
-                ->get();
-                return Inertia::render('Paneles/Administrador/AdminDashboard', ['user' => $user, 'usuarios' => $usuarios]);
+            case 1:
+                $usuariosQuery = \Backend\usuario_seguridad\Models\Usuario::where('eliminado', false)->get();
+                $totalUsuarios = $usuariosQuery->count();
+                $totalActivos = $usuariosQuery->where('estado', 'Activo')->count();
+                $totalInactivos = $usuariosQuery->where('estado', 'Inactivo')->count();
+                $totalAdmins = $usuariosQuery->where('rol_id', 1)->count();
+                $totalDocentes = $usuariosQuery->where('rol_id', 2)->count();
+                $totalPostulantes = $usuariosQuery->where('rol_id', 3)->count();
+
+                $bitacora = \Illuminate\Support\Facades\DB::table('bitacora')
+                    ->leftJoin('perfil', 'bitacora.usuario_id', '=', 'perfil.usuario_id')
+                    ->select('bitacora.id', 'bitacora.accion', 'bitacora.detalle', 'bitacora.fecha_hora', 'perfil.nombres', 'perfil.apellido_paterno')
+                    ->orderBy('bitacora.fecha_hora', 'desc')
+                    ->take(5)
+                    ->get();
+
+                return Inertia::render('Paneles/Administrador/AdminDashboard', [
+                    'user' => $user, 
+                    'stats' => [
+                        'total' => $totalUsuarios,
+                        'online' => $totalActivos,
+                        'offline' => $totalInactivos,
+                        'admins' => $totalAdmins,
+                        'docentes' => $totalDocentes,
+                        'postulantes' => $totalPostulantes
+                    ],
+                    'bitacoraReciente' => $bitacora
+                ]);
             case 2:
-                // Fetch docente's assigned classes
+                // Asignacion de clases a docentes
                 $perfil = \Backend\usuario_seguridad\Models\Perfil::where('usuario_id', $user->id)->first();
                 $materias = [];
                 

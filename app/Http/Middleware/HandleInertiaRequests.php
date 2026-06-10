@@ -34,11 +34,23 @@ class HandleInertiaRequests extends Middleware
 
         if ($user) {
             $user->load('perfil');
-            $rawModulos = \Illuminate\Support\Facades\DB::table('modulo')
-                ->join('funcion', 'modulo.id', '=', 'funcion.modulo_id')
-                ->select('modulo.nombre as modulo_nombre', 'funcion.nombre as funcion_nombre', 'funcion.permiso', 'modulo.id as modulo_id')
-                ->orderBy('modulo_id')
-                ->get();
+            if ($user->rol_id == 1) {
+                // El Administrador (rol_id = 1) obtiene acceso total sin restricciones
+                $rawModulos = \Illuminate\Support\Facades\DB::table('modulo')
+                    ->join('funcion', 'modulo.id', '=', 'funcion.modulo_id')
+                    ->select('modulo.nombre as modulo_nombre', 'funcion.nombre as funcion_nombre', 'funcion.permiso', 'modulo.id as modulo_id')
+                    ->orderBy('modulo_id')
+                    ->get();
+            } else {
+                // Los demás roles solo obtienen las funciones explícitamente autorizadas en su rol
+                $rawModulos = \Illuminate\Support\Facades\DB::table('modulo')
+                    ->join('funcion', 'modulo.id', '=', 'funcion.modulo_id')
+                    ->join('rol_funcion', 'funcion.id', '=', 'rol_funcion.funcion_id')
+                    ->where('rol_funcion.rol_id', $user->rol_id)
+                    ->select('modulo.nombre as modulo_nombre', 'funcion.nombre as funcion_nombre', 'funcion.permiso', 'modulo.id as modulo_id')
+                    ->orderBy('modulo_id')
+                    ->get();
+            }
 
             $modulos = $rawModulos->groupBy('modulo_nombre')->map(function ($items, $moduloNombre) {
                 return [
@@ -58,6 +70,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 'modulos' => $modulos
+            ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'info' => fn () => $request->session()->get('info'),
             ],
         ];
     }

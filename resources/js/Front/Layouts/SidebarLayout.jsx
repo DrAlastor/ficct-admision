@@ -118,11 +118,17 @@ export default function SidebarLayout({ children, title, subtitle }) {
                                 {/* Functions / Sub-items */}
                                 <div className={`mt-1 pl-11 space-y-1 overflow-hidden transition-all duration-200 ${openModules[modulo.nombre] ? 'max-h-96' : 'max-h-0'}`}>
                                     {modulo.funciones.map((func, fIdx) => {
-                                        // Definimos un mapa de rutas basado en el nombre de la función (el caso de uso)
+                                        //Definimos un mapa de rutas basado en el nombre de la función (el caso de uso)
                                         const routeMap = {
                                             'Gestionar Usuarios': 'usuarios.index',
                                             'Roles y Permisos': 'roles.index',
-                                            'Auditoría y Bitácora': 'bitacora.index'
+                                            'Auditoría y Bitácora': 'bitacora.index',
+                                            'Gestionar Contraseña': 'password.edit',
+                                            'Consultar Perfil': 'profile.show',
+                                            'Consultar Boleta': 'boleta.index',
+                                            'Consultar Horario': 'horario.index',
+                                            'Consultar Asistencia': 'asistencia.index',
+                                            'Rendir Exámenes': 'examenes.index'
                                         };
                                         const routeName = routeMap[func.nombre];
                                         const hrefUrl = routeName ? route(routeName) : '#';

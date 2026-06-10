@@ -9,7 +9,11 @@ use Illuminate\Support\Facades\DB;
 class DocenteController extends Controller
 {
     /**
-     * Get the list of students for a specific group, including their grades.
+     * Obtiene la lista de postulantes (estudiantes) inscritos en un grupo específico,
+     * incluyendo sus notas de evaluación actuales.
+     *
+     * @param string $grupoCodigo Código identificador del grupo.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getAlumnos($grupoCodigo)
     {
@@ -38,7 +42,12 @@ class DocenteController extends Controller
     }
 
     /**
-     * Update the grades for a student.
+     * Actualiza las calificaciones (notas) de un estudiante para una evaluación específica.
+     * Calcula automáticamente el promedio final basado en una ponderación 
+     * (30% para P1, 30% para P2 y 40% para el Final) y determina si el estado es Aprobado o Reprobado.
+     *
+     * @param Request $request Contiene 'evaluacion_id', 'nota_p1', 'nota_p2' y 'nota_p3'.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function updateNotas(Request $request)
     {

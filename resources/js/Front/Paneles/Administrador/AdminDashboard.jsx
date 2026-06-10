@@ -1,174 +1,202 @@
 import React from 'react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head } from '@inertiajs/react';
-import { FiSearch, FiUsers, FiShield, FiActivity, FiUserPlus, FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { FiUsers, FiShield, FiActivity, FiUserPlus, FiMonitor, FiUserCheck, FiClock, FiSettings } from 'react-icons/fi';
 
-export default function AdminDashboard({ auth, usuarios = [] }) {
-    // Helper para obtener el nombre completo o un texto por defecto
-    const getFullName = (u) => {
-        if (u.nombres) {
-            return `${u.nombres} ${u.apellido_paterno} ${u.apellido_materno || ''}`.trim();
-        }
-        return 'Usuario del Sistema';
+export default function AdminDashboard({ stats, bitacoraReciente = [] }) {
+    const { auth } = usePage().props;
+    
+    // Formatear Fecha Exacta (Igual a la tabla de Bitácora)
+    const formatExactDate = (dateString) => {
+        // Asegurar que JS interprete la fecha como UTC para que la convierta correctamente a la hora local (Bolivia)
+        const safeDate = dateString.includes('T') ? dateString : dateString.replace(' ', 'T') + 'Z';
+        const date = new Date(safeDate);
+        const fecha = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const hora = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return `${fecha} | ${hora}`;
     };
-
-    // Helper para badge de rol
-    const getRoleBadge = (rolNombre) => {
-        const lower = rolNombre.toLowerCase();
-        if (lower.includes('admin')) {
-            return <span className="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-[10px] tracking-widest uppercase border border-red-200">ADMINISTRADOR</span>;
-        }
-        if (lower.includes('docente')) {
-            return <span className="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-[10px] tracking-widest uppercase border border-indigo-200">DOCENTE</span>;
-        }
-        return <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-[10px] tracking-widest uppercase border border-green-200">POSTULANTE</span>;
-    };
-
-    // Estadísticas
-    const totalUsuarios = usuarios.length;
-    const totalAdmins = usuarios.filter(u => u.rol_nombre.toLowerCase().includes('admin')).length;
-    const totalDocentes = usuarios.filter(u => u.rol_nombre.toLowerCase().includes('docente')).length;
-    const totalPostulantes = usuarios.filter(u => !u.rol_nombre.toLowerCase().includes('admin') && !u.rol_nombre.toLowerCase().includes('docente')).length;
 
     return (
-        <SidebarLayout title="PANEL DE ADMINISTRACIÓN" subtitle="CONTROL Y GESTIÓN DE USUARIOS">
+        <SidebarLayout title="PANEL DE ADMINISTRACIÓN" subtitle="CENTRO DE CONTROL">
             <Head title="Administrador - Dashboard" />
 
             {/* Banner de Bienvenida Premium */}
-            {/* Puedes cambiar el color del banner donde dice Bienvenido modificando bg-[#24338A] */}
-            <div className="bg-[#24337A] rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
-                    <p className="text-gray-300 font-medium max-w-2xl text-lg">
-                        Estás en el centro de control. Desde aquí puedes monitorear y gestionar todos los usuarios, docentes y postulantes registrados en el sistema.
-                    </p>
+            <div className="bg-[#24337A] rounded-3xl p-8 md:p-10 mb-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none"></div>
+                <div className="absolute bottom-0 left-20 w-40 h-40 bg-blue-400 opacity-20 rounded-full blur-2xl -mb-10 pointer-events-none"></div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                        <h2 className="text-4xl font-black mb-3 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres}` : auth.user.codigo_inicio}!</h2>
+                        <p className="text-gray-300 font-medium max-w-2xl text-lg">
+                            Estás en el centro de control del sistema de admisión. Aquí tienes un resumen general del estado del sistema.
+                        </p>
+                    </div>
+                    <div className="mt-6 md:mt-0">
+                        <span className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-widest flex items-center border border-white/10 shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                            Sistema Online
+                        </span>
+                    </div>
                 </div>
             </div>
 
             {/* Tarjetas de Estadísticas Estilo Premium */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-xl text-gray-700 mr-4 group-hover:scale-110 transition-transform shadow-inner">
-                        <FiUsers size={28} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-gray-900 pointer-events-none">
+                        <FiMonitor size={100} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Total Usuarios</div>
-                        <div className="text-3xl font-black text-gray-800 tracking-tight">{totalUsuarios}</div>
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-2xl text-blue-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
+                        <FiMonitor size={28} />
                     </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-xl text-red-600 mr-4 group-hover:scale-110 transition-transform shadow-inner">
-                        <FiShield size={28} />
-                    </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Administradores</div>
-                        <div className="text-3xl font-black text-gray-800">{totalAdmins}</div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Usuarios Conectados</div>
+                        <div className="flex items-end">
+                            <span className="text-3xl font-black text-gray-800 tracking-tight leading-none">{stats?.online || 0}</span>
+                            <span className="text-sm text-gray-400 font-bold ml-2 mb-1">/ {stats?.total || 0}</span>
+                        </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-indigo-100 to-indigo-200 p-4 rounded-xl text-indigo-600 mr-4 group-hover:scale-110 transition-transform shadow-inner">
-                        <FiActivity size={28} />
+                
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-indigo-900 pointer-events-none">
+                        <FiUserPlus size={100} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Docentes Activos</div>
-                        <div className="text-2xl font-black text-gray-800">{totalDocentes}</div>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-xl text-green-600 mr-4 group-hover:scale-110 transition-transform shadow-inner">
+                    <div className="bg-gradient-to-br from-indigo-100 to-indigo-200 p-4 rounded-2xl text-indigo-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
                         <FiUserPlus size={28} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Postulantes</div>
-                        <div className="text-3xl font-black text-gray-800 tracking-tight">{totalPostulantes}</div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Postulantes Reg.</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{stats?.postulantes || 0}</div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-emerald-900 pointer-events-none">
+                        <FiUserCheck size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 p-4 rounded-2xl text-emerald-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
+                        <FiUserCheck size={28} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Docentes Activos</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{stats?.docentes || 0}</div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-red-900 pointer-events-none">
+                        <FiShield size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-2xl text-red-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
+                        <FiShield size={28} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Administradores</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{stats?.admins || 0}</div>
                     </div>
                 </div>
             </div>
 
-            {/* Tabla Principal */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide flex items-center">
-                        <span className="w-2 h-6 bg-[#0F1458] rounded-full mr-3"></span>
-                        Gestión de Usuarios
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Accesos Rápidos */}
+                <div className="lg:col-span-2 space-y-6">
+                    <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide flex items-center mb-4">
+                        <span className="w-2 h-6 bg-[#24337A] rounded-full mr-3"></span>
+                        Accesos Rápidos
                     </h3>
-                </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Link href={route('usuarios.index')} className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group flex items-start">
+                            <div className="bg-indigo-50 text-indigo-600 p-4 rounded-2xl group-hover:scale-110 transition-transform mr-4 shrink-0">
+                                <FiUsers size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-gray-900 text-lg mb-1 group-hover:text-indigo-600 transition-colors">Gestión de Usuarios</h4>
+                                <p className="text-sm text-gray-500 font-medium leading-relaxed">Agrega, edita o elimina usuarios, docentes y postulantes del sistema.</p>
+                            </div>
+                        </Link>
 
-                <div className="relative mb-6">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <FiSearch className="text-gray-400" />
+                        <Link href={route('roles.index')} className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group flex items-start">
+                            <div className="bg-purple-50 text-purple-600 p-4 rounded-2xl group-hover:scale-110 transition-transform mr-4 shrink-0">
+                                <FiShield size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-gray-900 text-lg mb-1 group-hover:text-purple-600 transition-colors">Roles y Permisos</h4>
+                                <p className="text-sm text-gray-500 font-medium leading-relaxed">Configura los niveles de acceso y los permisos de cada usuario.</p>
+                            </div>
+                        </Link>
+
+                        <Link href={route('bitacora.index')} className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group flex items-start">
+                            <div className="bg-amber-50 text-amber-600 p-4 rounded-2xl group-hover:scale-110 transition-transform mr-4 shrink-0">
+                                <FiActivity size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-gray-900 text-lg mb-1 group-hover:text-amber-600 transition-colors">Auditoría (Bitácora)</h4>
+                                <p className="text-sm text-gray-500 font-medium leading-relaxed">Revisa el historial de acciones y movimientos dentro del sistema.</p>
+                            </div>
+                        </Link>
+
+                        <Link href={route('profile.show')} className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 group flex items-start">
+                            <div className="bg-gray-100 text-gray-600 p-4 rounded-2xl group-hover:scale-110 transition-transform mr-4 shrink-0">
+                                <FiSettings size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-gray-900 text-lg mb-1 group-hover:text-gray-900 transition-colors">Mi Perfil</h4>
+                                <p className="text-sm text-gray-500 font-medium leading-relaxed">Consulta tus datos personales e ingresa a gestionar tu contraseña.</p>
+                            </div>
+                        </Link>
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Buscar por CI, nombre, cargo o correo..."
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm transition-shadow shadow-sm"
-                    />
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b-2 border-gray-100">
-                                <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">INFORMACIÓN PERSONAL</th>
-                                <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">DOCUMENTO CI</th>
-                                <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">POSICIÓN / CARGO</th>
-                                <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">ACCESO A SISTEMA</th>
-                                <th className="pb-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">ACCIONES</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {usuarios.map((u) => (
-                                <tr key={u.id} className="hover:bg-gray-50/80 transition-colors group">
-                                    <td className="py-4">
-                                        <div className="flex items-center">
-                                            <div className="w-10 h-10 rounded-xl bg-[#24337A] text-white flex items-center justify-center font-bold text-sm shadow-md group-hover:bg-[#07074E] transition-colors">
-                                                {u.nombres ? u.nombres.substring(0, 1).toUpperCase() : u.codigo_inicio.substring(0, 1).toUpperCase()}
-                                            </div>
-                                            <div className="ml-4">
-                                                <div className="font-bold text-gray-900 text-sm">{getFullName(u)}</div>
-                                                <div className="text-xs text-gray-500 flex items-center mt-1 font-medium">
-                                                    <span className="mr-1.5">📞</span> {u.telefono || 'Sin registro'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 text-sm font-bold text-gray-700">
-                                        {u.ci || 'N/A'}
-                                    </td>
-                                    <td className="py-4 text-center">
-                                        {getRoleBadge(u.rol_nombre)}
-                                    </td>
-                                    <td className="py-4">
-                                        <div className="text-xs font-bold text-red-600 flex items-center mb-1">
-                                            <span className="mr-1">✉</span> {u.codigo_inicio}
-                                        </div>
-                                        <div className="flex items-center">
-                                            <span className={`w-2 h-2 rounded-full mr-1.5 ${u.estado === 'Activo' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                                {u.estado || 'Desconocido'}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 text-center">
-                                        <div className="flex items-center justify-center space-x-2">
-                                            <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver detalle">
-                                                <FiEye size={18} />
-                                            </button>
-                                            <button className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors" title="Editar">
-                                                <FiEdit size={18} />
-                                            </button>
-                                            <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
-                                                <FiTrash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                {/* Timeline de Actividad Reciente */}
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide flex items-center">
+                            <span className="w-2 h-6 bg-red-500 rounded-full mr-3"></span>
+                            Actividad Reciente
+                        </h3>
+                        <Link href={route('bitacora.index')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50 px-3 py-1.5 rounded-lg">
+                            Ver todo
+                        </Link>
+                    </div>
+
+                    <div className="flex-1 relative">
+                        {bitacoraReciente.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-10">
+                                <FiClock size={32} className="mb-3 opacity-50" />
+                                <p className="font-medium text-sm">No hay actividad reciente.</p>
+                            </div>
+                        ) : (
+                            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-100"></div>
+                        )}
+
+                        <div className="space-y-6 relative z-10">
+                            {bitacoraReciente.map((evento, idx) => (
+                                <div key={idx} className="flex items-start">
+                                    <div className="w-8 h-8 rounded-full bg-white border-[3px] border-indigo-100 flex items-center justify-center shrink-0 z-10 mt-1 shadow-sm">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                                    </div>
+                                    <div className="ml-4 flex-1">
+                                        <p className="text-sm font-bold text-gray-900 mb-0.5">
+                                            {evento.accion}
+                                        </p>
+                                        {evento.nombres && (
+                                            <p className="text-xs text-gray-500 font-medium">
+                                                Por <span className="font-bold">{evento.nombres} {evento.apellido_paterno}</span>
+                                            </p>
+                                        )}
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-2 flex items-center">
+                                            <FiClock className="mr-1" /> {formatExactDate(evento.fecha_hora)}
+                                        </p>
+                                    </div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </SidebarLayout>
     );
 }

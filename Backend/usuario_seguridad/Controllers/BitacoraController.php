@@ -11,6 +11,14 @@ use Carbon\Carbon;
 
 class BitacoraController extends Controller
 {
+    /**
+     * Muestra el registro histórico de acciones realizadas en el sistema (Auditoría).
+     * Permite filtrar la bitácora por un término de búsqueda (acción/detalle), 
+     * por un usuario específico y por rangos de fecha.
+     *
+     * @param Request $request Petición HTTP con posibles filtros.
+     * @return \Inertia\Response
+     */
     public function index(Request $request)
     {
         $query = Bitacora::with('usuario.perfil')->orderBy('fecha_hora', 'desc');

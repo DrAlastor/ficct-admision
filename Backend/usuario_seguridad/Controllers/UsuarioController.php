@@ -14,9 +14,18 @@ use Backend\usuario_seguridad\Services\AuditService;
 
 class UsuarioController extends Controller
 {
+    /**
+     * Devuelve la vista principal del listado de usuarios del sistema.
+     * Soporta búsqueda por diferentes campos (nombres, apellidos, CI, email, cargo).
+     * Muestra solo los usuarios que no han sido eliminados lógicamente.
+     *
+     * @param Request $request Petición HTTP que puede contener el parámetro 'search'.
+     * @return \Inertia\Response
+     */
     public function index(Request $request)
     {
         $query = Usuario::with(['perfil', 'rol'])
+                    ->where('eliminado', false)
                     ->orderBy('rol_id', 'asc')
                     ->orderBy('id', 'asc');
 
@@ -43,6 +52,13 @@ class UsuarioController extends Controller
         ]);
     }
 
+    /**
+     * Genera automáticamente un código único para el usuario basándose en su rol.
+     * Ejemplos: ADM001, DOC002, POS2650001, USR003.
+     *
+     * @param int $rol_id ID del rol asignado al usuario.
+     * @return string Código generado.
+     */
     private function generarCodigo($rol_id)
     {
         $nextId = Usuario::max('id') + 1;
@@ -54,19 +70,43 @@ class UsuarioController extends Controller
         }
     }
 
+    /**
+     * Registra un nuevo usuario en la base de datos junto con su perfil.
+     * Verifica que el CI o Email no existan previamente. Si el usuario existía pero 
+     * estaba eliminado lógicamente, permite restaurarlo.
+     * Registra la acción en la Bitácora de Auditoría.
+     *
+     * @param Request $request Datos del formulario de nuevo usuario.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'ci' => 'required|string|max:20|unique:perfil,ci',
+            'ci' => 'required|string|max:20',
             'nombres' => 'required|string|max:100',
             'apellido_paterno' => 'required|string|max:100',
             'apellido_materno' => 'nullable|string|max:100',
             'telefono' => 'nullable|string|max:20',
             'cargo' => 'nullable|string|max:100',
-            'email' => 'required|string|email|max:150|unique:perfil,email',
+            'email' => 'required|string|email|max:150',
             'rol_id' => 'required|exists:rol,id',
             'password' => 'nullable|string|min:8'
         ]);
+
+        $perfilExistente = Perfil::where('ci', $validated['ci'])
+                                 ->orWhere('email', $validated['email'])
+                                 ->first();
+
+        if ($perfilExistente) {
+            $usuarioExistente = Usuario::find($perfilExistente->usuario_id);
+            if ($usuarioExistente && $usuarioExistente->eliminado) {
+                return back()->with([
+                    'conflict_user' => $usuarioExistente->id,
+                    'conflict_message' => 'Este usuario ya existió. ¿Deseas volver a crearlo?'
+                ]);
+            }
+            return back()->withErrors(['error' => 'El CI o Correo ya está en uso.']);
+        }
 
         DB::beginTransaction();
         try {
@@ -103,6 +143,14 @@ class UsuarioController extends Controller
         }
     }
 
+    /**
+     * Actualiza la información básica y el rol de un usuario existente.
+     * Permite cambiar la contraseña solo si se proporciona una nueva.
+     *
+     * @param Request $request Datos modificados del usuario.
+     * @param int $id ID del usuario a modificar.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, $id)
     {
         $usuario = Usuario::findOrFail($id);
@@ -147,17 +195,76 @@ class UsuarioController extends Controller
         }
     }
 
+    /**
+     * Elimina lógicamente a un usuario del sistema (Soft Delete).
+     * El registro se mantiene en base de datos para preservar el historial,
+     * pero no se muestra más en las listas activas ni permite iniciar sesión.
+     *
+     * @param int $id ID del usuario a eliminar.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy($id)
     {
         try {
             $usuario = Usuario::findOrFail($id);
-            // Delete logic (soft delete by setting estado=Inactivo or actual delete)
-            $usuario->estado = 'Inactivo';
+            $usuario->eliminado = true;
             $usuario->save();
-            AuditService::log('Usuario deshabilitado exitosamente', "Se deshabilitó al usuario ID: {$usuario->id}");
-            return redirect()->route('usuarios.index')->with('success', 'Usuario deshabilitado exitosamente.');
+            AuditService::log('Usuario eliminado exitosamente', "Se eliminó al usuario ID: {$usuario->id}");
+            return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado exitosamente.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Hubo un error al eliminar el usuario.']);
+        }
+    }
+
+    /**
+     * Reactiva o restaura a un usuario que había sido eliminado lógicamente.
+     * Permite actualizar su información en el momento de la reactivación.
+     *
+     * @param Request $request Datos actualizados del usuario.
+     * @param int $id ID del usuario a restaurar.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function restore(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'ci' => 'required|string|max:20',
+            'nombres' => 'required|string|max:100',
+            'apellido_paterno' => 'required|string|max:100',
+            'apellido_materno' => 'nullable|string|max:100',
+            'telefono' => 'nullable|string|max:20',
+            'cargo' => 'nullable|string|max:100',
+            'email' => 'required|string|email|max:150',
+            'rol_id' => 'required|exists:rol,id',
+            'password' => 'nullable|string|min:8'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $usuario = Usuario::findOrFail($id);
+            $usuario->eliminado = false;
+            $usuario->rol_id = $validated['rol_id'];
+            if (!empty($validated['password'])) {
+                $usuario->password = Hash::make($validated['password']);
+            }
+            $usuario->save();
+
+            $perfil = Perfil::where('usuario_id', $usuario->id)->firstOrFail();
+            $perfil->update([
+                'ci' => $validated['ci'],
+                'nombres' => $validated['nombres'],
+                'apellido_paterno' => $validated['apellido_paterno'],
+                'apellido_materno' => $validated['apellido_materno'] ?? null,
+                'telefono' => $validated['telefono'] ?? null,
+                'email' => $validated['email'],
+                'cargo' => $validated['cargo'] ?? null,
+            ]);
+
+            DB::commit();
+            AuditService::log('Usuario reactivado', "Se reactivó al usuario ID: {$usuario->id}");
+            return redirect()->route('usuarios.index')->with('success', 'Usuario reactivado exitosamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Hubo un error al reactivar el usuario.']);
         }
     }
 }

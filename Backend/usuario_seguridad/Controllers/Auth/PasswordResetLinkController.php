@@ -13,7 +13,10 @@ use Inertia\Response;
 class PasswordResetLinkController extends Controller
 {
     /**
-     * Display the password reset link request view.
+     * Muestra la vista para solicitar un enlace de restablecimiento de contraseña.
+     * Esta vista contiene un formulario donde el usuario ingresa su correo electrónico.
+     *
+     * @return \Inertia\Response
      */
     public function create(): Response
     {
@@ -23,9 +26,13 @@ class PasswordResetLinkController extends Controller
     }
 
     /**
-     * Handle an incoming password reset link request.
+     * Procesa la solicitud para enviar el enlace de recuperación de contraseña.
+     * Valida que el correo exista y usa la funcionalidad interna de Laravel para 
+     * enviar el token seguro por email.
      *
-     * @throws ValidationException
+     * @param Request $request Petición con el campo 'email'.
+     * @return \Illuminate\Http\RedirectResponse
+     * @throws ValidationException Si el correo no existe o no es válido.
      */
     public function store(Request $request): RedirectResponse
     {

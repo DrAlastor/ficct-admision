@@ -22,7 +22,10 @@ use Stripe\Checkout\Session as StripeSession;
 class PostulanteRegistroController extends Controller
 {
     /**
-     * Muestra el formulario de registro en React (Inertia).
+     * Renderiza la página principal de registro público para nuevos postulantes.
+     * Esta vista incluye el formulario de datos, opciones de carrera y pago.
+     *
+     * @return \Inertia\Response
      */
     public function create()
     {
@@ -30,7 +33,14 @@ class PostulanteRegistroController extends Controller
     }
 
     /**
-     * Valida los datos, guarda documentos temporalmente e inicia el pago en Stripe.
+     * Procesa el primer paso del registro:
+     * 1. Valida todos los datos demográficos y académicos del postulante.
+     * 2. Sube los documentos adjuntos (CI y Título de Bachiller) a un bucket de AWS S3.
+     * 3. Crea una sesión de pago segura mediante Stripe Checkout.
+     * 4. Almacena temporalmente los datos en caché para usarlos tras el pago exitoso.
+     *
+     * @param Request $request Petición con formulario multipart/form-data.
+     * @return \Illuminate\Http\JsonResponse Retorna la URL de Stripe para redirigir al usuario.
      */
     public function iniciarPago(Request $request)
     {
@@ -94,7 +104,15 @@ class PostulanteRegistroController extends Controller
     }
     
     /**
-     * Confirma el pago de Stripe, inserta en BD y envía el correo con credenciales.
+     * Callback de confirmación tras un pago exitoso en Stripe (Paso 2):
+     * 1. Verifica la validez de la sesión con la API de Stripe.
+     * 2. Inicia una transacción para generar Perfil, Usuario, Postulación y Pagos en BD.
+     * 3. Registra las opciones de carrera (prioridad 1 y 2).
+     * 4. Envia un correo electrónico con el código generado y la contraseña por defecto.
+     * 5. Redirige a la pantalla de Login con un mensaje de éxito.
+     *
+     * @param Request $request Petición HTTP con el parámetro `session_id` de Stripe.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function exitoPago(Request $request)
     {

@@ -15,11 +15,25 @@ use Illuminate\Support\Facades\Log;
 
 class PasswordResetController extends Controller
 {
+    /**
+     * Muestra la vista donde el usuario ingresa su correo para solicitar
+     * un token de recuperación de contraseña de 6 dígitos.
+     *
+     * @return \Inertia\Response
+     */
     public function create()
     {
         return Inertia::render('Modulos/usuario_seguridad/ForgotPassword');
     }
 
+    /**
+     * Valida el correo y genera un código de 6 dígitos que se guarda
+     * en la tabla `token_recuperacion`. 
+     * Simula el envío por correo electrónico registrándolo en los logs del sistema.
+     *
+     * @param Request $request Contiene el 'email' del usuario.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -52,11 +66,26 @@ class PasswordResetController extends Controller
                          ->with('status', 'Hemos enviado un código de recuperación a tu correo.');
     }
 
+    /**
+     * Muestra la vista para ingresar el token de 6 dígitos recibido por correo.
+     *
+     * @param Request $request Contiene el 'email' del usuario en la query string.
+     * @return \Inertia\Response
+     */
     public function showTokenForm(Request $request)
     {
         return Inertia::render('Modulos/usuario_seguridad/EnterToken', ['email' => $request->query('email')]);
     }
 
+    /**
+     * Verifica que el token ingresado coincida con el almacenado, no haya expirado
+     * (2 horas de vigencia) y no haya sido usado antes.
+     * Si es válido, lo marca como usado, inicia sesión automáticamente y redirige
+     * a la vista de edición de perfil para que cambie la contraseña.
+     *
+     * @param Request $request Contiene 'email' y 'token'.
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function verifyToken(Request $request)
     {
         $request->validate([

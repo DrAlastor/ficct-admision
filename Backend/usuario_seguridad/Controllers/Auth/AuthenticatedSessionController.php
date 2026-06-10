@@ -14,7 +14,11 @@ use Inertia\Response;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Muestra la vista principal de Inicio de Sesión (Login).
+     * Renderiza el componente de React pasando si está habilitado
+     * o no la recuperación de contraseña.
+     *
+     * @return \Inertia\Response
      */
     public function create(): Response
     {
@@ -25,22 +29,44 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Maneja la petición entrante de autenticación de un usuario.
+     * Valida credenciales, regenera la sesión para evitar fijación de sesión,
+     * y marca el estado del usuario como "Activo" (En línea).
+     *
+     * @param LoginRequest $request Petición que incluye CI/Código y contraseña.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
 
         $request->session()->regenerate();
+        
+        $user = Auth::user();
+        if ($user) {
+            $user->estado = 'Activo';
+            $user->save();
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
-     * Destroy an authenticated session.
+     * Destruye la sesión autenticada actual (Cerrar Sesión).
+     * Marca el estado del usuario como "Inactivo" (Desconectado), 
+     * invalida la sesión HTTP y regenera el token CSRF.
+     *
+     * @param Request $request Petición HTTP.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        if ($user) {
+            $user->estado = 'Inactivo';
+            $user->save();
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

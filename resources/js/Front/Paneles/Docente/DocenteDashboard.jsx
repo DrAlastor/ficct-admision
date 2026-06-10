@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { FiBook, FiUsers, FiClock, FiFileText, FiChevronRight } from 'react-icons/fi';
 import ListaAlumnos from './ListaAlumnos';
 
-export default function DocenteDashboard({ auth, perfil, materias = [] }) {
+export default function DocenteDashboard({ perfil, materias = [] }) {
+    const { auth } = usePage().props;
     const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
 
     // Agrupar materias para evitar repeticiones de días
@@ -29,54 +30,77 @@ export default function DocenteDashboard({ auth, perfil, materias = [] }) {
         <SidebarLayout title="PORTAL DOCENTE" subtitle="GESTIÓN ACADÉMICA Y CONTROL DE ALUMNOS">
             <Head title="Docente - Dashboard" />
 
-            {/* Banner de Bienvenida */}
-            {/* Puedes cambiar el color del banner donde dice Bienvenido modificando bg-[#24337A] */}
-            <div className="bg-[#24337A] rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20"></div>
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-black mb-2 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
-                    <p className="text-indigo-200 font-medium max-w-2xl text-lg">
-                        Administra tus grupos, registra calificaciones y gestiona el material académico para el semestre actual.
-                    </p>
+            {/* Banner de Bienvenida Premium */}
+            <div className="bg-[#24337A] rounded-3xl p-8 md:p-10 mb-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none"></div>
+                <div className="absolute bottom-0 left-20 w-40 h-40 bg-indigo-400 opacity-20 rounded-full blur-2xl -mb-10 pointer-events-none"></div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                        <h2 className="text-4xl font-black mb-3 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
+                        <p className="text-gray-300 font-medium max-w-2xl text-lg">
+                            Administra tus grupos, registra calificaciones y gestiona el material académico para el semestre actual.
+                        </p>
+                    </div>
+                    <div className="mt-6 md:mt-0">
+                        <span className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-widest flex items-center border border-white/10 shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-blue-400 mr-2 animate-pulse"></span>
+                            Semestre Activo
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* Tarjetas de Acceso Rápido */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-xl text-blue-600 mr-4 group-hover:scale-110 transition-transform">
+            {/* Tarjetas de Acceso Rápido / Estadísticas Premium */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-blue-900 pointer-events-none">
+                        <FiBook size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-2xl text-blue-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
                         <FiBook size={28} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Mis Grupos</div>
-                        <div className="text-3xl font-black text-gray-800">{totalMaterias}</div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Mis Grupos</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{totalMaterias}</div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-xl text-green-600 mr-4 group-hover:scale-110 transition-transform">
+
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-emerald-900 pointer-events-none">
+                        <FiUsers size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 p-4 rounded-2xl text-emerald-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
                         <FiUsers size={28} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Total Alumnos</div>
-                        <div className="text-3xl font-black text-gray-800">{totalAlumnos}</div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Total Alumnos</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{totalAlumnos}</div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-orange-100 to-orange-200 p-4 rounded-xl text-orange-600 mr-4 group-hover:scale-110 transition-transform">
+
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-amber-900 pointer-events-none">
+                        <FiClock size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-amber-100 to-amber-200 p-4 rounded-2xl text-amber-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
                         <FiClock size={28} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Horas/Semana</div>
-                        <div className="text-3xl font-black text-gray-800">{horasSemana}</div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Horas/Semana</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{horasSemana}</div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                    <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-4 rounded-xl text-purple-600 mr-4 group-hover:scale-110 transition-transform">
+
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-purple-900 pointer-events-none">
+                        <FiFileText size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-4 rounded-2xl text-purple-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
                         <FiFileText size={28} />
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Exámenes</div>
-                        <div className="text-3xl font-black text-gray-800 tracking-tight">Activos</div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Exámenes</div>
+                        <div className="text-3xl font-black text-gray-800 tracking-tight leading-none">Activos</div>
                     </div>
                 </div>
             </div>
@@ -86,42 +110,55 @@ export default function DocenteDashboard({ auth, perfil, materias = [] }) {
                 
                 {/* Columna Izquierda: Lista de Grupos */}
                 <div className="lg:col-span-4">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sticky top-6 h-full flex flex-col">
                         <h3 className="text-lg font-black text-[#0F172A] uppercase tracking-wide border-b border-gray-100 pb-3 mb-4 flex items-center">
                             <span className="w-2 h-6 bg-[#07074E] rounded-full mr-3"></span>
                             Mis Materias
                         </h3>
                         
                         {materiasUnicas.length === 0 ? (
-                            <p className="text-gray-500 italic text-sm">No tienes materias asignadas este semestre.</p>
+                            <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                    <FiBook className="text-gray-300" size={24} />
+                                </div>
+                                <p className="text-gray-500 font-medium text-sm max-w-[200px]">No tienes materias asignadas este semestre.</p>
+                            </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                                 {materiasUnicas.map((materia) => (
                                     <div 
                                         key={materia.grupo_codigo}
                                         onClick={() => setGrupoSeleccionado(materia)}
-                                        className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 group relative overflow-hidden ${
+                                        className={`border rounded-2xl p-4 cursor-pointer transition-all duration-300 group relative overflow-hidden ${
                                             grupoSeleccionado?.grupo_codigo === materia.grupo_codigo 
-                                            ? 'border-indigo-500 bg-indigo-50 shadow-md' 
-                                            : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                                            ? 'border-indigo-400 bg-indigo-50/50 shadow-md transform scale-[1.02]' 
+                                            : 'border-gray-100 hover:border-indigo-200 hover:bg-gray-50 hover:-translate-y-0.5'
                                         }`}
                                     >
                                         {/* Color indicator */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${grupoSeleccionado?.grupo_codigo === materia.grupo_codigo ? 'bg-indigo-500' : 'bg-transparent group-hover:bg-indigo-300'}`}></div>
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300 ${
+                                            grupoSeleccionado?.grupo_codigo === materia.grupo_codigo 
+                                            ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' 
+                                            : 'bg-transparent group-hover:bg-indigo-300'
+                                        }`}></div>
 
-                                        <div className="flex justify-between items-start mb-2 pl-2">
-                                            <span className="font-bold text-gray-800 leading-tight pr-2">{materia.materia}</span>
-                                            <span className="bg-[#0F172A] text-white text-[10px] font-bold px-2 py-1 rounded tracking-widest shrink-0 shadow-sm">
+                                        <div className="flex justify-between items-start mb-3 pl-3">
+                                            <span className="font-black text-gray-800 leading-tight pr-2 text-[15px]">{materia.materia}</span>
+                                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shrink-0 shadow-sm transition-colors ${
+                                                grupoSeleccionado?.grupo_codigo === materia.grupo_codigo
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-[#0F172A] text-white'
+                                            }`}>
                                                 {materia.grupo_nombre}
                                             </span>
                                         </div>
-                                        <div className="text-xs text-gray-500 flex items-center pl-2 mb-2">
+                                        <div className="text-xs text-gray-500 flex items-center pl-3 mb-3 font-medium">
                                             <FiClock className="mr-1.5 text-indigo-400" /> {materia.horario}
                                         </div>
-                                        <div className="flex justify-between items-center pl-2 mt-3 pt-3 border-t border-gray-100">
-                                            <span className="text-xs font-semibold text-gray-600 bg-white px-2 py-1 rounded-md border shadow-sm">Aula: {materia.aula}</span>
-                                            <div className="flex items-center text-xs font-medium text-gray-500">
-                                                <FiUsers className="mr-1" /> {materia.inscritos} / {materia.cupo}
+                                        <div className="flex justify-between items-center pl-3 mt-3 pt-3 border-t border-gray-100/80">
+                                            <span className="text-[11px] font-bold text-gray-600 bg-white px-2.5 py-1 rounded-lg border border-gray-100 shadow-sm">Aula: {materia.aula}</span>
+                                            <div className="flex items-center text-xs font-bold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg">
+                                                <FiUsers className="mr-1.5 text-gray-400" /> {materia.inscritos} <span className="mx-1 font-normal text-gray-300">/</span> {materia.cupo}
                                             </div>
                                         </div>
                                     </div>
@@ -134,17 +171,20 @@ export default function DocenteDashboard({ auth, perfil, materias = [] }) {
                 {/* Columna Derecha: Vista del Grupo Seleccionado (ListaAlumnos) */}
                 <div className="lg:col-span-8">
                     {grupoSeleccionado ? (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
                             <ListaAlumnos grupo={grupoSeleccionado} />
                         </div>
                     ) : (
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center h-full flex flex-col justify-center items-center">
-                            <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                                <FiUsers className="text-indigo-300" size={48} />
+                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center h-full flex flex-col justify-center items-center min-h-[500px]">
+                            <div className="relative mb-8">
+                                <div className="absolute inset-0 bg-indigo-100 blur-3xl rounded-full opacity-50"></div>
+                                <div className="w-32 h-32 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full flex items-center justify-center shadow-inner relative z-10 border border-white">
+                                    <FiUsers className="text-indigo-400" size={56} />
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-black text-gray-800 mb-2 tracking-tight">Listado no seleccionado</h3>
-                            <p className="text-gray-500 max-w-md mx-auto">
-                                Selecciona una materia del panel izquierdo para ver el listado de alumnos y registrar las notas del semestre.
+                            <h3 className="text-3xl font-black text-gray-800 mb-4 tracking-tight">Selecciona un Grupo</h3>
+                            <p className="text-gray-500 max-w-md mx-auto text-lg leading-relaxed">
+                                Haz clic en una materia del panel izquierdo para acceder a la lista de alumnos, revisar asistencias y registrar notas.
                             </p>
                         </div>
                     )}

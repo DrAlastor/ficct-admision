@@ -15,9 +15,14 @@ use Inertia\Response;
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Muestra la información personal del perfil del usuario logueado (Solo Lectura).
+     * Si el usuario es Postulante o Docente, añade datos adicionales específicos de su rol
+     * (Ej. Colegio de procedencia para postulantes, profesión para docentes).
+     *
+     * @param Request $request Petición HTTP para extraer el usuario autenticado.
+     * @return \Inertia\Response
      */
-    public function edit(Request $request): Response
+    public function show(Request $request): Response
     {
         $usuario = $request->user();
         $perfil = clone $usuario->perfil;
@@ -37,16 +42,33 @@ class ProfileController extends Controller
             }
         }
 
-        return Inertia::render('Modulos/usuario_seguridad/Edit', [
-            'mustVerifyEmail' => false,
-            'status' => session('status'),
+        return Inertia::render('Modulos/usuario_seguridad/ShowProfile', [
             'perfil' => $perfil,
             'rol_id' => $usuario->rol_id
         ]);
     }
 
     /**
-     * Update the user's profile information.
+     * Devuelve la vista que contiene el formulario para actualizar la contraseña 
+     * y datos básicos del usuario.
+     *
+     * @param Request $request Petición HTTP.
+     * @return \Inertia\Response
+     */
+    public function edit(Request $request): Response
+    {
+        return Inertia::render('Modulos/usuario_seguridad/Edit', [
+            'status' => session('status')
+        ]);
+    }
+
+    /**
+     * Actualiza la información básica del perfil del usuario desde las configuraciones.
+     * En este proyecto el formulario suele usarse solo para contraseñas, pero Laravel 
+     * lo expone por defecto para editar perfil (Email, Nombres).
+     *
+     * @param ProfileUpdateRequest $request Petición validada.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
@@ -62,7 +84,11 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's account.
+     * Elimina permanentemente la cuenta del usuario actual.
+     * Se requiere ingresar la contraseña actual para confirmar la acción.
+     *
+     * @param Request $request Petición HTTP con la contraseña.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request): RedirectResponse
     {
