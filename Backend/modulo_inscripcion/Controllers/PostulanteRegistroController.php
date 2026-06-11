@@ -16,8 +16,8 @@ use Backend\modulo_inscripcion\Models\Postulacion;
 use Backend\modulo_inscripcion\Models\Pago;
 use Backend\modulo_inscripcion\Models\Documento;
 use Inertia\Inertia;
-use Stripe\Stripe;
-use Stripe\Checkout\Session as StripeSession;
+use App\APIS\StripeAPI;
+use App\APIS\PayPalAPI;
 
 class PostulanteRegistroController extends Controller
 {
@@ -29,7 +29,20 @@ class PostulanteRegistroController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Modulos/modulo_inscripcion/Index');
+        // Pasar el precio del concepto y los métodos activos al Frontend
+        $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
+        $precio = $concepto ? $concepto->monto : 700.00;
+
+        $metodosActivos = DB::table('metodo_pago_config')
+            ->where('activo', true)
+            ->whereIn('nombre', ['Stripe (Tarjetas)', 'PayPal'])
+            ->select('id', 'nombre')
+            ->get();
+
+        return Inertia::render('Modulos/modulo_inscripcion/RegistroCUP/Index', [
+            'precio_matricula' => $precio,
+            'metodos_activos' => $metodosActivos
+        ]);
     }
 
     /**
@@ -60,47 +73,48 @@ class PostulanteRegistroController extends Controller
             'carrera_opcion2' => 'required|integer|different:carrera_opcion1',
             'turno_sugerido' => 'required|string',
             'tipo_colegio' => 'required|string|in:Fiscal,Convenio,Privado,CEA / Alternativo',
-            'documento_ci' => 'required|file|mimes:pdf,jpg,png|max:2048',
-            'documento_bachiller' => 'required|file|mimes:pdf,jpg,png|max:2048',
+            'documento_requisitos' => 'required|file|mimes:pdf|max:10240',
         ]);
 
-        // 2. Guardar los documentos directamente en AWS S3 (Bucket de archivos)
-        $rutaCI = $request->file('documento_ci')->store('postulantes-ficct/ci', 's3_archivos');
-        $rutaBachiller = $request->file('documento_bachiller')->store('postulantes-ficct/bachiller', 's3_archivos');
+        // 2. Guardar el documento directamente en AWS S3 (Bucket de archivos)
+        $rutaRequisitos = $request->file('documento_requisitos')->store('postulantes-ficct/requisitos', 's3_archivos');
 
         // 3. Guardar los datos en la sesión temporalmente mientras el usuario paga
-        $datosPostulante = $request->except(['documento_ci', 'documento_bachiller']);
-        $datosPostulante['ruta_ci'] = $rutaCI;
-        $datosPostulante['ruta_bachiller'] = $rutaBachiller;
+        $datosPostulante = $request->except(['documento_requisitos']);
+        $datosPostulante['ruta_requisitos'] = $rutaRequisitos;
         
         session(['datos_postulante' => $datosPostulante]);
 
-        // 4. Configurar la clave secreta de Stripe
-        Stripe::setApiKey(env('STRIPE_SECRET'));
+        // 4. Obtener Concepto y Metodo de pago
+        $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
+        $monto = $concepto ? $concepto->monto : 700.00;
+        $nombreConcepto = $concepto ? $concepto->descripcion : 'Pago de inscripción al CUP';
 
-        // 5. Crear la Sesión de Pago (Checkout)
-        $checkoutSession = StripeSession::create([
-            'payment_method_types' => ['card'],
-            'line_items' => [[
-                'price_data' => [
-                    'currency' => 'bob', 
-                    'product_data' => [
-                        'name' => 'Inscripción CUP - FICCT',
-                        'description' => 'Pago de postulación para el Curso Preuniversitario',
-                    ],
-                    // Stripe maneja todo en centavos. 700 Bs = 70000 centavos
-                    'unit_amount' => 70000, 
-                ],
-                'quantity' => 1,
-            ]],
-            'mode' => 'payment',
-            // URLs de redirección tras el pago
-            'success_url' => route('registro.exito') . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('registro.create'),
-        ]);
+        $metodoSeleccionado = $request->input('metodo_pago'); // 'stripe' o 'paypal'
 
-        // 6. Devolver la URL al frontend de React para redirigir al usuario
-        return response()->json(['url' => $checkoutSession->url]);
+        try {
+            if ($metodoSeleccionado === 'paypal') {
+                $resultado = PayPalAPI::crearOrden(
+                    $monto, 
+                    route('registro.exito', ['metodo' => 'paypal']), 
+                    route('registro.create')
+                );
+                // Guardar el order_id temporalmente para la validación después
+                session(['paypal_order_id' => $resultado->order_id]);
+                return response()->json(['url' => $resultado->url]);
+            } else {
+                // Por defecto Stripe
+                $urlStripe = StripeAPI::crearSesion(
+                    $monto, 
+                    $nombreConcepto, 
+                    route('registro.exito', ['metodo' => 'stripe']), 
+                    route('registro.create')
+                );
+                return response()->json(['url' => $urlStripe]);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
     
     /**
@@ -116,22 +130,32 @@ class PostulanteRegistroController extends Controller
      */
     public function exitoPago(Request $request)
     {
-        $sessionId = $request->query('session_id');
+        $metodo = $request->query('metodo', 'stripe');
         $datosPostulante = session('datos_postulante');
 
-        // Si no hay sesión de Stripe o faltan los datos, redirigir al inicio
-        if (!$sessionId || !$datosPostulante) {
+        if (!$datosPostulante) {
             return redirect()->route('registro.create')->withErrors(['error' => 'Sesión inválida o expirada.']);
         }
 
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-
         try {
-            // Verificar el estado de la sesión en Stripe
-            $sessionStripe = StripeSession::retrieve($sessionId);
+            $transaccion = null;
 
-            if ($sessionStripe->payment_status !== 'paid') {
-                return redirect()->route('registro.create')->withErrors(['error' => 'El pago no se completó.']);
+            if ($metodo === 'paypal') {
+                $orderId = session('paypal_order_id');
+                if (!$orderId) throw new \Exception("ID de orden de PayPal no encontrado en sesión.");
+                
+                // token param is implicitly passed by paypal in url but we capture with orderId
+                $token = $request->query('token');
+                if ($token && $token !== $orderId) {
+                    $orderId = $token; 
+                }
+
+                $transaccion = PayPalAPI::capturarPago($orderId);
+            } else {
+                $sessionId = $request->query('session_id');
+                if (!$sessionId) throw new \Exception("ID de sesión de Stripe no encontrado.");
+                
+                $transaccion = StripeAPI::verificarPago($sessionId);
             }
 
             // Usar una transacción de BD para asegurar que todos los datos se guarden correctamente
@@ -194,28 +218,24 @@ class PostulanteRegistroController extends Controller
                 ]
             ]);
 
-            // 5. Registrar los Documentos Subidos
+            // 5. Registrar el Documento Subido
             Documento::create([
                 'postulacion_codigo' => $postulacion->codigo,
-                'tipo_documento' => 'Carnet Identidad',
-                'url_archivo' => $datosPostulante['ruta_ci'],
-                'estado_validacion' => 'PENDIENTE'
-            ]);
-
-            Documento::create([
-                'postulacion_codigo' => $postulacion->codigo,
-                'tipo_documento' => 'Certificado Bachiller',
-                'url_archivo' => $datosPostulante['ruta_bachiller'],
-                'estado_validacion' => 'PENDIENTE'
+                'tipo_documento' => 'Requisitos Completos CUP',
+                'url_archivo' => $datosPostulante['ruta_requisitos'],
+                'estado_validacion' => 'Subido'
             ]);
 
             // 6. Registrar el Pago Exitoso
+            $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
+            $monto = $concepto ? $concepto->monto : 700.00;
+
             Pago::create([
                 'postulacion_codigo' => $postulacion->codigo,
                 'nro_recibo' => 'REC-' . rand(10000, 99999),
-                'monto' => 700.00,
-                'metodo_pago' => 'Stripe',
-                'transaccion_id' => $sessionStripe->payment_intent,
+                'monto' => $monto,
+                'metodo_pago_id' => $transaccion->metodo_id,
+                'transaccion_id' => $transaccion->transaccion_id,
                 'estado' => 'Completado',
                 'fecha' => now()->toDateString()
             ]);

@@ -17,12 +17,12 @@ export default function Preguntas({ materias, preguntas }) {
 
     const generarPrueba = () => {
         setShowConfirmModal(false);
-        router.post(route('examenes.preguntas.seeder'));
+        router.post(route('gestion_examenes.preguntas.seeder'));
     };
 
     const limpiarTodo = () => {
         setShowClearModal(false);
-        router.delete(route('examenes.preguntas.clear'));
+        router.delete(route('gestion_examenes.preguntas.clear'));
     };
 
     const pedirEliminarPregunta = (id) => {
@@ -32,7 +32,7 @@ export default function Preguntas({ materias, preguntas }) {
 
     const confirmarEliminarPregunta = () => {
         if(preguntaToDelete) {
-            router.delete(route('examenes.preguntas.destroy', preguntaToDelete));
+            router.delete(route('gestion_examenes.preguntas.destroy', preguntaToDelete));
             setShowDeleteModal(false);
             setPreguntaToDelete(null);
         }

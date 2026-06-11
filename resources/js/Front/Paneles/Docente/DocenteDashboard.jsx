@@ -31,20 +31,24 @@ export default function DocenteDashboard({ perfil, materias = [] }) {
             <Head title="Docente - Dashboard" />
 
             {/* Banner de Bienvenida Premium */}
-            <div className="bg-[#24337A] rounded-3xl p-8 md:p-10 mb-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-20 w-40 h-40 bg-indigo-400 opacity-20 rounded-full blur-2xl -mb-10 pointer-events-none"></div>
+            <div className="relative overflow-hidden rounded-3xl mb-8 shadow-2xl bg-[#07074E] text-white p-8 md:p-12">
+                {/* Background abstract shapes */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/30 to-indigo-500/10 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-red-500/20 to-pink-500/5 rounded-full blur-3xl -mb-10 -ml-10 pointer-events-none"></div>
+                
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between">
                     <div>
-                        <h2 className="text-4xl font-black mb-3 tracking-tight">¡Bienvenido, {auth.user.perfil?.nombres ? `${auth.user.perfil.nombres} ${auth.user.perfil.apellido_paterno || ''}`.trim() : auth.user.codigo_inicio}!</h2>
-                        <p className="text-gray-300 font-medium max-w-2xl text-lg">
-                            Administra tus grupos, registra calificaciones y gestiona el material académico para el semestre actual.
+                        <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight drop-shadow-md">
+                            ¡Bienvenido Docente, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-indigo-100">{auth.user.perfil?.nombres ? `${auth.user.perfil.nombres}` : auth.user.codigo_inicio}</span>!
+                        </h2>
+                        <p className="text-blue-100/90 font-medium max-w-2xl text-lg md:text-xl drop-shadow">
+                            Estás en el panel principal docente. Aquí tienes un resumen general de tu actividad en el sistema.
                         </p>
                     </div>
-                    <div className="mt-6 md:mt-0">
-                        <span className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-widest flex items-center border border-white/10 shadow-sm">
-                            <span className="w-2 h-2 rounded-full bg-blue-400 mr-2 animate-pulse"></span>
-                            Semestre Activo
+                    <div className="mt-8 md:mt-0">
+                        <span className="bg-white/10 backdrop-blur-xl border border-white/20 px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center shadow-lg transition-transform hover:scale-105">
+                            <span className="w-3 h-3 rounded-full bg-emerald-400 mr-3 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></span>
+                            Sistema Online
                         </span>
                     </div>
                 </div>

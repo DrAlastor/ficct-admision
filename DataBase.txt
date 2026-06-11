@@ -39,7 +39,7 @@ CREATE TABLE USUARIO (
     ROL_ID INT REFERENCES ROL(ID) ON DELETE CASCADE ON UPDATE CASCADE,
     CODIGO_INICIO VARCHAR(150) UNIQUE NOT NULL, 
     PASSWORD VARCHAR(255) NOT NULL,
-    ESTADO VARCHAR(20) DEFAULT 'Activo',
+    ESTADO VARCHAR(20),
     ELIMINADO BOOLEAN DEFAULT FALSE
 );
 
@@ -118,6 +118,7 @@ CREATE TABLE CARRERA (
     NOMBRE VARCHAR(150) NOT NULL,
     CUPO_MAXIMO INT NOT NULL
 );
+ALTER TABLE CARRERA ADD SIGLA VARCHAR(10) NOT NULL;
 
 CREATE TABLE POSTULACION (
     CODIGO SERIAL PRIMARY KEY,
@@ -159,6 +160,7 @@ CREATE TABLE MATERIA (
     ID SERIAL PRIMARY KEY,
     NOMBRE VARCHAR(100) NOT NULL
 );
+ALTER TABLE MATERIA ADD SIGLA VARCHAR(10) NOT NULL;
 
 CREATE TABLE AULA (
     ID SERIAL PRIMARY KEY,
@@ -213,6 +215,64 @@ CREATE TABLE EVALUACIONES (
     PROMEDIO_FINAL DECIMAL(5,2) DEFAULT 0,
     ESTADO_MATERIA VARCHAR(50)
 );
+---------------------------------------------------------------------------------------------
+                                          --NUEVO --
+ ---------------------------------------------------------------------------------------------
+-- Sesión de asistencia generada por el docente
+CREATE TABLE SESION_ASISTENCIA (
+    ID SERIAL PRIMARY KEY,
+    GRUPO_CODIGO INT REFERENCES GRUPO(CODIGO) ON DELETE CASCADE ON UPDATE CASCADE,
+    DOCENTE_ID INT REFERENCES DOCENTE(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONTRASENA VARCHAR(10) NOT NULL,
+    FECHA DATE NOT NULL,
+    HORA_APERTURA TIMESTAMP NOT NULL,
+    HORA_CIERRE TIMESTAMP,
+    ESTADO VARCHAR(20) DEFAULT 'Abierta', -- 'Abierta', 'Cerrada'
+    DOCENTE_PRESENTE BOOLEAN DEFAULT FALSE
+);
+
+-- Registro individual de asistencia de cada postulante
+CREATE TABLE REGISTRO_ASISTENCIA (
+    ID SERIAL PRIMARY KEY,
+    SESION_ID INT REFERENCES SESION_ASISTENCIA(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    POSTULANTE_ID INT REFERENCES POSTULANTE(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    ESTADO VARCHAR(20) NOT NULL, -- 'Presente', 'Falta'
+    HORA_REGISTRO TIMESTAMP,
+    UNIQUE(SESION_ID, POSTULANTE_ID)
+);
+
+-- Define los exámenes habilitados (ej: Parcial 1 de Matemáticas)
+CREATE TABLE EXAMEN (
+    ID SERIAL PRIMARY KEY,
+    MATERIA_ID INT REFERENCES MATERIA(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    TIPO VARCHAR(50) NOT NULL, -- 'Parcial 1', 'Parcial 2', 'Final'
+    FECHA_INICIO TIMESTAMP NOT NULL,
+    FECHA_FIN TIMESTAMP NOT NULL,
+    DURACION_MINUTOS INT,
+    CANTIDAD_PREGUNTAS INT -- Cuántas preguntas aleatorias le tocarán a cada estudiante
+);
+
+-- Banco de Preguntas por Materia
+CREATE TABLE PREGUNTA (
+    ID SERIAL PRIMARY KEY,
+    MATERIA_ID INT REFERENCES MATERIA(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    ENUNCIADO TEXT NOT NULL,
+    OPCION_A TEXT NOT NULL,
+    OPCION_B TEXT NOT NULL,
+    OPCION_C TEXT NOT NULL,
+    OPCION_D TEXT NOT NULL,
+    RESPUESTA_CORRECTA VARCHAR(1) NOT NULL -- 'A', 'B', 'C', 'D'
+);
+
+-- Registra si un estudiante ya dio el examen (para evitar que lo dé 2 veces)
+CREATE TABLE INTENTO_EXAMEN (
+    ID SERIAL PRIMARY KEY,
+    EXAMEN_ID INT REFERENCES EXAMEN(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    INSCRIPCION_ID INT REFERENCES INSCRIPCIONES_CUP(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    NOTA_OBTENIDA DECIMAL(5,2) NOT NULL, -- Nota pura sobre 100 antes de ponderar
+    FECHA_REALIZACION TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(EXAMEN_ID, INSCRIPCION_ID)
+);
 
 /*
 -- =================================================================
@@ -224,7 +284,7 @@ TRUNCATE TABLE
     GESTION, CARRERA, POSTULACION, POSTULACION_CARRERA, PAGO, 
     DOCUMENTOS, MATERIA, AULA, TURNO, GRUPO, HORARIO, CARGA_HORARIA, 
     INSCRIPCIONES_CUP, EVALUACIONES RESTART IDENTITY CASCADE;
-
+/*
 DROP TABLE IF EXISTS MODULO, FUNCION, ACCION, ROL, ROL_FUNCION, USUARIO, TOKEN_RECUPERACION, 
     BITACORA, PERFIL, ADMINISTRACION, POSTULANTE, DOCENTE, FACULTAD, 
     GESTION, CARRERA, POSTULACION, POSTULACION_CARRERA, PAGO, 
@@ -294,31 +354,41 @@ INSERT INTO ROL_FUNCION (ROL_ID, FUNCION_ID, ID_ACCION, DESCRIPCION) VALUES
 (1, 10, 3, 'Acceso Total'), (1, 11, 3, 'Acceso Total'), (1, 12, 3, 'Acceso Total'), (1, 13, 3, 'Acceso Total'), (1, 14, 3, 'Acceso Total'), (1, 15, 3, 'Acceso Total'), (1, 16, 3, 'Acceso Total'), (1, 17, 3, 'Acceso Total'),
 (1, 18, 3, 'Acceso Total'), (1, 19, 3, 'Acceso Total'),
 (1, 20, 3, 'Acceso Total'), (1, 21, 3, 'Acceso Total'), (1, 22, 3, 'Acceso Total'), (1, 23, 3, 'Acceso Total');
+/*
+-- Docente (Perfil, Aula Virtual y Docencia)
+(2, 4, 3, 'Acceso Total'), (2, 5, 1, 'Solo Lectura'), 
+(2, 7, 1, 'Solo Lectura'), (2, 8, 3, 'Lectura y Escritura'), (2, 9, 3, 'Lectura y Escritura'),
+(2, 18, 1, 'Solo Lectura'), (2, 19, 1, 'Solo Lectura'),
+
+-- Postulante (Perfil y Aula Virtual)
+(3, 4, 3, 'Acceso Total'), (3, 5, 1, 'Solo Lectura'), 
+(3, 6, 1, 'Solo Lectura'), (3, 7, 1, 'Solo Lectura'), (3, 8, 1, 'Solo Lectura'), (3, 9, 3, 'Lectura y Escritura');*/
 
 -- =================================================================
 -- 3. USUARIOS (Autenticación - CI con un 0 extra y Admin Especial)
 -- =================================================================
+
 INSERT INTO USUARIO (ID, ROL_ID, CODIGO_INICIO, PASSWORD, ESTADO) VALUES 
-(1, 1, 'ADM001', '$2y$12$RJgpTumVA3zANESqUKVWv.iv3P00bbMRMqHygT2BunITHfonxQjNm', 'Activo'),
-(2, 2, 'DOC0001', '$2y$12$fxv0hi8JCS19TkZv.s3PrevA6AcnGfsgJoCWa2jMSuxpiCr0Gs/Ei', 'Activo'),
-(3, 2, 'DOC0002', '$2y$12$nFhP/9E1E6B8ORl2VTnxHOTjDeVrPz33rdt1Z3DhR7RiUX7uXEFBe', 'Activo'),
-(4, 2, 'DOC0003', '$2y$12$RW4yAbFiXSSOiDcxN4wXUuRdVLbF8EQYkOsvJU7.Flpd20j8DMV86', 'Activo'),
-(5, 2, 'DOC0004', '$2y$12$/hlx6lLbZFlUk8mkkqSPJumxjDVZ97SYCmttOX2P9RAQi4FruVmhW', 'Activo'),
-(6, 3, 'POS2250001', '$2y$12$2WBcU4APf2obh0TZPOLctOsCkfch.j1R5rp3MxAVKGBGZ86wZaf66', 'Activo'),
-(7, 3, 'POS2250002', '$2y$12$C7rsU.GErkKdCRDRUwcuyu7W0jZaOrU12kEYZJu92IeUbU/CXx7Ou', 'Activo'),
-(8, 3, 'POS2250003', '$2y$12$7uB4EA/uGNBWGYsUWXzkXOKp9Qsf5TYoeXpiNQ4VFtVCDsWWYPswG', 'Activo'),
-(9, 3, 'POS2250004', '$2y$12$dddoPlRW5Hl2tpx0AlfUMu9I9lfHzpc6QoidF8Y9R4mo1Iqrc0xue', 'Activo'),
-(10, 3, 'POS2250005', '$2y$12$gptjudDku6ME8dI5e2NH9.QcJxWRCoxipQzn6JSalJ6MzZJeOcdLG', 'Activo'),
-(11, 3, 'POS2250006', '$2y$12$ROtkgRwPnuO4w8zll9cvTOKrhctgeWTSC2TuYjoxu62/PdkfXPl3C', 'Activo'),
-(12, 3, 'POS2250007', '$2y$12$TUDNe/wa4XJX0va6q1FDbO.nYZTma3AMUF7S.xogk.0WaHq1U5VKe', 'Activo'),
-(13, 3, 'POS2250008', '$2y$12$oXSJ4FHka2FnuIpdN8fvGOE5gUoiAcbl1G9dW2If.a6QN2cowGxFm', 'Activo'),
-(14, 3, 'POS2250009', '$2y$12$9PcW./1IctYUriWFjSig1OaPCu3XlhQqtlZN953htHkAnNsuBD1fO', 'Activo'),
-(15, 3, 'POS2250010', '$2y$12$GUzDIeeyO4Dc1V7v.VoDkeXV2fD3g0Yk2jQ/DrZ0mi6mLCK1viP2O', 'Activo'),
-(16, 3, 'POS2250011', '$2y$12$Wno7sXDcYTkxfvcYP4ihmOsCWbd42zlQOW60PCZaL9QNWRGQj//dS', 'Activo'),
-(17, 3, 'POS2250012', '$2y$12$0swuAZhgr6gGeLrnqZ0dbulfDKh14SIGaYJZ2p2oFCAObqNKwDrKq', 'Activo'),
-(18, 3, 'POS2250013', '$2y$12$/2ARDiBXUSmFoFPETTQvfeM6B4WnVdyDVdYRXpUWV9aHLmntUuSla', 'Activo'),
-(19, 3, 'POS2250014', '$2y$12$pZlyIIVGlp5/C8U3QC6TY.HT/GFoHo6Aa06Si/jwr4cO1tznYHMSu', 'Activo'),
-(20, 3, 'POS2250015', '$2y$12$Il5E3uj2v/BQeXW3mkAHiOPLReRR5r1XMl5Hdjw7ETMKCJExxcYKO', 'Activo');
+(1, 1, 'ADM001', '$2y$12$RJgpTumVA3zANESqUKVWv.iv3P00bbMRMqHygT2BunITHfonxQjNm', 'Inactivo'),
+(2, 2, 'DOC0001', '$2y$12$fxv0hi8JCS19TkZv.s3PrevA6AcnGfsgJoCWa2jMSuxpiCr0Gs/Ei', 'Inactivo'),
+(3, 2, 'DOC0002', '$2y$12$nFhP/9E1E6B8ORl2VTnxHOTjDeVrPz33rdt1Z3DhR7RiUX7uXEFBe', 'Inactivo'),
+(4, 2, 'DOC0003', '$2y$12$RW4yAbFiXSSOiDcxN4wXUuRdVLbF8EQYkOsvJU7.Flpd20j8DMV86', 'Inactivo'),
+(5, 2, 'DOC0004', '$2y$12$/hlx6lLbZFlUk8mkkqSPJumxjDVZ97SYCmttOX2P9RAQi4FruVmhW', 'Inactivo'),
+(6, 3, 'POS2250001', '$2y$12$2WBcU4APf2obh0TZPOLctOsCkfch.j1R5rp3MxAVKGBGZ86wZaf66', 'Inactivo'),
+(7, 3, 'POS2250002', '$2y$12$C7rsU.GErkKdCRDRUwcuyu7W0jZaOrU12kEYZJu92IeUbU/CXx7Ou', 'Inactivo'),
+(8, 3, 'POS2250003', '$2y$12$7uB4EA/uGNBWGYsUWXzkXOKp9Qsf5TYoeXpiNQ4VFtVCDsWWYPswG', 'Inactivo'),
+(9, 3, 'POS2250004', '$2y$12$dddoPlRW5Hl2tpx0AlfUMu9I9lfHzpc6QoidF8Y9R4mo1Iqrc0xue', 'Inactivo'),
+(10, 3, 'POS2250005', '$2y$12$gptjudDku6ME8dI5e2NH9.QcJxWRCoxipQzn6JSalJ6MzZJeOcdLG', 'Inactivo'),
+(11, 3, 'POS2250006', '$2y$12$ROtkgRwPnuO4w8zll9cvTOKrhctgeWTSC2TuYjoxu62/PdkfXPl3C', 'Inactivo'),
+(12, 3, 'POS2250007', '$2y$12$TUDNe/wa4XJX0va6q1FDbO.nYZTma3AMUF7S.xogk.0WaHq1U5VKe', 'Inactivo'),
+(13, 3, 'POS2250008', '$2y$12$oXSJ4FHka2FnuIpdN8fvGOE5gUoiAcbl1G9dW2If.a6QN2cowGxFm', 'Inactivo'),
+(14, 3, 'POS2250009', '$2y$12$9PcW./1IctYUriWFjSig1OaPCu3XlhQqtlZN953htHkAnNsuBD1fO', 'Inactivo'),
+(15, 3, 'POS2250010', '$2y$12$GUzDIeeyO4Dc1V7v.VoDkeXV2fD3g0Yk2jQ/DrZ0mi6mLCK1viP2O', 'Inactivo'),
+(16, 3, 'POS2250011', '$2y$12$Wno7sXDcYTkxfvcYP4ihmOsCWbd42zlQOW60PCZaL9QNWRGQj//dS', 'Inactivo'),
+(17, 3, 'POS2250012', '$2y$12$0swuAZhgr6gGeLrnqZ0dbulfDKh14SIGaYJZ2p2oFCAObqNKwDrKq', 'Inactivo'),
+(18, 3, 'POS2250013', '$2y$12$/2ARDiBXUSmFoFPETTQvfeM6B4WnVdyDVdYRXpUWV9aHLmntUuSla', 'Inactivo'),
+(19, 3, 'POS2250014', '$2y$12$pZlyIIVGlp5/C8U3QC6TY.HT/GFoHo6Aa06Si/jwr4cO1tznYHMSu', 'Inactivo'),
+(20, 3, 'POS2250015', '$2y$12$Il5E3uj2v/BQeXW3mkAHiOPLReRR5r1XMl5Hdjw7ETMKCJExxcYKO', 'Inactivo');
 
 -- =================================================================
 -- 4. PERFILES DEMOGRÁFICOS EXACTOS
@@ -370,9 +440,9 @@ INSERT INTO POSTULANTE (ID, COLEGIO_PROCEDENCIA, CIUDAD) VALUES
 -- =================================================================
 INSERT INTO FACULTAD (ID, NOMBRE) VALUES (1, 'Facultad de Ingeniería en Ciencias de la Computación y Telecomunicaciones');
 INSERT INTO GESTION (ID, SEMESTRE, AÑO) VALUES (1, 1, 2026);
-INSERT INTO CARRERA (CODIGO, FACULTAD_ID, NOMBRE, CUPO_MAXIMO) VALUES 
-(1, 1, 'Ingeniería Informática', 300), (2, 1, 'Ingeniería en Sistemas', 200),
-(3, 1, 'Ingeniería en Redes y Telecomunicaciones', 250), (4, 1, 'Ingeniería Robótica', 50);
+INSERT INTO CARRERA (CODIGO, FACULTAD_ID, SIGLA, NOMBRE, CUPO_MAXIMO) VALUES 
+(1, 1, '187-6', 'Ingeniería Informática', 300), (2, 1, '187-4' ,'Ingeniería en Sistemas', 200),
+(3, 1, '187-5' ,'Ingeniería en Redes y Telecomunicaciones', 250), (4, 1, '323-0', 'Ingeniería Robótica', 50);
 
 -- Generar Postulación para los 15 estudiantes
 INSERT INTO POSTULACION (CODIGO, POSTULANTE_ID, GESTION_ID, FECHA, HORA, ESTADO) VALUES 
@@ -415,16 +485,16 @@ INSERT INTO DOCUMENTOS (POSTULACION_CODIGO, TIPO_DOCUMENTO, URL_ARCHIVO, ESTADO_
 -- =================================================================
 -- 7. MATERIAS, AULAS, TURNOS Y GRUPOS (LÓGICA DE COHORTES)
 -- =================================================================
-INSERT INTO MATERIA (ID, NOMBRE) VALUES 
-(1, 'Computación'), (2, 'Matemáticas'), (3, 'Física'), (4, 'Inglés');
+INSERT INTO MATERIA (ID, SIGLA, NOMBRE) VALUES 
+(1, 'INF100', 'Computación'), (2, 'MAT100', 'Matemáticas'), (3, 'FIS100', 'Física'), (4, 'LIN100', 'Inglés');
 
 INSERT INTO TURNO (ID, DESCRIPCION) VALUES 
 (1, 'Mañana'), (2, 'Tarde'), (3, 'Noche');
 
 INSERT INTO AULA (ID, NRO_AULA, CAPACIDAD) VALUES 
-(1, 'Aula 11 - 236', 70), (2, 'Aula 12 - 236', 70), (3, 'Aula 13 - 236', 70), (4, 'Aula 14 - 236', 70), (5, 'Aula 15 - 236', 70), (6, 'Aula 16 - 236', 70),
-(7, 'Aula 21 - 236', 70), (8, 'Aula 22 - 236', 70), (9, 'Aula 23 - 236', 70), (10, 'Aula 24 - 236', 70), (11, 'Aula 25 - 236', 70), (12, 'Aula 26 - 236', 70),
-(13, 'Aula 31 - 236', 70), (14, 'Aula 32 - 236', 70), (15, 'Aula 33 - 236', 70), (16, 'Aula 34 - 236', 70), (17, 'Aula 35 - 236', 70), (18, 'Aula 36 - 236', 70),
+(1, '11 - 236', 70), (2, '12 - 236', 70), (3, '13 - 236', 70), (4, '14 - 236', 70), (5, '15 - 236', 70), (6, '16 - 236', 70),
+(7, '21 - 236', 70), (8, '22 - 236', 70), (9, '23 - 236', 70), (10, '24 - 236', 70), (11, '25 - 236', 70), (12, '26 - 236', 70),
+(13, '31 - 236', 70), (14, '32 - 236', 70), (15, '33 - 236', 70), (16, '34 - 236', 70), (17, '35 - 236', 70), (18, '36 - 236', 70),
 (19, 'Lab 41 - 236', 40), (20, 'Lab 42 - 236', 40), (21, 'Lab 43 - 236', 40), (22, 'Lab 44 - 236', 40), (23, 'Lab 45 - 236', 40), (24, 'Lab 46 - 236', 40);
 
 -- Un "Grupo" (Cohorte) pasa las 4 materias. 

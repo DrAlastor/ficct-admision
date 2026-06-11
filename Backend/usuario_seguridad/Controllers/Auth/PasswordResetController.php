@@ -23,7 +23,7 @@ class PasswordResetController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Modulos/usuario_seguridad/ForgotPassword');
+        return Inertia::render('Modulos/modulo_inscripcion/Autenticacion/ForgotPassword');
     }
 
     /**
@@ -74,7 +74,7 @@ class PasswordResetController extends Controller
      */
     public function showTokenForm(Request $request)
     {
-        return Inertia::render('Modulos/usuario_seguridad/EnterToken', ['email' => $request->query('email')]);
+        return Inertia::render('Modulos/modulo_inscripcion/Autenticacion/EnterToken', ['email' => $request->query('email')]);
     }
 
     /**

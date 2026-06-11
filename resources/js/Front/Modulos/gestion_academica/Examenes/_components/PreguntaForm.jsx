@@ -15,7 +15,7 @@ export default function PreguntaForm({ materias }) {
 
     const submitPregunta = (e) => {
         e.preventDefault();
-        post(route('examenes.preguntas.store'), {
+        post(route('gestion_examenes.preguntas.store'), {
             onSuccess: () => reset('enunciado', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d', 'respuesta_correcta')
         });
     };

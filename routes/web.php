@@ -19,7 +19,7 @@ Route::post('/registro-cup/pago', [PostulanteRegistroController::class, 'iniciar
 Route::get('/registro-cup/exito', [PostulanteRegistroController::class, 'exitoPago'])->name('registro.exito');
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
+    return Inertia::render('Modulos/modulo_inscripcion/PaginaInicio/Index', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
@@ -42,7 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/perfil', [Backend\usuario_seguridad\Controllers\ProfileController::class, 'show'])->name('profile.show');
     
     // Gestión de Usuarios
-    Route::post('/usuarios/{id}/restore', [UsuarioController::class, 'restore'])->name('usuarios.restore');
+    Route::post('/usuarios/{id}/restore', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'restore'])->name('usuarios.restore');
     Route::resource('usuarios', Backend\usuario_seguridad\Controllers\UsuarioController::class);
     
     // Gestión de Roles y Permisos
@@ -76,15 +76,52 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rendir Examenes
     Route::get('/examenes', [\Backend\aula_virtual\Controllers\ExamenController::class, 'index'])->name('examenes.index');
-    Route::get('/examenes/preguntas', [\Backend\aula_virtual\Controllers\ExamenController::class, 'preguntas'])->name('examenes.preguntas');
-    Route::post('/examenes/preguntas/store', [\Backend\aula_virtual\Controllers\ExamenController::class, 'storePregunta'])->name('examenes.preguntas.store');
-    Route::post('/examenes/preguntas/seeder', [\Backend\aula_virtual\Controllers\ExamenController::class, 'seederPreguntas'])->name('examenes.preguntas.seeder');
-    Route::delete('/examenes/preguntas/clear', [\Backend\aula_virtual\Controllers\ExamenController::class, 'clearPreguntas'])->name('examenes.preguntas.clear');
-    Route::delete('/examenes/preguntas/{id}', [\Backend\aula_virtual\Controllers\ExamenController::class, 'destroyPregunta'])->name('examenes.preguntas.destroy');
-    Route::post('/examenes/store', [\Backend\aula_virtual\Controllers\ExamenController::class, 'storeExamen'])->name('examenes.store');
-    
     Route::get('/examenes/{id}/rendir', [\Backend\aula_virtual\Controllers\ExamenController::class, 'rendir'])->name('examenes.rendir');
     Route::post('/examenes/{id}/calificar', [\Backend\aula_virtual\Controllers\ExamenController::class, 'calificar'])->name('examenes.calificar');
+
+    Route::prefix('gestion-examenes')->group(function () {
+        Route::get('/', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'index'])->name('gestion_examenes.index');
+        Route::get('/preguntas', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'preguntas'])->name('gestion_examenes.preguntas');
+        Route::post('/preguntas/store', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'storePregunta'])->name('gestion_examenes.preguntas.store');
+        Route::post('/preguntas/seeder', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'seederPreguntas'])->name('gestion_examenes.preguntas.seeder');
+        Route::delete('/preguntas/clear', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'clearPreguntas'])->name('gestion_examenes.preguntas.clear');
+        Route::delete('/preguntas/{id}', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'destroyPregunta'])->name('gestion_examenes.preguntas.destroy');
+        Route::post('/store', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'storeExamen'])->name('gestion_examenes.store');
+    });
+
+    // Configuración de Cupos
+    Route::get('/configuracion-cupos', [\Backend\gestion_academica\Controllers\CupoController::class, 'index'])->name('cupos.index');
+    Route::post('/configuracion-cupos', [\Backend\gestion_academica\Controllers\CupoController::class, 'update'])->name('cupos.update');
+
+    // Gestión de Grupos
+    Route::get('/grupos', [\Backend\gestion_academica\Controllers\GrupoController::class, 'index'])->name('grupos.index');
+    Route::post('/grupos/generar', [\Backend\gestion_academica\Controllers\GrupoController::class, 'generar'])->name('grupos.generar');
+
+    // Gestión de Horarios
+    Route::get('/horarios', [\Backend\gestion_academica\Controllers\GestionHorarioController::class, 'index'])->name('horarios.admin.index');
+    Route::post('/horarios/generar', [\Backend\gestion_academica\Controllers\GestionHorarioController::class, 'generar'])->name('horarios.admin.generar');
+    
+    // Gestión de Aulas
+    Route::get('/aulas', [\Backend\gestion_academica\Controllers\AulaController::class, 'index'])->name('aulas.admin.index');
+    Route::get('/aulas/disponibles', [\Backend\gestion_academica\Controllers\AulaController::class, 'getAulasDisponibles'])->name('aulas.admin.aulas_disponibles');
+    Route::post('/aulas/asignar', [\Backend\gestion_academica\Controllers\AulaController::class, 'asignarAula'])->name('aulas.admin.asignar_aula');
+    Route::post('/aulas/autogenerar', [\Backend\gestion_academica\Controllers\AulaController::class, 'autogenerar'])->name('aulas.admin.autogenerar');
+
+    // Gestión Académica
+    Route::get('/postulantes', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'index'])->name('postulantes.index');
+    Route::put('/postulantes/{id}', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'update'])->name('postulantes.update');
+
+    // Gestión de Pagos (CU23)
+    Route::get('/pagos', [\Backend\gestion_academica\Controllers\PagoController::class, 'index'])->name('pagos.admin.index');
+    Route::post('/pagos/concepto', [\Backend\gestion_academica\Controllers\PagoController::class, 'guardarConcepto'])->name('pagos.admin.concepto.store');
+    Route::delete('/pagos/concepto/{id}', [\Backend\gestion_academica\Controllers\PagoController::class, 'eliminarConcepto'])->name('pagos.admin.concepto.destroy');
+    Route::post('/pagos/metodo', [\Backend\gestion_academica\Controllers\PagoController::class, 'guardarMetodo'])->name('pagos.admin.metodo.store');
+
+    // Gestión de Carreras (CU24)
+    Route::get('/carreras', [\Backend\gestion_academica\Controllers\CarreraController::class, 'index'])->name('carreras.admin.index');
+    Route::post('/carreras', [\Backend\gestion_academica\Controllers\CarreraController::class, 'store'])->name('carreras.admin.store');
+    Route::put('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'update'])->name('carreras.admin.update');
+    Route::delete('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'destroy'])->name('carreras.admin.destroy');
 });
 
 require __DIR__.'/auth.php';

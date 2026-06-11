@@ -16,7 +16,7 @@ export default function AdminView({ materias, examenes }) {
 
     const submitExamen = (e) => {
         e.preventDefault();
-        post(route('examenes.store'), {
+        post(route('gestion_examenes.store'), {
             onSuccess: () => {
                 reset();
                 setShowForm(false);
@@ -31,7 +31,7 @@ export default function AdminView({ materias, examenes }) {
                     <div>
                         <h3 className="font-black text-gray-800 text-lg mb-1">Banco de Preguntas</h3>
                         <p className="text-xs text-gray-500 mb-4">Gestiona las preguntas de selección múltiple por materia.</p>
-                        <Link href={route('examenes.preguntas')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold flex items-center inline-flex transition-colors">
+                        <Link href={route('gestion_examenes.preguntas')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold flex items-center inline-flex transition-colors">
                             <FiDatabase className="mr-2" /> Gestionar Banco
                         </Link>
                     </div>

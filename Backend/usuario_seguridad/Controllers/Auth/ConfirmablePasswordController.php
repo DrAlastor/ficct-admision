@@ -17,7 +17,7 @@ class ConfirmablePasswordController extends Controller
      */
     public function show(): Response
     {
-        return Inertia::render('Modulos/usuario_seguridad/ConfirmPassword');
+        return Inertia::render('Modulos/modulo_inscripcion/Autenticacion/ConfirmPassword');
     }
 
     /**

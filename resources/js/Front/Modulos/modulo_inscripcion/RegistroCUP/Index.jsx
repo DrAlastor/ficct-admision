@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import FormDatosPersonales from '@/Components/Registro/FormDatosPersonales';
-import FormPreferencias from '@/Components/Registro/FormPreferencias';
-import FormDocumentos from '@/Components/Registro/FormDocumentos';
+import { FaPaypal, FaStripe } from 'react-icons/fa';
+import FormDatosPersonales from './_components/FormDatosPersonales';
+import FormPreferencias from './_components/FormPreferencias';
+import FormDocumentos from './_components/FormDocumentos';
 
 /**
  * Componente público de Registro para nuevos postulantes.
@@ -12,9 +13,13 @@ import FormDocumentos from '@/Components/Registro/FormDocumentos';
  *
  * @returns {JSX.Element}
  */
-export default function RegistroIndex() {
+export default function RegistroIndex({ precio_matricula, metodos_activos = [] }) {
     const { props } = usePage();
     const globalErrors = props.errors || {};
+
+    const [metodoSeleccionado, setMetodoSeleccionado] = useState(
+        metodos_activos.length > 0 ? (metodos_activos[0].nombre.toLowerCase().includes('stripe') ? 'stripe' : 'paypal') : 'stripe'
+    );
 
     const [data, setData] = useState({
         nombres: '',
@@ -31,8 +36,7 @@ export default function RegistroIndex() {
         carrera_opcion2: '',
         turno_sugerido: '',
         tipo_colegio: '',
-        documento_ci: null,
-        documento_bachiller: null,
+        documento_requisitos: null,
     });
 
     const [errores, setErrores] = useState(globalErrors);
@@ -55,6 +59,7 @@ export default function RegistroIndex() {
         Object.keys(data).forEach((key) => {
             formData.append(key, data[key]);
         });
+        formData.append('metodo_pago', metodoSeleccionado);
 
         try {
             const response = await axios.post('/registro-cup/pago', formData, {
@@ -130,20 +135,60 @@ export default function RegistroIndex() {
                         <h3 className="mb-5 border-b border-blue-950/10 pb-3 text-xl font-bold text-[#063f7c]">
                             3. Documentacion Respaldo
                         </h3>
-                        <FormDocumentos handleChange={handleChange} errores={errores} />
+                        <FormDocumentos data={data} handleChange={handleChange} errores={errores} />
                     </section>
 
                     <div className="border-t border-blue-950/10 pt-6">
                         <div className="mb-6 rounded-xl border border-blue-950/10 bg-[#f4f8fc] p-6">
-                            <h4 className="mb-2 text-lg font-bold text-[#063f7c]">
+                            <h4 className="mb-4 text-lg font-bold text-[#063f7c]">
                                 Resumen de Inscripcion
                             </h4>
-                            <div className="flex items-center justify-between gap-4 text-gray-700">
+                            <div className="flex items-center justify-between gap-4 text-gray-700 mb-6">
                                 <span>Matricula Preuniversitaria (CUP)</span>
                                 <span className="rounded-md bg-[#ef172f] px-4 py-2 text-lg font-bold text-white">
-                                    700.00 Bs
+                                    {precio_matricula ? Number(precio_matricula).toFixed(2) : '700.00'} Bs
                                 </span>
                             </div>
+
+                            <h4 className="mb-3 text-md font-bold text-[#063f7c]">
+                                Selecciona un Método de Pago:
+                            </h4>
+                            {metodos_activos.length === 0 ? (
+                                <div className="text-red-500 font-bold p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    No hay métodos de pago configurados. Por favor contacta a soporte.
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {metodos_activos.map(metodo => {
+                                        const isStripe = metodo.nombre.toLowerCase().includes('stripe');
+                                        const val = isStripe ? 'stripe' : 'paypal';
+                                        return (
+                                            <div 
+                                                key={metodo.id}
+                                                onClick={() => setMetodoSeleccionado(val)}
+                                                className={`cursor-pointer rounded-xl border-2 p-4 flex items-center transition-all ${
+                                                    metodoSeleccionado === val 
+                                                        ? 'border-[#063f7c] bg-blue-50/50 shadow-md' 
+                                                        : 'border-transparent bg-white hover:border-gray-200 shadow-sm'
+                                                }`}
+                                            >
+                                                <div className={`p-3 rounded-lg mr-4 ${isStripe ? 'bg-[#635BFF]/10 text-[#635BFF]' : 'bg-[#003087]/10 text-[#003087]'}`}>
+                                                    {isStripe ? <FaStripe size={28} /> : <FaPaypal size={24} />}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-800">{metodo.nombre}</p>
+                                                    <p className="text-xs text-gray-500">Pago seguro y encriptado</p>
+                                                </div>
+                                                {metodoSeleccionado === val && (
+                                                    <div className="ml-auto w-5 h-5 bg-[#063f7c] rounded-full flex items-center justify-center">
+                                                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         <button

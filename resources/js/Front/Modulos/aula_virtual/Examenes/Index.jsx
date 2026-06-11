@@ -3,24 +3,15 @@ import { Head, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
-import AdminView from './_components/AdminView';
-import DocenteView from './_components/DocenteView';
+import ResultadosView from './_components/ResultadosView';
 import PostulanteView from './_components/PostulanteView';
 
-/**
- * Componente principal del submódulo de Exámenes.
- * Funciona como un enrutador interno que muestra una vista u otra (AdminView, DocenteView, PostulanteView)
- * dependiendo del rol del usuario autenticado, manteniendo un mismo SidebarLayout de fondo.
- *
- * @param {Object} props Props enviados desde ExamenController.php
- * @returns {JSX.Element}
- */
-export default function Index({ auth, rol, message, materias = [], examenes = [], grupos = [], notas = [], inscripciones = [] }) {
+export default function Index({ auth, rol, message, examenes = [], grupos = [], notas = [], inscripciones = [] }) {
     const { flash } = usePage().props;
 
     return (
-        <SidebarLayout title="GESTIÓN DE EXÁMENES" subtitle="Configuración y seguimiento de evaluaciones web">
-            <Head title="Exámenes" />
+        <SidebarLayout title="AULA VIRTUAL" subtitle="Rendir Evaluaciones y Ver Resultados">
+            <Head title="Exámenes Aula Virtual" />
 
             <div className="max-w-7xl mx-auto pb-10">
                 {/* Flash Messages */}
@@ -37,13 +28,15 @@ export default function Index({ auth, rol, message, materias = [], examenes = []
                     </div>
                 )}
 
-                {/* Vista según el rol */}
-                {rol === 'admin' && (
-                    <AdminView materias={materias} examenes={examenes} />
+                {message && rol === 'error' && (
+                    <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-xl">
+                        <p className="text-sm font-bold text-red-800">{message}</p>
+                    </div>
                 )}
 
-                {rol === 'docente' && (
-                    <DocenteView grupos={grupos} notas={notas} />
+                {/* Vista según el rol */}
+                {rol === 'admin_docente' && (
+                    <ResultadosView grupos={grupos} notas={notas} />
                 )}
 
                 {rol === 'postulante' && (

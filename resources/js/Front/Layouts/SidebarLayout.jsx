@@ -73,30 +73,33 @@ export default function SidebarLayout({ children, title, subtitle }) {
 
     return (
         <div className="flex h-screen bg-[#F4F6FB] font-sans">
-            {/* Sidebar */}
-            {/* Puedes cambiar el color del panel izquierdo modificando bg-[#0F1458] en la linea de abajo */}
+            {/* Sidebar Premium */}
             <aside
-                className={`bg-[#07074E] text-white flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full overflow-hidden'}`}
+                className={`bg-gradient-to-b from-[#07074E] via-[#0A0F5C] to-[#050533] text-white flex flex-col transition-all duration-300 shadow-[4px_0_24px_rgba(7,7,78,0.15)] z-20 relative overflow-hidden ${sidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full'}`}
             >
-                <div className="w-72 flex flex-col h-full">
+                <div className="w-72 flex flex-col h-full relative z-10">
+                    {/* Decorative glow */}
+                    <div className="absolute top-0 left-0 w-full h-32 bg-blue-500/10 blur-3xl pointer-events-none"></div>
+
                     {/* Logo Area */}
-                    <div className="h-16 flex items-center px-6 bg-[#07074E] border-b border-blue-900/50">
-                        <div className="bg-[#ef172f] rounded p-2 mr-3">
-                            <FiLayout className="text-white font-bold" />
+                    <div className="h-16 flex items-center px-6 border-b border-white/5 backdrop-blur-sm">
+                        <div className="bg-gradient-to-br from-[#ef172f] to-[#c20c20] rounded-xl p-2.5 mr-3 shadow-lg shadow-red-500/20">
+                            <FiLayout className="text-white font-bold" size={18} />
                         </div>
-                        <span className="font-bold text-lg tracking-wider">
-                            FICCT<span className="font-light text-blue-200"> SYSTEM</span>
+                        <span className="font-black text-xl tracking-widest drop-shadow-sm">
+                            FICCT<span className="font-light text-blue-300"> SYSTEM</span>
                         </span>
                     </div>
 
                     {/* Dashboard Menu Item */}
-                    <div className="px-4 py-4">
+                    <div className="px-5 py-5 border-b border-white/5">
                         <Link
                             href={route('dashboard')}
-                            className="flex items-center px-4 py-3 bg-[#24337A] rounded-lg text-white font-semibold transition hover:bg-[#084886] shadow-md"
+                            className="relative overflow-hidden group flex items-center px-4 py-3.5 bg-gradient-to-r from-blue-600/80 to-indigo-600/80 rounded-xl text-white font-bold transition-all hover:shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:-translate-y-0.5 border border-white/10"
                         >
-                            <FiLayout className="mr-3" />
-                            Dashboard
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 mix-blend-overlay"></div>
+                            <FiLayout className="mr-3 text-blue-200 group-hover:text-white transition-colors relative z-10" size={20} />
+                            <span className="tracking-wide relative z-10">Dashboard</span>
                         </Link>
                     </div>
 
@@ -128,7 +131,15 @@ export default function SidebarLayout({ children, title, subtitle }) {
                                             'Consultar Boleta': 'boleta.index',
                                             'Consultar Horario': 'horario.index',
                                             'Consultar Asistencia': 'asistencia.index',
-                                            'Rendir Exámenes': 'examenes.index'
+                                            'Rendir Exámenes': 'examenes.index',
+                                            'Gestionar Postulantes': 'postulantes.index',
+                                            'Gestionar Cupos': 'cupos.index',
+                                            'Gestionar Grupos': 'grupos.index',
+                                            'Gestionar Horarios': 'horarios.admin.index',
+                                            'Gestionar Aulas': 'aulas.admin.index',
+                                            'Gestionar Exámenes': 'gestion_examenes.index',
+                                            'Gestionar Pagos': 'pagos.admin.index',
+                                            'Gestionar Carreras': 'carreras.admin.index'
                                         };
                                         const routeName = routeMap[func.nombre];
                                         const hrefUrl = routeName ? route(routeName) : '#';
@@ -193,20 +204,23 @@ export default function SidebarLayout({ children, title, subtitle }) {
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     {/* Banner Dark */}
                     {title && (
-                        <div className="rounded-2xl p-8 mb-8 shadow-lg flex justify-between items-center bg-[#07074E]">
-                            {/* Puedes cambiar el color del panel de control superior modificando el bg-[#0F1458] en la linea de arriba */}
-                            <div>
-                                <h1 className="text-white text-3xl font-black italic tracking-wide uppercase">
-                                    BIENVENIDO, <span className="text-red-600">{getRoleName(user.rol_id)}</span>
+                        <div className="relative overflow-hidden rounded-3xl p-8 md:p-10 mb-8 shadow-2xl flex flex-col md:flex-row justify-between md:items-center bg-gradient-to-r from-[#07074E] via-[#0A0F5C] to-[#050533]">
+                            {/* Abstract Glow */}
+                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500/20 blur-3xl rounded-full pointer-events-none"></div>
+                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none"></div>
+
+                            <div className="relative z-10 mb-6 md:mb-0">
+                                <h1 className="text-white text-3xl md:text-4xl font-black italic tracking-wide uppercase drop-shadow-md">
+                                    BIENVENIDO, <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-red-600">{getRoleName(user.rol_id)}</span>
                                 </h1>
                                 {subtitle && (
-                                    <p className="text-gray-400 font-medium tracking-widest text-xs mt-2 uppercase">
+                                    <p className="text-blue-200/80 font-bold tracking-[0.2em] text-xs mt-3 uppercase">
                                         {subtitle}
                                     </p>
                                 )}
                             </div>
-                            <div className="hidden md:flex items-center bg-white/10 px-4 py-2 rounded-lg text-white/80 text-sm font-semibold backdrop-blur-sm border border-white/10">
-                                <span>{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</span>
+                            <div className="relative z-10 flex items-center bg-white/10 px-5 py-2.5 rounded-xl text-white font-bold backdrop-blur-md border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.05)] transition-transform hover:scale-105">
+                                <span className="tracking-widest text-sm">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</span>
                             </div>
                         </div>
                     )}
