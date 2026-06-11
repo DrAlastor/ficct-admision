@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\CredencialesPostulanteMail;
-use Backend\modulo_inscripcion\Models\Usuario;
-use Backend\modulo_inscripcion\Models\Perfil;
+use Backend\usuario_seguridad\Models\Usuario;
+use Backend\usuario_seguridad\Models\Perfil;
 use Backend\modulo_inscripcion\Models\Postulante;
 use Backend\modulo_inscripcion\Models\Postulacion;
 use Backend\modulo_inscripcion\Models\Pago;
@@ -63,7 +63,7 @@ class PostulanteRegistroController extends Controller
             'apellido_paterno' => 'required|string|max:100',
             'apellido_materno' => 'nullable|string|max:100',
             'ci' => 'required|string|max:20|unique:perfil,ci',
-            'email' => 'required|email|unique:usuario,correo',
+            'email' => 'required|email|unique:perfil,email',
             'fecha_nacimiento' => 'required|date',
             'nacionalidad' => 'required|string|max:50',
             'sexo' => 'required|in:M,F',
@@ -113,10 +113,312 @@ class PostulanteRegistroController extends Controller
                 return response()->json(['url' => $urlStripe]);
             }
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
+            return response()->json(['errors' => ['general' => $e->getMessage()]], 422);
         }
     }
     
+    public function procesarPagoFicticio(Request $request)
+    {
+        $request->validate([
+            'nombres' => 'required|string|max:100',
+            'apellido_paterno' => 'required|string|max:100',
+            'apellido_materno' => 'nullable|string|max:100',
+            'ci' => 'required|string|max:20|unique:perfil,ci',
+            'email' => 'required|email|unique:perfil,email',
+            'fecha_nacimiento' => 'required|date',
+            'nacionalidad' => 'required|string|max:50',
+            'sexo' => 'required|in:M,F',
+            'direccion' => 'required|string',
+            'telefono' => 'required|string|max:20',
+            'carrera_opcion1' => 'required|integer',
+            'carrera_opcion2' => 'required|integer|different:carrera_opcion1',
+            'turno_sugerido' => 'required|string',
+            'tipo_colegio' => 'required|string|in:Fiscal,Convenio,Privado,CEA / Alternativo',
+            'documento_requisitos' => 'required|file|mimes:pdf|max:10240',
+            'metodo_pago' => 'required|string',
+            'fake_payment_details' => 'required|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Guardar documento
+            $rutaRequisitos = $request->file('documento_requisitos')->store('postulantes-ficct/requisitos', 's3_archivos');
+
+            // 2. Generar Código Secuencial
+            $siguienteId = \Backend\usuario_seguridad\Models\Perfil::max('id') + 1;
+            $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
+
+            // 3. Crear Perfil (sin usuario_id)
+            $perfil = Perfil::create([
+                'usuario_id' => null, // Se asignará cuando se acepte
+                'codigo' => $codigoPostulante,
+                'ci' => $request->ci,
+                'nombres' => $request->nombres,
+                'apellido_paterno' => $request->apellido_paterno,
+                'apellido_materno' => $request->apellido_materno ?? null,
+                'fecha_nacimiento' => $request->fecha_nacimiento,
+                'nacionalidad' => $request->nacionalidad,
+                'sexo' => $request->sexo,
+                'direccion' => $request->direccion,
+                'telefono' => $request->telefono,
+                'email' => $request->email
+            ]);
+
+            // 3.1 Crear Postulante
+            $postulante = Postulante::create([
+                'id' => $perfil->id,
+                'colegio_procedencia' => $request->tipo_colegio ?? null,
+                'ciudad' => null
+            ]);
+
+            // 4. Crear Postulación (Estado: Pendiente)
+            $postulacion = Postulacion::create([
+                'postulante_id' => $postulante->id,
+                'gestion_id' => 1,
+                'fecha' => now()->toDateString(),
+                'hora' => now()->toTimeString(),
+                'estado' => 'Pendiente'
+            ]);
+
+            // 4.1 Preferencias Carrera
+            DB::table('postulacion_carrera')->insert([
+                [
+                    'postulacion_codigo' => $postulacion->codigo,
+                    'carrera_codigo' => $request->carrera_opcion1,
+                    'prioridad' => 1
+                ],
+                [
+                    'postulacion_codigo' => $postulacion->codigo,
+                    'carrera_codigo' => $request->carrera_opcion2,
+                    'prioridad' => 2
+                ]
+            ]);
+
+            // 5. Documento (Pendiente)
+            Documento::create([
+                'postulacion_codigo' => $postulacion->codigo,
+                'tipo_documento' => 'Requisitos Completos CUP',
+                'url_archivo' => $rutaRequisitos,
+                'estado_validacion' => 'Pendiente'
+            ]);
+
+            // 6. Pago Ficticio
+            $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
+            $monto = $concepto ? $concepto->monto : 700.00;
+            $metodoDb = DB::table('metodo_pago_config')->where('nombre', 'like', '%' . $request->metodo_pago . '%')->first();
+            
+            Pago::create([
+                'postulacion_codigo' => $postulacion->codigo,
+                'nro_recibo' => 'REC-FAKE-' . rand(10000, 99999),
+                'monto' => $monto,
+                'metodo_pago' => $request->metodo_pago,
+                'transaccion_id' => 'fake_txn_' . uniqid(),
+                'estado' => 'Completado',
+                'fecha' => now()->toDateString()
+            ]);
+
+            DB::commit();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function iniciarInscripcion(Request $request)
+    {
+        $request->validate([
+            'nombres' => 'required|string|max:100',
+            'apellido_paterno' => 'required|string|max:100',
+            'apellido_materno' => 'nullable|string|max:100',
+            'ci' => 'required|string|max:20',
+            'email' => 'required|email',
+            'fecha_nacimiento' => 'required|date',
+            'nacionalidad' => 'required|string|max:50',
+            'sexo' => 'required|in:M,F',
+            'direccion' => 'required|string',
+            'telefono' => 'required|string|max:20',
+            'carrera_opcion1' => 'required|integer',
+            'carrera_opcion2' => 'required|integer|different:carrera_opcion1',
+            'turno_sugerido' => 'required|string',
+            'tipo_colegio' => 'required|string|in:Fiscal,Convenio,Privado,CEA / Alternativo',
+            'documento_requisitos' => 'required|file|mimes:pdf|max:10240'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Verificación manual de duplicidad y sobreescritura
+            $perfilExistente = \Backend\usuario_seguridad\Models\Perfil::where('ci', $request->ci)->orWhere('email', $request->email)->first();
+            $postulacion = null;
+
+            $rutaRequisitos = $request->file('documento_requisitos')->store('postulantes-ficct/requisitos', 's3_archivos');
+
+            if ($perfilExistente) {
+                // Verificar si ya tiene una postulación pagada/aceptada
+                $postulacionExistente = Postulacion::where('postulante_id', $perfilExistente->id)->latest('codigo')->first();
+                
+                // Si la postulación ya no está Pendiente (ya pagó o fue aceptado), bloqueamos el registro
+                if ($postulacionExistente && $postulacionExistente->estado !== 'Pendiente') {
+                    return response()->json(['errors' => [
+                        'ci' => ['El Carnet de Identidad o Correo ya se encuentran registrados y en proceso de revisión.'],
+                        'email' => ['El Carnet de Identidad o Correo ya se encuentran registrados y en proceso de revisión.']
+                    ]], 422);
+                }
+                
+                // Si existe pero está "Pendiente" (no ha pagado), SOBREESCRIBIMOS
+                $perfilExistente->update([
+                    'nombres' => $request->nombres,
+                    'apellido_paterno' => $request->apellido_paterno,
+                    'apellido_materno' => $request->apellido_materno ?? null,
+                    'fecha_nacimiento' => $request->fecha_nacimiento,
+                    'nacionalidad' => $request->nacionalidad,
+                    'sexo' => $request->sexo,
+                    'direccion' => $request->direccion,
+                    'telefono' => $request->telefono,
+                    // No sobreescribimos 'codigo' ni 'ci' ni 'email' si no es necesario (pero email y ci fueron usados en la búsqueda, asumimos que son iguales. Wait, orWhere means one of them could be different! So we should update both!)
+                    'ci' => $request->ci,
+                    'email' => $request->email,
+                ]);
+
+                $postulante = Postulante::find($perfilExistente->id);
+                if ($postulante) {
+                    $postulante->update(['colegio_procedencia' => $request->tipo_colegio]);
+                } else {
+                    $postulante = Postulante::create([
+                        'id' => $perfilExistente->id,
+                        'colegio_procedencia' => $request->tipo_colegio,
+                        'ciudad' => null
+                    ]);
+                }
+
+                $postulacion = $postulacionExistente;
+                if (!$postulacion) {
+                    $postulacion = Postulacion::create([
+                        'postulante_id' => $postulante->id,
+                        'gestion_id' => 1,
+                        'fecha' => now()->toDateString(),
+                        'hora' => now()->toTimeString(),
+                        'estado' => 'Pendiente'
+                    ]);
+                }
+
+                // Actualizar documento
+                $documento = Documento::where('postulacion_codigo', $postulacion->codigo)->first();
+                if ($documento) {
+                    $documento->update(['url_archivo' => $rutaRequisitos]);
+                } else {
+                    Documento::create([
+                        'postulacion_codigo' => $postulacion->codigo,
+                        'tipo_documento' => 'Requisitos Completos CUP',
+                        'url_archivo' => $rutaRequisitos,
+                        'estado_validacion' => 'Pendiente'
+                    ]);
+                }
+
+                // Actualizar carreras
+                DB::table('postulacion_carrera')->where('postulacion_codigo', $postulacion->codigo)->delete();
+                DB::table('postulacion_carrera')->insert([
+                    ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion1, 'prioridad' => 1],
+                    ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion2, 'prioridad' => 2]
+                ]);
+
+            } else {
+                // FLUJO NORMAL PARA NUEVOS USUARIOS
+                $siguienteId = \Backend\usuario_seguridad\Models\Perfil::max('id') + 1;
+                $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
+
+                $perfilExistente = \Backend\usuario_seguridad\Models\Perfil::create([
+                    'usuario_id' => null, // NO creamos usuario todavía!
+                    'codigo' => $codigoPostulante,
+                    'ci' => $request->ci,
+                    'nombres' => $request->nombres,
+                    'apellido_paterno' => $request->apellido_paterno,
+                    'apellido_materno' => $request->apellido_materno ?? null,
+                    'fecha_nacimiento' => $request->fecha_nacimiento,
+                    'nacionalidad' => $request->nacionalidad,
+                    'sexo' => $request->sexo,
+                    'direccion' => $request->direccion,
+                    'telefono' => $request->telefono,
+                    'email' => $request->email
+                ]);
+
+                $postulante = Postulante::create([
+                    'id' => $perfilExistente->id,
+                    'colegio_procedencia' => $request->tipo_colegio,
+                    'ciudad' => null
+                ]);
+
+                $postulacion = Postulacion::create([
+                    'postulante_id' => $postulante->id,
+                    'gestion_id' => 1,
+                    'fecha' => now()->toDateString(),
+                    'hora' => now()->toTimeString(),
+                    'estado' => 'Pendiente'
+                ]);
+
+                DB::table('postulacion_carrera')->insert([
+                    ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion1, 'prioridad' => 1],
+                    ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion2, 'prioridad' => 2]
+                ]);
+
+                Documento::create([
+                    'postulacion_codigo' => $postulacion->codigo,
+                    'tipo_documento' => 'Requisitos Completos CUP',
+                    'url_archivo' => $rutaRequisitos,
+                    'estado_validacion' => 'Pendiente'
+                ]);
+            }
+
+            DB::commit();
+
+            $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
+            $monto = $concepto ? $concepto->monto : 700.00;
+
+            return response()->json([
+                'success' => true,
+                'postulacion_codigo' => $postulacion->codigo,
+                'monto' => $monto
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function consultarRegistro(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+        
+        $perfil = Perfil::where('email', $request->email)->first();
+        if (!$perfil) {
+            return response()->json(['status' => 'No encontrado']);
+        }
+        
+        $postulante = Postulante::find($perfil->id);
+        $postulacion = Postulacion::where('postulante_id', $postulante->id)->orderBy('codigo', 'desc')->first();
+        
+        if (!$postulacion) {
+            return response()->json(['status' => 'No encontrado']);
+        }
+
+        if ($postulacion->estado === 'Pendiente') {
+            return response()->json(['status' => 'Pendiente']);
+        }
+
+        if ($postulacion->estado === 'Habilitado CUP' || $postulacion->estado === 'Aceptado') {
+            // Usuario ya debe estar creado
+            return response()->json([
+                'status' => 'Aceptado',
+                'codigo' => $perfil->codigo,
+                'password' => $perfil->ci
+            ]);
+        }
+        
+        return response()->json(['status' => $postulacion->estado]);
+    }
     /**
      * Callback de confirmación tras un pago exitoso en Stripe (Paso 2):
      * 1. Verifica la validez de la sesión con la API de Stripe.

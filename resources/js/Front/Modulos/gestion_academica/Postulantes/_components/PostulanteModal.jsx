@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
-import { FiX, FiSave, FiUser } from 'react-icons/fi';
+import { useForm, router } from '@inertiajs/react';
+import { FiX, FiSave, FiUser, FiCalendar, FiMapPin, FiMail, FiPhone, FiCheckCircle } from 'react-icons/fi';
 
 export default function PostulanteModal({ isOpen, onClose, postulante }) {
     const { data, setData, put, processing, errors, reset, clearErrors } = useForm({
@@ -43,11 +43,19 @@ export default function PostulanteModal({ isOpen, onClose, postulante }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('postulantes.update', postulante.perfil_id), {
+        put(`/postulantes/${postulante.perfil_id}`, {
             onSuccess: () => {
                 onClose();
             }
         });
+    };
+
+    const handleAceptar = () => {
+        if (confirm("¿Estás seguro de que quieres aceptar a este postulante? Se generarán sus credenciales y se enviarán por correo.")) {
+            router.post(`/postulantes/${postulante.perfil_id}/aceptar`, {}, {
+                onSuccess: () => onClose()
+            });
+        }
     };
 
     if (!isOpen) return null;
@@ -270,6 +278,16 @@ export default function PostulanteModal({ isOpen, onClose, postulante }) {
 
                         {/* Footer / Botones */}
                         <div className="pt-6 mt-6 border-t border-gray-100 flex justify-end gap-3">
+                            {postulante?.estado === 'Pendiente' && (
+                                <button
+                                    type="button"
+                                    onClick={handleAceptar}
+                                    className="px-6 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all flex items-center justify-center disabled:opacity-70 mr-auto"
+                                >
+                                    <FiCheckCircle className="mr-2" size={18} />
+                                    Aceptar Postulante
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={onClose}

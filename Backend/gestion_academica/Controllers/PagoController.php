@@ -22,12 +22,11 @@ class PagoController extends Controller
             ->join('postulacion', 'pago.postulacion_codigo', '=', 'postulacion.codigo')
             ->join('postulante', 'postulacion.postulante_id', '=', 'postulante.id')
             ->join('perfil', 'postulante.id', '=', 'perfil.id')
-            ->leftJoin('metodo_pago_config', 'pago.metodo_pago_id', '=', 'metodo_pago_config.id')
             ->select(
                 'pago.id',
                 'pago.nro_recibo',
                 'pago.monto',
-                'metodo_pago_config.nombre as metodo_pago',
+                'pago.metodo_pago',
                 'pago.transaccion_id',
                 'pago.estado',
                 'pago.fecha',

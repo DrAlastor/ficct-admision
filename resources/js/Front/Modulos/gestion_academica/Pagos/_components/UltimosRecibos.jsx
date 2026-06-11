@@ -69,9 +69,9 @@ export default function UltimosRecibos({ historial }) {
                                     </span>
                                 </td>
                                 <td className="py-4 px-6 text-right">
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${pago.estado.toLowerCase() === 'completado' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                        {pago.estado.toLowerCase() === 'completado' && <FiCheckCircle className="mr-1.5" />}
-                                        {pago.estado}
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${(pago.estado || '').toLowerCase() === 'completado' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                        {(pago.estado || '').toLowerCase() === 'completado' && <FiCheckCircle className="mr-1.5" />}
+                                        {pago.estado || 'Pendiente'}
                                     </span>
                                 </td>
                             </tr>

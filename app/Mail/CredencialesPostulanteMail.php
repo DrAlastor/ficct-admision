@@ -14,12 +14,18 @@ class CredencialesPostulanteMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $nombre;
+    public $codigo;
+    public $password;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($nombre, $codigo, $password)
     {
-        //
+        $this->nombre = $nombre;
+        $this->codigo = $codigo;
+        $this->password = $password;
     }
 
     /**
@@ -28,7 +34,7 @@ class CredencialesPostulanteMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Credenciales Postulante Mail',
+            subject: '¡Bienvenido a la FICCT! Tus credenciales de acceso',
         );
     }
 
