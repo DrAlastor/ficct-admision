@@ -5,6 +5,13 @@ namespace Backend\gestion_academica\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CredencialesPostulanteMail;
+use Backend\usuario_seguridad\Models\Usuario;
+use Backend\usuario_seguridad\Models\Perfil;
+use Backend\modulo_inscripcion\Models\Postulacion;
+use Backend\modulo_inscripcion\Models\Documento;
 use Inertia\Inertia;
 
 class PostulanteController extends Controller
@@ -108,6 +115,57 @@ class PostulanteController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'No se pudo actualizar los datos. ' . $e->getMessage()]);
+        }
+    }
+
+    public function aceptar($id)
+    {
+        DB::beginTransaction();
+        try {
+            $perfil = Perfil::findOrFail($id);
+            $postulacion = Postulacion::where('postulante_id', $id)->orderBy('codigo', 'desc')->first();
+
+            if (!$postulacion || $postulacion->estado !== 'Pendiente') {
+                throw new \Exception('La postulación no está pendiente o no existe.');
+            }
+
+            // Crear Usuario
+            $usuario = Usuario::create([
+                'codigo_inicio' => $perfil->codigo,
+                'password' => Hash::make($perfil->ci),
+                'estado' => 'Activo',
+                'rol_id' => 3 
+            ]);
+
+            // Vincular Usuario al Perfil
+            $perfil->usuario_id = $usuario->id;
+            $perfil->save();
+
+            // Cambiar estado
+            $postulacion->estado = 'Habilitado CUP';
+            $postulacion->save();
+
+            Documento::where('postulacion_codigo', $postulacion->codigo)->update([
+                'estado_validacion' => 'Subido'
+            ]);
+
+            DB::commit();
+
+            // Enviar Correo
+            try {
+                Mail::to($perfil->email)->send(new CredencialesPostulanteMail(
+                    $perfil->nombres,
+                    $perfil->codigo, 
+                    $perfil->ci
+                ));
+            } catch (\Exception $e) {
+                // Log o ignorar fallo de correo para no revertir la BD
+            }
+
+            return redirect()->back()->with('success', 'Postulante aceptado y credenciales enviadas.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'Error al aceptar: ' . $e->getMessage()]);
         }
     }
 }

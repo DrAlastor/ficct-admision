@@ -17,7 +17,7 @@ class CarreraController extends Controller
             ->orderBy('carrera.codigo')
             ->get();
             
-        return Inertia::render('Front/Modulos/gestion_academica/Carreras/Index', [
+        return Inertia::render('Modulos/gestion_academica/Carreras/Index', [
             'carreras' => $carreras
         ]);
     }

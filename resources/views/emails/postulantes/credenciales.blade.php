@@ -1,17 +1,25 @@
 <x-mail::message>
-# ¡Bienvenido al CUP de la FICCT, {{ $nombres }}!
+# ¡Felicidades {{ $nombre }}! Tu inscripción ha sido aceptada.
 
-Tu registro y pago se han procesado correctamente. Ya puedes acceder al sistema del Aula Virtual.
+Tu registro como postulante en la **Facultad de Ingeniería en Ciencias de la Computación y Telecomunicaciones (FICCT)** ha sido validado exitosamente.
 
-Tal como definimos en el proceso de admisión, el sistema ha creado tu acceso. Tus credenciales oficiales son:
+A partir de este momento, puedes ingresar al sistema para consultar el estado de tu postulación, ver tus horarios y revisar tus boletas.
 
-- **Usuario (Código):** {{ $codigo }}
-- **Contraseña:** {{ $ci }}
+Tus credenciales de acceso son:
 
-<x-mail::button :url="route('login')">
-Iniciar Sesión
+<x-mail::panel>
+**Usuario:** {{ $codigo }}
+**Contraseña:** {{ $password }}
+</x-mail::panel>
+
+<x-mail::button :url="url('/login')">
+Ingresar al Sistema
 </x-mail::button>
 
-Gracias,<br>
-La Administración de la FICCT
+Te recomendamos cambiar tu contraseña una vez hayas ingresado por primera vez por motivos de seguridad.
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Saludos cordiales,<br>
+**Administración FICCT**
 </x-mail::message>

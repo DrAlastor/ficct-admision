@@ -15,8 +15,20 @@ Route::post('/registro-cup', [PostulanteRegistroController::class, 'store'])->na
 // Procesar formulario e iniciar pago
 Route::post('/registro-cup/pago', [PostulanteRegistroController::class, 'iniciarPago'])->name('registro.iniciarPago');
 
-// URL de éxito a la que vuelve Stripe
+// URL de éxito a la que vuelve Stripe (Flujo original)
 Route::get('/registro-cup/exito', [PostulanteRegistroController::class, 'exitoPago'])->name('registro.exito');
+
+// RUTAS DE PAGOS (Stripe & PayPal)
+Route::post('/api/create-payment-intent', [PaymentController::class, 'createPaymentIntent']);
+Route::post('/api/paypal/create-order', [PaymentController::class, 'createPayPalOrder']);
+Route::post('/api/paypal/capture-order', [PaymentController::class, 'capturePayPalOrder']);
+Route::post('/stripe/webhook', [PaymentController::class, 'stripeWebhook'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
+// Nuevo flujo: Pago ficticio, iniciar inscripción y consulta
+Route::post('/registro-cup/iniciar-inscripcion', [PostulanteRegistroController::class, 'iniciarInscripcion']);
+Route::post('/registro-cup/pago-ficticio', [PostulanteRegistroController::class, 'procesarPagoFicticio'])->name('registro.pago.ficticio');
+Route::post('/registro-cup/consultar', [PostulanteRegistroController::class, 'consultarRegistro'])->name('registro.consultar');
 
 Route::get('/', function () {
     return Inertia::render('Modulos/modulo_inscripcion/PaginaInicio/Index', [
@@ -108,6 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/aulas/autogenerar', [\Backend\gestion_academica\Controllers\AulaController::class, 'autogenerar'])->name('aulas.admin.autogenerar');
 
     // Gestión Académica
+    Route::post('/postulantes/{id}/aceptar', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'aceptar'])->name('postulantes.aceptar');
     Route::get('/postulantes', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'index'])->name('postulantes.index');
     Route::put('/postulantes/{id}', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'update'])->name('postulantes.update');
 

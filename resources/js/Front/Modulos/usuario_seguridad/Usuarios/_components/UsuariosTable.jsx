@@ -73,7 +73,11 @@ export default function UsuariosTable({ usuarios, openModal, handleDelete }) {
                                                 <span className="bg-[#07074E] text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
                                                     {usuario.rol?.nombre || 'SIN ROL'}
                                                 </span>
-                                                {usuario.estado === 'Inactivo' && (
+                                                {usuario.estado === 'Activo' ? (
+                                                    <span className="ml-2 bg-green-100 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                                        Conectado
+                                                    </span>
+                                                ) : (
                                                     <span className="ml-2 bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
                                                         Inactivo
                                                     </span>
