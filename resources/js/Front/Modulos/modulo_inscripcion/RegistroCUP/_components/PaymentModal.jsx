@@ -148,6 +148,23 @@ export default function PaymentModal({ show, onClose, monto, metodoPago, postula
                             />
                         </PayPalScriptProvider>
                     )}
+
+                    {/* BOTÓN DE BYPASS PARA PRUEBAS LOCALES */}
+                    <div className="mt-6 border-t border-gray-100 pt-6">
+                        <p className="text-center text-xs text-gray-400 mb-3">Opciones de Desarrollador</p>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                axios.post('/registro-cup/pago-ficticio', { postulacion_codigo: postulacionCodigo })
+                                    .then(() => onPaymentSuccess())
+                                    .catch(err => alert("Error en pago ficticio: " + (err.response?.data?.error || err.message)));
+                            }}
+                            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm flex items-center justify-center"
+                        >
+                            <FiCheckCircle className="mr-2" size={18} />
+                            SIMULAR PAGO EXITOSO (BYPASS)
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
