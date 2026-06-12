@@ -133,16 +133,17 @@ class PostulanteController extends Controller
             $usuario = Usuario::create([
                 'codigo_inicio' => $perfil->codigo,
                 'password' => Hash::make($perfil->ci),
-                'estado' => 'Activo',
+                'estado' => 'Inactivo',
                 'rol_id' => 3 
             ]);
 
-            // Vincular Usuario al Perfil
+            // Vincular Usuario al Perfil y asignar cargo
             $perfil->usuario_id = $usuario->id;
+            $perfil->cargo = 'POSTULANTE';
             $perfil->save();
 
             // Cambiar estado
-            $postulacion->estado = 'Habilitado CUP';
+            $postulacion->estado = 'Habilitado';
             $postulacion->save();
 
             Documento::where('postulacion_codigo', $postulacion->codigo)->update([
@@ -158,8 +159,9 @@ class PostulanteController extends Controller
                     $perfil->codigo, 
                     $perfil->ci
                 ));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Log o ignorar fallo de correo para no revertir la BD
+                \Log::warning("Error enviando email a {$perfil->email}: " . $e->getMessage());
             }
 
             return redirect()->back()->with('success', 'Postulante aceptado y credenciales enviadas.');

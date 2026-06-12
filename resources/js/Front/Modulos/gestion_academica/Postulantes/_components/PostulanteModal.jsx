@@ -50,12 +50,19 @@ export default function PostulanteModal({ isOpen, onClose, postulante }) {
         });
     };
 
+    const [showConfirm, setShowConfirm] = React.useState(false);
+
     const handleAceptar = () => {
-        if (confirm("¿Estás seguro de que quieres aceptar a este postulante? Se generarán sus credenciales y se enviarán por correo.")) {
-            router.post(`/postulantes/${postulante.perfil_id}/aceptar`, {}, {
-                onSuccess: () => onClose()
-            });
-        }
+        setShowConfirm(true);
+    };
+
+    const confirmAceptar = () => {
+        router.post(`/postulantes/${postulante.perfil_id}/aceptar`, {}, {
+            onSuccess: () => {
+                setShowConfirm(false);
+                onClose();
+            }
+        });
     };
 
     if (!isOpen) return null;
@@ -314,6 +321,37 @@ export default function PostulanteModal({ isOpen, onClose, postulante }) {
                     </form>
                 </div>
             </div>
+
+            {/* Custom Confirm Modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in duration-200">
+                        <div className="p-6 text-center">
+                            <div className="mx-auto w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4">
+                                <FiCheckCircle size={32} />
+                            </div>
+                            <h3 className="text-xl font-black text-gray-800 mb-2">Aceptar Postulante</h3>
+                            <p className="text-gray-500 text-sm mb-6">
+                                ¿Estás seguro de que quieres aceptar a este postulante? Se generarán sus credenciales y se enviarán por correo. Su estado cambiará a "Habilitado".
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowConfirm(false)}
+                                    className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={confirmAceptar}
+                                    className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all"
+                                >
+                                    Sí, Aceptar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
