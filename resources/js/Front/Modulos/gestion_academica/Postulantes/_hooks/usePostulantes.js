@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 export default function usePostulantes(postulantes) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCarrera, setSelectedCarrera] = useState('');
+    const [activeTab, setActiveTab] = useState('Pendientes');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedPostulante, setSelectedPostulante] = useState(null);
 
@@ -32,15 +33,21 @@ export default function usePostulantes(postulantes) {
                 p.carrera_opcion_1 === selectedCarrera || 
                 p.carrera_opcion_2 === selectedCarrera;
 
-            return matchesSearch && matchesCarrera;
+            const matchesTab = activeTab === 'Pendientes' 
+                ? (p.estado === 'Pendiente' || p.estado === null)
+                : (p.estado === 'Habilitado CUP' || p.estado === 'Habilitado' || p.estado === 'Aceptado');
+
+            return matchesSearch && matchesCarrera && matchesTab;
         });
-    }, [postulantes, searchQuery, selectedCarrera]);
+    }, [postulantes, searchQuery, selectedCarrera, activeTab]);
 
     return {
         searchQuery,
         handleSearch,
         selectedCarrera,
         handleCarreraChange,
+        activeTab,
+        setActiveTab,
         filteredPostulantes,
         isModalOpen,
         setIsModalOpen,

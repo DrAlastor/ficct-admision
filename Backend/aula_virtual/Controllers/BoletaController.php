@@ -145,7 +145,7 @@ class BoletaController extends Controller
         if ($inscripciones->isEmpty()) {
             return Inertia::render('Modulos/aula_virtual/Boleta/Index', [
                 'status' => 'processing',
-                'message' => $docente ? 'No tienes carga horaria asignada aún.' : 'Boleta en procesamiento.',
+                'message' => $user->rol_id == 2 ? 'No tienes carga horaria asignada aún.' : 'Boleta en procesamiento.',
                 'can_edit' => $can_edit,
                 'config' => $config,
                 'boleta' => null

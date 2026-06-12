@@ -12,6 +12,8 @@ export default function Index({ auth, postulantes, gestionActual, carreras }) {
         handleSearch,
         selectedCarrera,
         handleCarreraChange,
+        activeTab,
+        setActiveTab,
         filteredPostulantes,
         isModalOpen,
         setIsModalOpen,
@@ -60,6 +62,30 @@ export default function Index({ auth, postulantes, gestionActual, carreras }) {
                         ))}
                     </select>
                 </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-100 mb-6 inline-flex">
+                <button
+                    onClick={() => setActiveTab('Pendientes')}
+                    className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                        activeTab === 'Pendientes' 
+                        ? 'bg-[#07074E] text-white shadow-md' 
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                    Pendientes
+                </button>
+                <button
+                    onClick={() => setActiveTab('Habilitados')}
+                    className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                        activeTab === 'Habilitados' 
+                        ? 'bg-green-600 text-white shadow-md' 
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                    Habilitados / Aceptados
+                </button>
             </div>
 
             {/* Table */}

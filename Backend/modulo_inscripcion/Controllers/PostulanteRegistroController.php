@@ -270,7 +270,8 @@ class PostulanteRegistroController extends Controller
                     'sexo' => $request->sexo,
                     'direccion' => $request->direccion,
                     'telefono' => $request->telefono,
-                    'email' => $request->email
+                    'email' => $request->email,
+                    'cargo' => 'POSTULANTE'
                 ]);
 
                 $postulante = Postulante::create([
