@@ -208,7 +208,10 @@ export default function PaymentModal({ show, onClose, monto, metodoPago, postula
                         <button
                             type="button"
                             onClick={() => {
-                                axios.post('/registro-cup/pago-ficticio', { postulacion_codigo: postulacionCodigo })
+                                axios.post('/registro-cup/pago-ficticio', { 
+                                    postulacion_codigo: postulacionCodigo,
+                                    metodo_pago: metodoPago 
+                                })
                                     .then(() => onPaymentSuccess())
                                     .catch(err => alert("Error en pago ficticio: " + (err.response?.data?.error || err.message)));
                             }}

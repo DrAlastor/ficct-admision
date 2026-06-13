@@ -241,6 +241,8 @@ class PaymentController extends Controller
                 'fecha' => now()->toDateString()
             ]);
 
+            // No finalizamos la inscripción aquí; el administrador la aceptará manualmente.
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();

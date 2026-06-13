@@ -128,7 +128,8 @@ class PostulanteRegistroController extends Controller
     public function procesarPagoFicticio(Request $request)
     {
         $request->validate([
-            'postulacion_codigo' => 'required|integer'
+            'postulacion_codigo' => 'required|integer',
+            'metodo_pago' => 'nullable|string' // Aceptamos el metodo de pago (Stripe o Paypal) del frontend
         ]);
 
         try {
@@ -136,6 +137,9 @@ class PostulanteRegistroController extends Controller
 
             $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
             $monto = $concepto ? $concepto->monto : 700.00;
+
+            // Nombre del método de pago para el historial
+            $nombreMetodo = $request->metodo_pago ? $request->metodo_pago . ' (Bypass)' : 'Bypass Ficticio';
 
             // Verificar si ya existe un pago
             $existe = \Backend\modulo_inscripcion\Models\Pago::where('postulacion_codigo', $request->postulacion_codigo)->exists();
@@ -145,11 +149,14 @@ class PostulanteRegistroController extends Controller
                     'postulacion_codigo' => $request->postulacion_codigo,
                     'nro_recibo' => 'REC-FIC-' . rand(10000, 99999),
                     'monto' => $monto,
-                    'metodo_pago' => 'Bypass Ficticio',
+                    'metodo_pago' => $nombreMetodo,
                     'transaccion_id' => 'bypass_' . uniqid(),
                     'estado' => 'Completado',
                     'fecha' => now()->toDateString()
                 ]);
+
+                // No llamamos a finalizarInscripcionPagada aquí, la postulación queda en Pendiente
+                // para que el administrador la acepte manualmente.
             }
 
             DB::commit();
