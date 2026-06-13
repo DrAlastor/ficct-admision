@@ -5,11 +5,19 @@ namespace Backend\consulta_reporte\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * CU30 - Chat de voz con IA
+ */
 class GeminiAIService
 {
     protected $apiKey;
     protected $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
+    /**
+     * Ejecuta la acción o procedimiento '__construct' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function __construct()
     {
         $this->apiKey = env('GEMINI_API_KEY');
@@ -32,7 +40,7 @@ NO INCLUYAS markdown como ```sql o ```, NINGÚN TEXTO EXTRA, SOLO EL SQL.
 
 ### ESQUEMA DE BASE DE DATOS RELEVANTE:
 
-Tabla: gestion (id SERIAL, semestre INT, aÑo INT)
+Tabla: gestion (id SERIAL, semestre INT, anio INT)
 Tabla: perfil (id SERIAL, ci VARCHAR, nombres VARCHAR, apellido_paterno VARCHAR, apellido_materno VARCHAR, sexo CHAR, nacionalidad VARCHAR)
 Tabla: postulante (id INT REFERENCES perfil(id), colegio_procedencia VARCHAR, ciudad VARCHAR)
 Tabla: postulacion (codigo VARCHAR, gestion_id INT, postulante_id INT, estado VARCHAR)

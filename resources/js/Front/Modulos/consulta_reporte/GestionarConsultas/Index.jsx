@@ -45,17 +45,17 @@ export default function Index() {
     };
 
     return (
-        <SidebarLayout title="CONSULTAS Y REPORTES" subtitle="Gestionar Consultas e IA — CU28">
+        <SidebarLayout title="CONSULTAS Y REPORTES" subtitle="Gestionar Consultas e IA">
             <Head title="Gestionar Consultas" />
 
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
                 {/* Panel Izquierdo: Controles */}
                 <div className="xl:col-span-5 flex flex-col h-full">
                     <SmartSearch onSearch={handleSearchIA} loading={loading} />
-                    <QuickQueries 
-                        gestiones={gestiones} 
-                        onSelectQuery={handleQuickQuery} 
-                        loading={loading} 
+                    <QuickQueries
+                        gestiones={gestiones}
+                        onSelectQuery={handleQuickQuery}
+                        loading={loading}
                     />
                 </div>
 

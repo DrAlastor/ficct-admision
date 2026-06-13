@@ -14,6 +14,11 @@ class Rol extends Model
         'descripcion'
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'funciones' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function funciones()
     {
         return $this->belongsToMany(Funcion::class, 'rol_funcion', 'rol_id', 'funcion_id')

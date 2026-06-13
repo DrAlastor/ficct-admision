@@ -18,6 +18,11 @@ class Evaluacion extends Model
         'estado_materia'
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'inscripcion' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function inscripcion()
     {
         return $this->belongsTo(\Backend\modulo_inscripcion\Models\InscripcionCup::class, 'inscripcion_id');

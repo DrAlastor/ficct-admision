@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * CU05 - Consultar Perfil
+ */
 class ProfileController extends Controller
 {
     /**

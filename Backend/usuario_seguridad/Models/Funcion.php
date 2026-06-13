@@ -16,11 +16,21 @@ class Funcion extends Model
         'descripcion'
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'modulo' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function modulo()
     {
         return $this->belongsTo(Modulo::class, 'modulo_id');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'roles' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function roles()
     {
         return $this->belongsToMany(Rol::class, 'rol_funcion', 'funcion_id', 'rol_id')

@@ -7,8 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU23 - Gestionar Pagos
+ */
 class PagoController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index()
     {
         // Obtener conceptos de pago
@@ -45,6 +53,11 @@ class PagoController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'guardarConcepto' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function guardarConcepto(Request $request)
     {
         $request->validate([
@@ -71,12 +84,22 @@ class PagoController extends Controller
         return redirect()->back()->with('success', 'Concepto de pago guardado correctamente.');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'eliminarConcepto' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function eliminarConcepto($id)
     {
         DB::table('concepto_pago')->where('id', $id)->delete();
         return redirect()->back()->with('success', 'Concepto eliminado correctamente.');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'guardarMetodo' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function guardarMetodo(Request $request)
     {
         $request->validate([

@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU27 - Gestionar Estadísticas
+ */
 class EstadisticaController extends Controller
 {
     /**
@@ -19,14 +22,14 @@ class EstadisticaController extends Controller
         // 1. LISTA DE GESTIONES (para los filtros)
         // ════════════════════════════════════════════════════
         $gestiones = DB::table('gestion')
-            ->orderBy('aÑo', 'desc')
+            ->orderBy('anio', 'desc')
             ->orderBy('semestre', 'desc')
             ->get()
             ->map(fn($g) => [
                 'id' => $g->id,
-                'label' => "{$g->semestre}-{$g->aÑo}",
+                'label' => "{$g->semestre}-{$g->anio}",
                 'semestre' => $g->semestre,
-                'anio' => $g->aÑo,
+                'anio' => $g->anio,
             ]);
 
         // ════════════════════════════════════════════════════
@@ -64,7 +67,7 @@ class EstadisticaController extends Controller
         
         if (empty($gestionIds)) {
             // Si no se pasa ninguna, usar la más reciente
-            $ultima = DB::table('gestion')->orderBy('aÑo', 'desc')->orderBy('semestre', 'desc')->first();
+            $ultima = DB::table('gestion')->orderBy('anio', 'desc')->orderBy('semestre', 'desc')->first();
             $gestionIds = $ultima ? [$ultima->id] : [];
         }
 
@@ -74,7 +77,7 @@ class EstadisticaController extends Controller
             $gestion = DB::table('gestion')->where('id', $gestionId)->first();
             if (!$gestion) continue;
 
-            $label = "{$gestion->semestre}-{$gestion->aÑo}";
+            $label = "{$gestion->semestre}-{$gestion->anio}";
 
             // ─────────────────────────────────────────────
             // A. POSTULANTES

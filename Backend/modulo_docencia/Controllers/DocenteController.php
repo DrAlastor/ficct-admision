@@ -11,8 +11,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
+/**
+ * CU25 - Gestionar Docente
+ */
 class DocenteController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -51,6 +59,11 @@ class DocenteController extends Controller
         ]);
     }
 
+    /**
+     * Valida y almacena un nuevo registro en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function store(Request $request)
     {
         // Validar requerimientos
@@ -132,6 +145,11 @@ class DocenteController extends Controller
         }
     }
 
+    /**
+     * Valida y actualiza los datos de un registro existente en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function update(Request $request, $id)
     {
         $docente = Docente::findOrFail($id);
@@ -195,6 +213,11 @@ class DocenteController extends Controller
         }
     }
 
+    /**
+     * Elimina (física o lógicamente) un registro de la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function destroy($id)
     {
         $docente = Docente::findOrFail($id);

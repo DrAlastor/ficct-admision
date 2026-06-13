@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Backend\consulta_reporte\Services\GeminiAIService;
 
+/**
+ * CU28 - Gestionar Consultas
+ */
 class ConsultaController extends Controller
 {
     /**
@@ -16,12 +19,12 @@ class ConsultaController extends Controller
     public function index()
     {
         $gestiones = DB::table('gestion')
-            ->orderBy('aÑo', 'desc')
+            ->orderBy('anio', 'desc')
             ->orderBy('semestre', 'desc')
             ->get()
             ->map(fn($g) => [
                 'id' => $g->id,
-                'label' => "{$g->semestre}-{$g->aÑo}",
+                'label' => "{$g->semestre}-{$g->anio}",
             ]);
 
         $carreras = DB::table('carrera')->get();

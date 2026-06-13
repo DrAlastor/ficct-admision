@@ -54,7 +54,7 @@ export default function Index() {
             });
 
             if (!response.ok) throw new Error('Error al obtener datos');
-            
+
             const result = await response.json();
             setData(result);
         } catch (error) {
@@ -90,22 +90,22 @@ export default function Index() {
     const exportToPDF = () => {
         const element = document.getElementById('dashboard-content');
         if (!element) return;
-        
+
         const opt = {
-            margin:       0.2,
-            filename:     'dashboard_estadistico.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+            margin: 0.2,
+            filename: 'dashboard_estadistico.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
         };
-        
+
         import('html2pdf.js').then(html2pdf => {
             html2pdf.default().set(opt).from(element).save();
         });
     };
 
     return (
-        <SidebarLayout title="CONSULTAS Y REPORTES" subtitle="Dashboard Estadístico — CU27">
+        <SidebarLayout title="CONSULTAS Y REPORTES" subtitle="Dashboard Estadístico">
             <Head title="Gestionar Estadísticas" />
 
             <div className="flex justify-between items-center mb-6">
@@ -129,7 +129,7 @@ export default function Index() {
                         onClick={exportToPDF}
                         className="ml-4 h-[72px] bg-gradient-to-r from-red-500 to-rose-600 text-white px-6 rounded-2xl font-bold shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
                         <span className="text-[10px] uppercase tracking-wider">Exportar PDF</span>
                     </button>
                 )}
@@ -208,11 +208,10 @@ export default function Index() {
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex items-center gap-2 px-5 py-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${
-                                            activeTab === tab.id
-                                                ? 'border-[#07074E] text-[#07074E] bg-indigo-50/50'
-                                                : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                                        }`}
+                                        className={`flex items-center gap-2 px-5 py-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${activeTab === tab.id
+                                            ? 'border-[#07074E] text-[#07074E] bg-indigo-50/50'
+                                            : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                            }`}
                                     >
                                         <span className="text-base">{tab.emoji}</span>
                                         {tab.label}

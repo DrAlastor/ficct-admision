@@ -7,8 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU24 - Gestionar Carreras
+ */
 class CarreraController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index()
     {
         $carreras = DB::table('carrera')
@@ -22,6 +30,11 @@ class CarreraController extends Controller
         ]);
     }
 
+    /**
+     * Valida y almacena un nuevo registro en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -40,6 +53,11 @@ class CarreraController extends Controller
         return redirect()->back()->with('success', 'Carrera creada exitosamente.');
     }
 
+    /**
+     * Valida y actualiza los datos de un registro existente en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function update(Request $request, $codigo)
     {
         $validated = $request->validate([
@@ -57,6 +75,11 @@ class CarreraController extends Controller
         return redirect()->back()->with('success', 'Carrera actualizada exitosamente.');
     }
 
+    /**
+     * Elimina (física o lógicamente) un registro de la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function destroy($codigo)
     {
         // Verificación de integridad referencial

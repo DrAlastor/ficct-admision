@@ -144,6 +144,7 @@ export default function SidebarLayout({ children, title, subtitle }) {
                                             'Gestionar Carga Horaria': 'carga_horaria.index',
                                             'Gestionar Estadísticas': 'estadisticas.index',
                                             'Gestionar Consultas': 'consultas.index',
+                                            'Reporte de Pagos': 'reporte_pagos.index',
                                         };
                                         const routeName = routeMap[func.nombre];
                                         const hrefUrl = routeName ? route(routeName) : '#';

@@ -10,6 +10,9 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Response;
 
+/**
+ * CU16 - Rendir Exámenes
+ */
 class ExamenController extends Controller
 {
     /**
@@ -305,6 +308,11 @@ class ExamenController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'rendir' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function rendir($id, Request $request)
     {
         $user = $request->user();
@@ -388,6 +396,11 @@ class ExamenController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'calificar' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function calificar($id, Request $request)
     {
         $user = $request->user();

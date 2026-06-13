@@ -7,13 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
+/**
+ * CU00 - Panel Principal
+ */
 class DashboardController extends Controller
 {
     /**
      * Muestra el panel principal (Dashboard) correspondiente al rol del usuario.
      * - Administrador (1): Ve estadísticas globales (cantidad de usuarios, activos, inactivos) y bitácora reciente.
      * - Docente (2): Ve un resumen de las materias y grupos que dicta (incluyendo cupos y horarios).
-     * - Postulante (3): Ve su grupo asignado y su propio horario de clases.
+     * - Postulante (4): Ve su grupo asignado y su propio horario de clases.
      *
      * @return \Inertia\Response
      */
@@ -24,18 +27,32 @@ class DashboardController extends Controller
         // Determinar a qué dashboard redirigir según el rol_id
         // 1: Admin
         // 2: Docente
-        // 3: Postulante / Estudiante
+        // 3: Coordinador
+        // 4: Postulante / Estudiante
         
         switch ($user->rol_id) {
             case 1:
             case 1:
                 $usuariosQuery = \Backend\usuario_seguridad\Models\Usuario::where('eliminado', false)->get();
+                
+                // Asegurarnos de que el usuario actual se marque y cuente como Activo (útil si se reinició la BD)
+                if ($user->estado !== 'Activo') {
+                    $user->estado = 'Activo';
+                    $user->save();
+                    
+                    // Actualizar en la colección para el conteo
+                    $userEnColeccion = $usuariosQuery->firstWhere('id', $user->id);
+                    if ($userEnColeccion) {
+                        $userEnColeccion->estado = 'Activo';
+                    }
+                }
+
                 $totalUsuarios = $usuariosQuery->count();
                 $totalActivos = $usuariosQuery->where('estado', 'Activo')->count();
                 $totalInactivos = $usuariosQuery->where('estado', 'Inactivo')->count();
                 $totalAdmins = $usuariosQuery->where('rol_id', 1)->count();
                 $totalDocentes = $usuariosQuery->where('rol_id', 2)->count();
-                $totalPostulantes = $usuariosQuery->where('rol_id', 3)->count();
+                $totalPostulantes = $usuariosQuery->where('rol_id', 4)->count();
 
                 $bitacora = \Illuminate\Support\Facades\DB::table('bitacora')
                     ->leftJoin('perfil', 'bitacora.usuario_id', '=', 'perfil.usuario_id')

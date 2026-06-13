@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
+/**
+ * CU14 - Consultar Horario
+ */
 class HorarioController extends Controller
 {
     /**

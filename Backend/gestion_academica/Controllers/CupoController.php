@@ -7,8 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU18 - Gestionar Cupos
+ */
 class CupoController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index()
     {
         $carreras = DB::table('carrera')->orderBy('codigo')->get();
@@ -22,6 +30,11 @@ class CupoController extends Controller
         ]);
     }
 
+    /**
+     * Valida y actualiza los datos de un registro existente en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function update(Request $request)
     {
         $validated = $request->validate([

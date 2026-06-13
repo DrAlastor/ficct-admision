@@ -164,6 +164,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/consultas', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'index'])->name('consultas.index');
     Route::post('/consultas/ia', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'ejecutarConsultaIA'])->name('consultas.ia');
     Route::post('/consultas/predefinida', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'ejecutarPredefinida'])->name('consultas.predefinida');
+
+    // Consultas y Reportes - Reporte de Pagos (CU29)
+    Route::get('/reporte-pagos', [\Backend\consulta_reporte\Controllers\ReportePagoController::class, 'index'])->name('reporte_pagos.index');
 });
 
 require __DIR__.'/auth.php';

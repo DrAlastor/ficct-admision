@@ -27,6 +27,11 @@ class Docente extends Model
         'grupos_maximos'
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'perfil' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function perfil()
     {
         return $this->belongsTo(\Backend\usuario_seguridad\Models\Perfil::class, 'id', 'id');

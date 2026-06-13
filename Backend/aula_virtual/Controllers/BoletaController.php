@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+/**
+ * CU13 - Consultar Boleta
+ */
 class BoletaController extends Controller
 {
     /**

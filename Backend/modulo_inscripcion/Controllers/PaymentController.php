@@ -12,11 +12,19 @@ use Illuminate\Support\Facades\DB;
 use Backend\modulo_inscripcion\Models\Pago;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * CU00 - Pagos Stripe
+ */
 class PaymentController extends Controller
 {
     // ==========================================
     // STRIPE
     // ==========================================
+    /**
+     * Ejecuta la acción o procedimiento 'createPaymentIntent' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function createPaymentIntent(Request $request)
     {
         $request->validate([
@@ -46,6 +54,11 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'stripeWebhook' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function stripeWebhook(Request $request)
     {
         $payload = $request->getContent();
@@ -83,6 +96,11 @@ class PaymentController extends Controller
     // ==========================================
     // PAYPAL
     // ==========================================
+    /**
+     * Ejecuta la acción o procedimiento 'getPayPalAccessToken' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     private function getPayPalAccessToken()
     {
         $clientId = env('PAYPAL_CLIENT_ID');
@@ -106,6 +124,11 @@ class PaymentController extends Controller
         throw new \Exception('No se pudo obtener el Access Token de PayPal. Status: ' . $response->status());
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'createPayPalOrder' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function createPayPalOrder(Request $request)
     {
         $request->validate([
@@ -147,6 +170,11 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'capturePayPalOrder' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function capturePayPalOrder(Request $request)
     {
         $request->validate([
@@ -190,6 +218,11 @@ class PaymentController extends Controller
     // ==========================================
     // MÉTODO COMÚN PARA REGISTRAR PAGOS
     // ==========================================
+    /**
+     * Ejecuta la acción o procedimiento 'registrarPagoExitoso' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     private function registrarPagoExitoso($postulacionCodigo, $transaccionId, $metodoNombre, $monto)
     {
         // Verificar si ya existe el pago para no duplicar en webhooks

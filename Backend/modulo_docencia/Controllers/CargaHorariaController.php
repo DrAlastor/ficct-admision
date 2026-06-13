@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU26 - Gestionar Carga Horaria
+ */
 class CargaHorariaController extends Controller
 {
     /**

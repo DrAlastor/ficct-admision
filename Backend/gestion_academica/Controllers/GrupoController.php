@@ -8,8 +8,16 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+/**
+ * CU19 - Gestionar Grupos
+ */
 class GrupoController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index()
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -52,6 +60,11 @@ class GrupoController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'generar' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function generar(Request $request)
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -146,6 +159,11 @@ class GrupoController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'toggleInscripciones' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function toggleInscripciones(Request $request)
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -162,6 +180,11 @@ class GrupoController extends Controller
         return redirect()->back()->with('success', "Inscripciones $estadoStr exitosamente.");
     }
 
+    /**
+     * Valida y actualiza los datos de un registro existente en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function update(Request $request, $nombre)
     {
         $request->validate([
@@ -182,6 +205,11 @@ class GrupoController extends Controller
         return redirect()->back()->with('success', "Grupo $nombre actualizado exitosamente.");
     }
 
+    /**
+     * Elimina (física o lógicamente) un registro de la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function destroy($nombre)
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -194,16 +222,31 @@ class GrupoController extends Controller
         return redirect()->back()->with('success', "Grupo $nombre eliminado exitosamente.");
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'descargarListaPdf' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function descargarListaPdf($nombre)
     {
         return $this->generarLista($nombre, 'pdf');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'descargarListaCsv' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function descargarListaCsv($nombre)
     {
         return $this->generarLista($nombre, 'csv');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'generarLista' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     private function generarLista($nombre, $format)
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -266,6 +309,11 @@ class GrupoController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'asignarAlumnosAleatoriamente' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function asignarAlumnosAleatoriamente()
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -365,6 +413,11 @@ class GrupoController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'inscribirPostulante' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function inscribirPostulante(Request $request)
     {
         $request->validate([
