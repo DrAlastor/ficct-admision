@@ -23,7 +23,7 @@ class DocenteController extends Controller
         $alumnos = DB::table('inscripciones_cup')
             ->join('postulacion', 'inscripciones_cup.postulacion_codigo', '=', 'postulacion.codigo')
             ->join('perfil', 'postulacion.postulante_id', '=', 'perfil.id')
-            ->join('evaluaciones', 'inscripciones_cup.id', '=', 'evaluaciones.inscripcion_id')
+            ->leftJoin('evaluaciones', 'inscripciones_cup.id', '=', 'evaluaciones.inscripcion_id')
             ->where('inscripciones_cup.grupo_codigo', $grupoCodigo)
             ->select(
                 'inscripciones_cup.id as inscripcion_id',
@@ -36,7 +36,7 @@ class DocenteController extends Controller
                 'evaluaciones.nota_p2',
                 'evaluaciones.nota_p3',
                 'evaluaciones.promedio_final',
-                'evaluaciones.estado_materia'
+                DB::raw("COALESCE(evaluaciones.estado_materia, 'Cursando') as estado_materia")
             )
             ->orderBy('perfil.apellido_paterno')
             ->get();
@@ -55,13 +55,13 @@ class DocenteController extends Controller
     public function updateNotas(Request $request)
     {
         $request->validate([
-            'evaluacion_id' => 'required|integer',
+            'inscripcion_id' => 'required|integer',
             'nota_p1' => 'required|numeric|min:0|max:100',
             'nota_p2' => 'required|numeric|min:0|max:100',
             'nota_p3' => 'required|numeric|min:0|max:100',
         ]);
 
-        $evaluacionId = $request->input('evaluacion_id');
+        $inscripcionId = $request->input('inscripcion_id');
         $notaP1 = $request->input('nota_p1');
         $notaP2 = $request->input('nota_p2');
         $notaP3 = $request->input('nota_p3');
@@ -73,14 +73,16 @@ class DocenteController extends Controller
         $estadoMateria = $promedioFinal >= 51 ? 'Aprobado' : 'Reprobado';
 
         DB::table('evaluaciones')
-            ->where('id', $evaluacionId)
-            ->update([
-                'nota_p1' => $notaP1,
-                'nota_p2' => $notaP2,
-                'nota_p3' => $notaP3,
-                'promedio_final' => $promedioFinal,
-                'estado_materia' => $estadoMateria
-            ]);
+            ->updateOrInsert(
+                ['inscripcion_id' => $inscripcionId],
+                [
+                    'nota_p1' => $notaP1,
+                    'nota_p2' => $notaP2,
+                    'nota_p3' => $notaP3,
+                    'promedio_final' => $promedioFinal,
+                    'estado_materia' => $estadoMateria
+                ]
+            );
 
         return response()->json([
             'success' => true,

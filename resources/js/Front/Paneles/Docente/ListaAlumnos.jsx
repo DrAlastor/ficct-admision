@@ -28,7 +28,7 @@ export default function ListaAlumnos({ grupo }) {
     }, [grupo]);
 
     const handleEdit = (alumno) => {
-        setEditingId(alumno.evaluacion_id);
+        setEditingId(alumno.inscripcion_id);
         setEditData({
             nota_p1: alumno.nota_p1 || 0,
             nota_p2: alumno.nota_p2 || 0,
@@ -45,18 +45,18 @@ export default function ListaAlumnos({ grupo }) {
         setEditData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = async (evaluacion_id) => {
+    const handleSave = async (inscripcion_id) => {
         setSaving(true);
         try {
             const response = await axios.post('/docente/notas/update', {
-                evaluacion_id,
+                inscripcion_id,
                 ...editData
             });
             
             if (response.data.success) {
                 // Update local state
                 setAlumnos(alumnos.map(al => {
-                    if (al.evaluacion_id === evaluacion_id) {
+                    if (al.inscripcion_id === inscripcion_id) {
                         return {
                             ...al,
                             nota_p1: editData.nota_p1,
@@ -133,7 +133,7 @@ export default function ListaAlumnos({ grupo }) {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {alumnos.map((alumno, index) => (
-                                <tr key={alumno.inscripcion_id} className={`hover:bg-indigo-50/30 transition-colors duration-200 ${editingId === alumno.evaluacion_id ? 'bg-blue-50/50' : ''}`}>
+                                <tr key={alumno.inscripcion_id} className={`hover:bg-indigo-50/30 transition-colors duration-200 ${editingId === alumno.inscripcion_id ? 'bg-blue-50/50' : ''}`}>
                                     <td className="p-4">
                                         <div className="flex items-center">
                                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-blue-200 text-indigo-700 font-bold flex items-center justify-center mr-3 text-xs shadow-inner">
@@ -148,7 +148,7 @@ export default function ListaAlumnos({ grupo }) {
                                     <td className="p-4 text-center text-sm text-gray-600 font-mono">{alumno.ci}</td>
                                     
                                     {/* Edit Mode vs View Mode */}
-                                    {editingId === alumno.evaluacion_id ? (
+                                    {editingId === alumno.inscripcion_id ? (
                                         <>
                                             <td className="p-4 text-center">
                                                 <input type="number" name="nota_p1" value={editData.nota_p1} onChange={handleChange} min="0" max="100" className="w-16 p-1 text-center border border-indigo-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-indigo-700" />
@@ -167,7 +167,7 @@ export default function ListaAlumnos({ grupo }) {
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end space-x-2">
-                                                    <button onClick={() => handleSave(alumno.evaluacion_id)} disabled={saving} className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-md transition shadow-sm">
+                                                    <button onClick={() => handleSave(alumno.inscripcion_id)} disabled={saving} className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-md transition shadow-sm">
                                                         {saving ? <FiRefreshCw className="animate-spin" /> : <FiCheck />}
                                                     </button>
                                                     <button onClick={handleCancel} disabled={saving} className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-md transition shadow-sm">

@@ -58,7 +58,7 @@ class HorarioController extends Controller
         $carreraNombre = 'N/A';
         $inscripciones = collect();
 
-        if ($user->rol_id == 3) {
+        if ($user->rol_id == 4) {
             $postulacion = DB::table('postulacion')
                 ->where('postulante_id', $perfil->id)
                 ->orderByDesc('codigo')

@@ -11,6 +11,7 @@ export default function PostulanteView({ examenes, inscripciones }) {
     const getEstadoClass = (estado) => {
         if (estado === 'Aprobado') return 'bg-green-100 text-green-700 border-green-200';
         if (estado === 'Reprobado') return 'bg-red-100 text-red-700 border-red-200';
+        if (estado === 'Cursando') return 'bg-blue-100 text-blue-700 border-blue-200';
         return 'bg-gray-100 text-gray-700 border-gray-200';
     };
 
@@ -149,8 +150,8 @@ export default function PostulanteView({ examenes, inscripciones }) {
                                         <td className="px-6 py-4 text-center font-mono text-gray-600">{ins.nota_p3 || '0.00'}</td>
                                         <td className="px-6 py-4 text-center font-mono font-black text-purple-700">{ins.promedio_final || '0.00'}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`px-2.5 py-1.5 rounded-md text-xs font-bold border ${getEstadoClass(ins.estado_materia || 'Reprobado')}`}>
-                                                {ins.estado_materia || 'Reprobado'}
+                                            <span className={`px-2.5 py-1.5 rounded-md text-xs font-bold border ${getEstadoClass(ins.estado_materia || 'Cursando')}`}>
+                                                {ins.estado_materia || 'Cursando'}
                                             </span>
                                         </td>
                                     </tr>

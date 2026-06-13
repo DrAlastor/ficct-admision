@@ -61,7 +61,7 @@ class AsistenciaController extends Controller
         }
 
         // ===================== POSTULANTE =====================
-        if ($user->rol_id == 3) {
+        if ($user->rol_id == 4) {
             return $this->vistaPostulante($perfil);
         }
 
@@ -547,7 +547,7 @@ class AsistenciaController extends Controller
     public function marcarPostulante(Request $request)
     {
         $user = Auth::user();
-        if ($user->rol_id != 3) {
+        if ($user->rol_id != 4) {
             abort(403, 'Solo postulantes pueden marcar asistencia con contraseña.');
         }
 

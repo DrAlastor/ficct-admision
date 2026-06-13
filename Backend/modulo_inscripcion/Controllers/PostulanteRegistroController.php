@@ -39,12 +39,18 @@ class PostulanteRegistroController extends Controller
         $metodosActivos = DB::table('metodo_pago_config')
             ->where('activo', true)
             ->whereIn('nombre', ['Stripe (Tarjetas)', 'PayPal'])
-            ->select('id', 'nombre')
+            ->select('id', 'nombre', 'public_key')
             ->get();
+
+        // Extraer las claves públicas para pasarlas al modal de pago
+        $stripeKey = $metodosActivos->firstWhere('nombre', 'Stripe (Tarjetas)')->public_key ?? null;
+        $paypalClientId = $metodosActivos->firstWhere('nombre', 'PayPal')->public_key ?? null;
 
         return Inertia::render('Modulos/modulo_inscripcion/RegistroCUP/Index', [
             'precio_matricula' => $precio,
-            'metodos_activos' => $metodosActivos
+            'metodos_activos' => $metodosActivos,
+            'stripe_key' => $stripeKey,
+            'paypal_client_id' => $paypalClientId
         ]);
     }
 
@@ -198,6 +204,10 @@ class PostulanteRegistroController extends Controller
         try {
             DB::beginTransaction();
 
+            // Obtener la gestión actual (la más reciente)
+            $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+            $gestionId = $gestionActual ? $gestionActual->id : 1;
+
             // Verificación manual de duplicidad y sobreescritura
             $perfilExistente = \Backend\usuario_seguridad\Models\Perfil::where('ci', $request->ci)->orWhere('email', $request->email)->first();
             $postulacion = null;
@@ -246,7 +256,7 @@ class PostulanteRegistroController extends Controller
                 if (!$postulacion) {
                     $postulacion = Postulacion::create([
                         'postulante_id' => $postulante->id,
-                        'gestion_id' => 1,
+                        'gestion_id' => $gestionId,
                         'fecha' => now()->toDateString(),
                         'hora' => now()->toTimeString(),
                         'estado' => 'Pendiente'
@@ -278,47 +288,50 @@ class PostulanteRegistroController extends Controller
                 $siguienteId = \Backend\usuario_seguridad\Models\Perfil::max('id') + 1;
                 $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
 
-                $perfilExistente = \Backend\usuario_seguridad\Models\Perfil::create([
-                    'usuario_id' => null, // NO creamos usuario todavía!
-                    'codigo' => $codigoPostulante,
-                    'ci' => $request->ci,
-                    'nombres' => $request->nombres,
-                    'apellido_paterno' => $request->apellido_paterno,
-                    'apellido_materno' => $request->apellido_materno ?? null,
-                    'fecha_nacimiento' => $request->fecha_nacimiento,
-                    'nacionalidad' => $request->nacionalidad,
-                    'sexo' => $request->sexo,
-                    'direccion' => $request->direccion,
-                    'telefono' => $request->telefono,
-                    'email' => $request->email,
-                    'cargo' => 'POSTULANTE'
-                ]);
+                $perfilExistente = new \Backend\usuario_seguridad\Models\Perfil();
+                $perfilExistente->id = $siguienteId;
+                $perfilExistente->usuario_id = null; // NO creamos usuario todavía!
+                $perfilExistente->codigo = $codigoPostulante;
+                $perfilExistente->ci = $request->ci;
+                $perfilExistente->nombres = $request->nombres;
+                $perfilExistente->apellido_paterno = $request->apellido_paterno;
+                $perfilExistente->apellido_materno = $request->apellido_materno ?? null;
+                $perfilExistente->fecha_nacimiento = $request->fecha_nacimiento;
+                $perfilExistente->nacionalidad = $request->nacionalidad;
+                $perfilExistente->sexo = $request->sexo;
+                $perfilExistente->direccion = $request->direccion;
+                $perfilExistente->telefono = $request->telefono;
+                $perfilExistente->email = $request->email;
+                $perfilExistente->cargo = 'POSTULANTE';
+                $perfilExistente->save();
 
-                $postulante = Postulante::create([
-                    'id' => $perfilExistente->id,
-                    'colegio_procedencia' => $request->tipo_colegio,
-                    'ciudad' => null
-                ]);
+                $postulante = new Postulante();
+                $postulante->id = $perfilExistente->id;
+                $postulante->colegio_procedencia = $request->tipo_colegio;
+                $postulante->ciudad = null;
+                $postulante->save();
 
-                $postulacion = Postulacion::create([
-                    'postulante_id' => $postulante->id,
-                    'gestion_id' => 1,
-                    'fecha' => now()->toDateString(),
-                    'hora' => now()->toTimeString(),
-                    'estado' => 'Pendiente'
-                ]);
+                $postulacion = new Postulacion();
+                $postulacion->codigo = Postulacion::max('codigo') + 1;
+                $postulacion->postulante_id = $postulante->id;
+                $postulacion->gestion_id = $gestionId;
+                $postulacion->fecha = now()->toDateString();
+                $postulacion->hora = now()->toTimeString();
+                $postulacion->estado = 'Pendiente';
+                $postulacion->save();
 
                 DB::table('postulacion_carrera')->insert([
                     ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion1, 'prioridad' => 1],
                     ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion2, 'prioridad' => 2]
                 ]);
 
-                Documento::create([
-                    'postulacion_codigo' => $postulacion->codigo,
-                    'tipo_documento' => 'Requisitos Completos CUP',
-                    'url_archivo' => $rutaRequisitos,
-                    'estado_validacion' => 'Pendiente'
-                ]);
+                $documento = new Documento();
+                $documento->id = Documento::max('id') + 1;
+                $documento->postulacion_codigo = $postulacion->codigo;
+                $documento->tipo_documento = 'Requisitos Completos CUP';
+                $documento->url_archivo = $rutaRequisitos;
+                $documento->estado_validacion = 'Pendiente';
+                $documento->save();
             }
 
             DB::commit();
@@ -418,47 +431,54 @@ class PostulanteRegistroController extends Controller
             DB::beginTransaction();
 
             // 1. Generar el Código de Postulante (Ej. POS26059999)
-            $codigoPostulante = 'POS' . date('ym') . rand(1000, 9999);
+            $siguienteId = \Backend\usuario_seguridad\Models\Perfil::max('id') + 1;
+            $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
 
             // 2. Crear el Usuario (Autenticación)
-            $usuario = Usuario::create([
-                'codigo_inicio' => $codigoPostulante,
-                'password' => Hash::make($datosPostulante['ci']), 
-                'estado' => 'Activo',
-                'rol_id' => 3 
-            ]);
+            $usuario = new Usuario();
+            $usuario->id = Usuario::max('id') + 1;
+            $usuario->codigo_inicio = $codigoPostulante;
+            $usuario->password = Hash::make($datosPostulante['ci']);
+            $usuario->estado = 'Inactivo';
+            $usuario->rol_id = 4;
+            $usuario->save();
 
             // 3. Crear el Perfil (Demografía)
-            $perfil = Perfil::create([
-                'usuario_id' => $usuario->id,
-                'codigo' => $codigoPostulante,
-                'ci' => $datosPostulante['ci'],
-                'nombres' => $datosPostulante['nombres'],
-                'apellido_paterno' => $datosPostulante['apellido_paterno'],
-                'apellido_materno' => $datosPostulante['apellido_materno'] ?? null,
-                'fecha_nacimiento' => $datosPostulante['fecha_nacimiento'],
-                'nacionalidad' => $datosPostulante['nacionalidad'],
-                'sexo' => $datosPostulante['sexo'],
-                'direccion' => $datosPostulante['direccion'],
-                'telefono' => $datosPostulante['telefono'],
-                'email' => $datosPostulante['email']
-            ]);
+            $perfil = new Perfil();
+            $perfil->id = $siguienteId;
+            $perfil->usuario_id = $usuario->id;
+            $perfil->codigo = $codigoPostulante;
+            $perfil->ci = $datosPostulante['ci'];
+            $perfil->nombres = $datosPostulante['nombres'];
+            $perfil->apellido_paterno = $datosPostulante['apellido_paterno'];
+            $perfil->apellido_materno = $datosPostulante['apellido_materno'] ?? null;
+            $perfil->fecha_nacimiento = $datosPostulante['fecha_nacimiento'];
+            $perfil->nacionalidad = $datosPostulante['nacionalidad'];
+            $perfil->sexo = $datosPostulante['sexo'];
+            $perfil->direccion = $datosPostulante['direccion'];
+            $perfil->telefono = $datosPostulante['telefono'];
+            $perfil->email = $datosPostulante['email'];
+            $perfil->save();
 
             // 3.1 Crear el registro específico de Postulante
-            $postulante = Postulante::create([
-                'id' => $perfil->id,
-                'colegio_procedencia' => $datosPostulante['tipo_colegio'] ?? null,
-                'ciudad' => null
-            ]);
+            $postulante = new Postulante();
+            $postulante->id = $perfil->id;
+            $postulante->colegio_procedencia = $datosPostulante['tipo_colegio'] ?? null;
+            $postulante->ciudad = null;
+            $postulante->save();
 
             // 4. Crear la Postulación (Gestión actual)
-            $postulacion = Postulacion::create([
-                'postulante_id' => $postulante->id,
-                'gestion_id' => 1, // Se debe asignar dinámicamente según la gestión activa
-                'fecha' => now()->toDateString(),
-                'hora' => now()->toTimeString(),
-                'estado' => 'Habilitado CUP'
-            ]);
+            $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+            $gestionId = $gestionActual ? $gestionActual->id : 1;
+            
+            $postulacion = new Postulacion();
+            $postulacion->codigo = Postulacion::max('codigo') + 1;
+            $postulacion->postulante_id = $postulante->id;
+            $postulacion->gestion_id = $gestionId;
+            $postulacion->fecha = now()->toDateString();
+            $postulacion->hora = now()->toTimeString();
+            $postulacion->estado = 'Habilitado CUP';
+            $postulacion->save();
 
             // 4.1 Registrar las Preferencias de Carrera (CU-09)
             DB::table('postulacion_carrera')->insert([
@@ -475,26 +495,28 @@ class PostulanteRegistroController extends Controller
             ]);
 
             // 5. Registrar el Documento Subido
-            Documento::create([
-                'postulacion_codigo' => $postulacion->codigo,
-                'tipo_documento' => 'Requisitos Completos CUP',
-                'url_archivo' => $datosPostulante['ruta_requisitos'],
-                'estado_validacion' => 'Subido'
-            ]);
+            $documento = new Documento();
+            $documento->id = Documento::max('id') + 1;
+            $documento->postulacion_codigo = $postulacion->codigo;
+            $documento->tipo_documento = 'Requisitos Completos CUP';
+            $documento->url_archivo = $datosPostulante['ruta_requisitos'];
+            $documento->estado_validacion = 'Subido';
+            $documento->save();
 
             // 6. Registrar el Pago Exitoso
             $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
             $monto = $concepto ? $concepto->monto : 700.00;
 
-            Pago::create([
-                'postulacion_codigo' => $postulacion->codigo,
-                'nro_recibo' => 'REC-' . rand(10000, 99999),
-                'monto' => $monto,
-                'metodo_pago_id' => $transaccion->metodo_id,
-                'transaccion_id' => $transaccion->transaccion_id,
-                'estado' => 'Completado',
-                'fecha' => now()->toDateString()
-            ]);
+            $pago = new Pago();
+            $pago->id = Pago::max('id') + 1;
+            $pago->postulacion_codigo = $postulacion->codigo;
+            $pago->nro_recibo = 'REC-' . rand(10000, 99999);
+            $pago->monto = $monto;
+            $pago->metodo_pago_id = $transaccion->metodo_id;
+            $pago->transaccion_id = $transaccion->transaccion_id;
+            $pago->estado = 'Completado';
+            $pago->fecha = now()->toDateString();
+            $pago->save();
 
             DB::commit();
 

@@ -99,41 +99,43 @@ class DocenteController extends Controller
                 $codigoInicio = 'DOC' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
 
-            $usuario = Usuario::create([
-                'codigo_inicio' => $codigoInicio,
-                'password' => Hash::make($request->ci), // Default password
-                'estado' => 'Activo',
-                'rol_id' => 2 // Rol Docente
-            ]);
+            $usuario = new Usuario();
+            $usuario->id = Usuario::max('id') + 1;
+            $usuario->codigo_inicio = $codigoInicio;
+            $usuario->password = Hash::make($request->ci);
+            $usuario->estado = 'Inactivo';
+            $usuario->rol_id = 2;
+            $usuario->save();
 
             // 2. Crear Perfil
-            $perfil = Perfil::create([
-                'usuario_id' => $usuario->id,
-                'codigo' => $codigoInicio,
-                'ci' => $request->ci,
-                'nombres' => $request->nombres,
-                'apellido_paterno' => $request->apellido_paterno,
-                'apellido_materno' => $request->apellido_materno,
-                'fecha_nacimiento' => $request->fecha_nacimiento,
-                'nacionalidad' => $request->nacionalidad,
-                'sexo' => $request->sexo,
-                'direccion' => $request->direccion,
-                'telefono' => $request->telefono,
-                'email' => $request->email,
-                'cargo' => 'DOCENTE TITULAR'
-            ]);
+            $perfil = new Perfil();
+            $perfil->id = Perfil::max('id') + 1;
+            $perfil->usuario_id = $usuario->id;
+            $perfil->codigo = $codigoInicio;
+            $perfil->ci = $request->ci;
+            $perfil->nombres = $request->nombres;
+            $perfil->apellido_paterno = $request->apellido_paterno;
+            $perfil->apellido_materno = $request->apellido_materno;
+            $perfil->fecha_nacimiento = $request->fecha_nacimiento;
+            $perfil->nacionalidad = $request->nacionalidad;
+            $perfil->sexo = $request->sexo;
+            $perfil->direccion = $request->direccion;
+            $perfil->telefono = $request->telefono;
+            $perfil->email = $request->email;
+            $perfil->cargo = 'DOCENTE TITULAR';
+            $perfil->save();
 
             // 3. Crear Docente
-            Docente::create([
-                'id' => $perfil->id,
-                'profesion' => $request->profesion,
-                'area_profesional' => $request->area_profesional,
-                'grado_academico' => $request->grado_academico,
-                'maestria' => $request->maestria,
-                'diplomado_educacion_superior' => $request->diplomado_educacion_superior,
-                'experiencia_anos' => $request->experiencia_anos,
-                'grupos_maximos' => 4 // Default
-            ]);
+            $docente = new Docente();
+            $docente->id = $perfil->id;
+            $docente->profesion = $request->profesion;
+            $docente->area_profesional = $request->area_profesional;
+            $docente->grado_academico = $request->grado_academico;
+            $docente->maestria = $request->maestria;
+            $docente->diplomado_educacion_superior = $request->diplomado_educacion_superior;
+            $docente->experiencia_anos = $request->experiencia_anos;
+            $docente->grupos_maximos = 4;
+            $docente->save();
 
             DB::commit();
 

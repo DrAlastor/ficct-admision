@@ -121,7 +121,7 @@ class UsuarioController extends Controller
             $usuario->rol_id = $validated['rol_id'];
             $usuario->codigo_inicio = $codigo;
             $usuario->password = Hash::make($password);
-            $usuario->estado = 'Activo';
+            $usuario->estado = 'Inactivo';
             $usuario->save();
 
             $perfil = new Perfil();

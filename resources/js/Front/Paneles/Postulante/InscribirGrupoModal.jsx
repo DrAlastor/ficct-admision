@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import { FiX, FiCheckCircle, FiUsers, FiMonitor } from 'react-icons/fi';
 
 export default function InscribirGrupoModal({ show, onClose, grupos }) {
@@ -26,21 +26,23 @@ export default function InscribirGrupoModal({ show, onClose, grupos }) {
         }
     };
 
-    // Form submission correctly
     const submitForm = (e) => {
         e.preventDefault();
         if (!selectedGroup) return;
         
         if(confirm(`¿Estás seguro de inscribirte al grupo ${selectedGroup}? Esta acción no se puede deshacer.`)) {
-            post(route('grupos.inscribir_postulante'), {
-                grupo_nombre: selectedGroup,
+            router.post(route('grupos.inscribir_postulante'), 
+            {
+                grupo_nombre: selectedGroup
+            }, 
+            {
                 preserveScroll: true,
                 onSuccess: () => {
                     alert("¡Inscripción exitosa!");
                     onClose();
                 },
                 onError: (err) => {
-                    alert(err.error || "Ocurrió un error");
+                    alert(err.error || err.grupo_nombre || "Ocurrió un error al inscribir");
                 }
             });
         }
