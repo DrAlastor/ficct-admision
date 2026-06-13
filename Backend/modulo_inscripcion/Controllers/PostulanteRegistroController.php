@@ -304,25 +304,27 @@ class PostulanteRegistroController extends Controller
                 $postulante->ciudad = null;
                 $postulante->save();
 
-                $postulacion = Postulacion::create([
-                    'postulante_id' => $postulante->id,
-                    'gestion_id' => $gestionId,
-                    'fecha' => now()->toDateString(),
-                    'hora' => now()->toTimeString(),
-                    'estado' => 'Pendiente'
-                ]);
+                $postulacion = new Postulacion();
+                $postulacion->codigo = Postulacion::max('codigo') + 1;
+                $postulacion->postulante_id = $postulante->id;
+                $postulacion->gestion_id = $gestionId;
+                $postulacion->fecha = now()->toDateString();
+                $postulacion->hora = now()->toTimeString();
+                $postulacion->estado = 'Pendiente';
+                $postulacion->save();
 
                 DB::table('postulacion_carrera')->insert([
                     ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion1, 'prioridad' => 1],
                     ['postulacion_codigo' => $postulacion->codigo, 'carrera_codigo' => $request->carrera_opcion2, 'prioridad' => 2]
                 ]);
 
-                Documento::create([
-                    'postulacion_codigo' => $postulacion->codigo,
-                    'tipo_documento' => 'Requisitos Completos CUP',
-                    'url_archivo' => $rutaRequisitos,
-                    'estado_validacion' => 'Pendiente'
-                ]);
+                $documento = new Documento();
+                $documento->id = Documento::max('id') + 1;
+                $documento->postulacion_codigo = $postulacion->codigo;
+                $documento->tipo_documento = 'Requisitos Completos CUP';
+                $documento->url_archivo = $rutaRequisitos;
+                $documento->estado_validacion = 'Pendiente';
+                $documento->save();
             }
 
             DB::commit();
@@ -462,13 +464,14 @@ class PostulanteRegistroController extends Controller
             $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
             $gestionId = $gestionActual ? $gestionActual->id : 1;
             
-            $postulacion = Postulacion::create([
-                'postulante_id' => $postulante->id,
-                'gestion_id' => $gestionId,
-                'fecha' => now()->toDateString(),
-                'hora' => now()->toTimeString(),
-                'estado' => 'Habilitado CUP'
-            ]);
+            $postulacion = new Postulacion();
+            $postulacion->codigo = Postulacion::max('codigo') + 1;
+            $postulacion->postulante_id = $postulante->id;
+            $postulacion->gestion_id = $gestionId;
+            $postulacion->fecha = now()->toDateString();
+            $postulacion->hora = now()->toTimeString();
+            $postulacion->estado = 'Habilitado CUP';
+            $postulacion->save();
 
             // 4.1 Registrar las Preferencias de Carrera (CU-09)
             DB::table('postulacion_carrera')->insert([
@@ -485,26 +488,28 @@ class PostulanteRegistroController extends Controller
             ]);
 
             // 5. Registrar el Documento Subido
-            Documento::create([
-                'postulacion_codigo' => $postulacion->codigo,
-                'tipo_documento' => 'Requisitos Completos CUP',
-                'url_archivo' => $datosPostulante['ruta_requisitos'],
-                'estado_validacion' => 'Subido'
-            ]);
+            $documento = new Documento();
+            $documento->id = Documento::max('id') + 1;
+            $documento->postulacion_codigo = $postulacion->codigo;
+            $documento->tipo_documento = 'Requisitos Completos CUP';
+            $documento->url_archivo = $datosPostulante['ruta_requisitos'];
+            $documento->estado_validacion = 'Subido';
+            $documento->save();
 
             // 6. Registrar el Pago Exitoso
             $concepto = DB::table('concepto_pago')->where('nombre', 'Matrícula CUP')->first();
             $monto = $concepto ? $concepto->monto : 700.00;
 
-            Pago::create([
-                'postulacion_codigo' => $postulacion->codigo,
-                'nro_recibo' => 'REC-' . rand(10000, 99999),
-                'monto' => $monto,
-                'metodo_pago_id' => $transaccion->metodo_id,
-                'transaccion_id' => $transaccion->transaccion_id,
-                'estado' => 'Completado',
-                'fecha' => now()->toDateString()
-            ]);
+            $pago = new Pago();
+            $pago->id = Pago::max('id') + 1;
+            $pago->postulacion_codigo = $postulacion->codigo;
+            $pago->nro_recibo = 'REC-' . rand(10000, 99999);
+            $pago->monto = $monto;
+            $pago->metodo_pago_id = $transaccion->metodo_id;
+            $pago->transaccion_id = $transaccion->transaccion_id;
+            $pago->estado = 'Completado';
+            $pago->fecha = now()->toDateString();
+            $pago->save();
 
             DB::commit();
 
