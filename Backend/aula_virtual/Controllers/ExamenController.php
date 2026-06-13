@@ -76,7 +76,8 @@ class ExamenController extends Controller
                 ->where('i.grupo_codigo', $g->grupo_codigo)
                 ->select(
                     'perf.ci', 'perf.nombres', 'perf.apellido_paterno', 'perf.apellido_materno',
-                    'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia'
+                    'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 
+                    DB::raw("COALESCE(ev.estado_materia, 'Cursando') as estado_materia")
                 )
                 ->orderBy('perf.apellido_paterno')
                 ->get();
@@ -132,7 +133,8 @@ class ExamenController extends Controller
                 ->where('i.grupo_codigo', $g->grupo_codigo)
                 ->select(
                     'perf.nombres', 'perf.apellido_paterno', 'perf.apellido_materno',
-                    'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia'
+                    'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 
+                    DB::raw("COALESCE(ev.estado_materia, 'Cursando') as estado_materia")
                 )
                 ->orderBy('perf.apellido_paterno')
                 ->get();
@@ -171,7 +173,8 @@ class ExamenController extends Controller
             ->where('i.grupo_codigo', $grupo_codigo)
             ->select(
                 'perf.ci', 'perf.nombres', 'perf.apellido_paterno', 'perf.apellido_materno',
-                'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia'
+                'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 
+                DB::raw("COALESCE(ev.estado_materia, 'Cursando') as estado_materia")
             )
             ->orderBy('perf.apellido_paterno')
             ->get();
@@ -210,7 +213,7 @@ class ExamenController extends Controller
                         $alumno->nota_p2 ?? '0.00',
                         $alumno->nota_p3 ?? '0.00',
                         $alumno->promedio_final ?? '0.00',
-                        $alumno->estado_materia ?? 'Reprobado'
+                        $alumno->estado_materia ?? 'Cursando'
                     ]);
                 }
                 fclose($file);
@@ -256,7 +259,7 @@ class ExamenController extends Controller
             ->join('materia as m', 'g.materia_id', '=', 'm.id')
             ->leftJoin('evaluaciones as ev', 'i.id', '=', 'ev.inscripcion_id')
             ->where('p.postulante_id', $postulante->id)
-            ->select('i.id as inscripcion_id', 'm.id as materia_id', 'm.nombre as materia_nombre', 'g.codigo as grupo_codigo', 'g.nombre as grupo_nombre', 'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia')
+            ->select('i.id as inscripcion_id', 'm.id as materia_id', 'm.nombre as materia_nombre', 'g.codigo as grupo_codigo', 'g.nombre as grupo_nombre', 'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', DB::raw("COALESCE(ev.estado_materia, 'Cursando') as estado_materia"))
             ->get();
 
         if ($inscripciones->isEmpty()) {
