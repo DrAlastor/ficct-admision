@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FiX, FiCheckCircle, FiShield, FiAlertTriangle } from 'react-icons/fi';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import axios from 'axios';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY);
+// stripePromise se crea dinámicamente en el componente PaymentModal con la key del backend
 
 const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
     const stripe = useStripe();
@@ -80,7 +80,7 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
                     },
                 }} />
             </div>
-            
+
             {loading && (
                 <div className="text-blue-500 text-sm font-medium text-center">
                     Conectando con Stripe...
@@ -94,8 +94,8 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
                 </div>
             )}
 
-            <button 
-                type="submit" 
+            <button
+                type="submit"
                 disabled={!stripe || processing || !clientSecret}
                 className="w-full bg-[#00D084] hover:bg-[#00b371] text-white font-black py-4 rounded-xl shadow-lg shadow-green-200 transition-all transform hover:scale-[1.02] flex items-center justify-center text-lg disabled:opacity-50"
             >
@@ -105,8 +105,11 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
     );
 };
 
-export default function PaymentModal({ show, onClose, monto, metodoPago, postulacionCodigo, onPaymentSuccess }) {
+export default function PaymentModal({ show, onClose, monto, metodoPago, postulacionCodigo, onPaymentSuccess, stripeKey, paypalClientId }) {
     const [paypalError, setPaypalError] = useState(null);
+    
+    // Memoizar la instancia de Stripe para no recargarla en cada render
+    const stripePromise = useMemo(() => stripeKey ? loadStripe(stripeKey) : null, [stripeKey]);
 
     if (!show) return null;
 
@@ -139,7 +142,7 @@ export default function PaymentModal({ show, onClose, monto, metodoPago, postula
                         </div>
                     </div>
 
-                    {metodoPago === 'Stripe (Tarjetas)' && (
+                    {metodoPago === 'Stripe (Tarjetas)' && stripePromise && (
                         <Elements stripe={stripePromise}>
                             <StripeForm monto={monto} postulacionCodigo={postulacionCodigo} onPaymentSuccess={onPaymentSuccess} />
                         </Elements>
@@ -147,8 +150,8 @@ export default function PaymentModal({ show, onClose, monto, metodoPago, postula
 
                     {metodoPago === 'PayPal' && (
                         <>
-                            <PayPalScriptProvider options={{ "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID, currency: "USD" }}>
-                                <PayPalButtons 
+                            <PayPalScriptProvider options={{ "client-id": paypalClientId, currency: "USD" }}>
+                                <PayPalButtons
                                     style={{ layout: "vertical", shape: "rect", color: "blue" }}
                                     createOrder={(data, actions) => {
                                         setPaypalError(null);
@@ -215,7 +218,7 @@ export default function PaymentModal({ show, onClose, monto, metodoPago, postula
                             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm flex items-center justify-center"
                         >
                             <FiCheckCircle className="mr-2" size={18} />
-                            SIMULAR PAGO EXITOSO (BYPASS)
+                            PAGAR CON BYPASS
                         </button>
                     </div>
                 </div>

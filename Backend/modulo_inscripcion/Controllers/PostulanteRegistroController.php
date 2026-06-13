@@ -39,12 +39,18 @@ class PostulanteRegistroController extends Controller
         $metodosActivos = DB::table('metodo_pago_config')
             ->where('activo', true)
             ->whereIn('nombre', ['Stripe (Tarjetas)', 'PayPal'])
-            ->select('id', 'nombre')
+            ->select('id', 'nombre', 'public_key')
             ->get();
+
+        // Extraer las claves públicas para pasarlas al modal de pago
+        $stripeKey = $metodosActivos->firstWhere('nombre', 'Stripe (Tarjetas)')->public_key ?? null;
+        $paypalClientId = $metodosActivos->firstWhere('nombre', 'PayPal')->public_key ?? null;
 
         return Inertia::render('Modulos/modulo_inscripcion/RegistroCUP/Index', [
             'precio_matricula' => $precio,
-            'metodos_activos' => $metodosActivos
+            'metodos_activos' => $metodosActivos,
+            'stripe_key' => $stripeKey,
+            'paypal_client_id' => $paypalClientId
         ]);
     }
 
@@ -191,6 +197,10 @@ class PostulanteRegistroController extends Controller
         try {
             DB::beginTransaction();
 
+            // Obtener la gestión actual (la más reciente)
+            $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+            $gestionId = $gestionActual ? $gestionActual->id : 1;
+
             // Verificación manual de duplicidad y sobreescritura
             $perfilExistente = \Backend\usuario_seguridad\Models\Perfil::where('ci', $request->ci)->orWhere('email', $request->email)->first();
             $postulacion = null;
@@ -239,7 +249,7 @@ class PostulanteRegistroController extends Controller
                 if (!$postulacion) {
                     $postulacion = Postulacion::create([
                         'postulante_id' => $postulante->id,
-                        'gestion_id' => 1,
+                        'gestion_id' => $gestionId,
                         'fecha' => now()->toDateString(),
                         'hora' => now()->toTimeString(),
                         'estado' => 'Pendiente'
@@ -295,7 +305,7 @@ class PostulanteRegistroController extends Controller
 
                 $postulacion = Postulacion::create([
                     'postulante_id' => $postulante->id,
-                    'gestion_id' => 1,
+                    'gestion_id' => $gestionId,
                     'fecha' => now()->toDateString(),
                     'hora' => now()->toTimeString(),
                     'estado' => 'Pendiente'

@@ -17,7 +17,7 @@ import { Link } from '@inertiajs/react';
  *
  * @returns {JSX.Element}
  */
-export default function RegistroIndex({ precio_matricula, metodos_activos = [] }) {
+export default function RegistroIndex({ precio_matricula, metodos_activos = [], stripe_key, paypal_client_id }) {
     const { props } = usePage();
     const globalErrors = props.errors || {};
 
@@ -288,6 +288,8 @@ export default function RegistroIndex({ precio_matricula, metodos_activos = [] }
                 metodoPago={metodoSeleccionado === 'stripe' ? 'Stripe (Tarjetas)' : 'PayPal'}
                 postulacionCodigo={postulacionCodigo}
                 onPaymentSuccess={handlePaymentSuccess}
+                stripeKey={stripe_key}
+                paypalClientId={paypal_client_id}
             />
 
                 <ConsultarRegistro 
