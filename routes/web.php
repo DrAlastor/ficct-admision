@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Backend\modulo_inscripcion\Controllers\PostulanteRegistroController;
+use Backend\modulo_inscripcion\Controllers\PaymentController;
 
 // Mostrar el formulario en React
 Route::get('/registro-cup', [PostulanteRegistroController::class, 'create'])->name('registro.create');
@@ -88,8 +89,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rendir Examenes
     Route::get('/examenes', [\Backend\aula_virtual\Controllers\ExamenController::class, 'index'])->name('examenes.index');
-    Route::get('/examenes/{id}/rendir', [\Backend\aula_virtual\Controllers\ExamenController::class, 'rendir'])->name('examenes.rendir');
+    Route::post('/examenes/{id}/rendir', [\Backend\aula_virtual\Controllers\ExamenController::class, 'rendir'])->name('examenes.rendir');
     Route::post('/examenes/{id}/calificar', [\Backend\aula_virtual\Controllers\ExamenController::class, 'calificar'])->name('examenes.calificar');
+    Route::get('/examenes/exportar-notas/{grupo_codigo}/{format}', [\Backend\aula_virtual\Controllers\ExamenController::class, 'exportarNotas'])->name('examenes.exportar_notas');
 
     Route::prefix('gestion-examenes')->group(function () {
         Route::get('/', [\Backend\gestion_academica\Controllers\GestionExamenController::class, 'index'])->name('gestion_examenes.index');
@@ -108,6 +110,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Gestión de Grupos
     Route::get('/grupos', [\Backend\gestion_academica\Controllers\GrupoController::class, 'index'])->name('grupos.index');
     Route::post('/grupos/generar', [\Backend\gestion_academica\Controllers\GrupoController::class, 'generar'])->name('grupos.generar');
+    Route::post('/grupos/toggle-inscripciones', [\Backend\gestion_academica\Controllers\GrupoController::class, 'toggleInscripciones'])->name('grupos.toggle_inscripciones');
+    Route::post('/grupos/asignar-alumnos', [\Backend\gestion_academica\Controllers\GrupoController::class, 'asignarAlumnosAleatoriamente'])->name('grupos.asignar_alumnos');
+    Route::post('/grupos/inscribir-postulante', [\Backend\gestion_academica\Controllers\GrupoController::class, 'inscribirPostulante'])->name('grupos.inscribir_postulante');
+    Route::put('/grupos/{nombre}', [\Backend\gestion_academica\Controllers\GrupoController::class, 'update'])->name('grupos.update');
+    Route::delete('/grupos/{nombre}', [\Backend\gestion_academica\Controllers\GrupoController::class, 'destroy'])->name('grupos.destroy');
+    Route::get('/grupos/{nombre}/pdf', [\Backend\gestion_academica\Controllers\GrupoController::class, 'descargarListaPdf'])->name('grupos.descargar_pdf');
+    Route::get('/grupos/{nombre}/csv', [\Backend\gestion_academica\Controllers\GrupoController::class, 'descargarListaCsv'])->name('grupos.descargar_csv');
 
     // Gestión de Horarios
     Route::get('/horarios', [\Backend\gestion_academica\Controllers\GestionHorarioController::class, 'index'])->name('horarios.admin.index');
@@ -135,6 +144,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/carreras', [\Backend\gestion_academica\Controllers\CarreraController::class, 'store'])->name('carreras.admin.store');
     Route::put('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'update'])->name('carreras.admin.update');
     Route::delete('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'destroy'])->name('carreras.admin.destroy');
+
+    // Módulo de Docencia (CU25)
+    Route::get('/docentes', [\Backend\modulo_docencia\Controllers\DocenteController::class, 'index'])->name('docentes.index');
+    Route::post('/docentes', [\Backend\modulo_docencia\Controllers\DocenteController::class, 'store'])->name('docentes.store');
+    Route::put('/docentes/{id}', [\Backend\modulo_docencia\Controllers\DocenteController::class, 'update'])->name('docentes.update');
+    Route::delete('/docentes/{id}', [\Backend\modulo_docencia\Controllers\DocenteController::class, 'destroy'])->name('docentes.destroy');
+
+    // Gestión de Carga Horaria (CU26)
+    Route::get('/carga-horaria', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'index'])->name('carga_horaria.index');
+    Route::get('/carga-horaria/{id}/grupos', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'getGrupos']);
+    Route::post('/carga-horaria/{id}', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'store'])->name('carga_horaria.store');
+
+    // Consultas y Reportes - Estadísticas (CU27)
+    Route::get('/estadisticas', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'index'])->name('estadisticas.index');
+    Route::get('/estadisticas/data', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'getData'])->name('estadisticas.data');
+
+    // Consultas y Reportes - Consultas Detalladas e IA (CU28)
+    Route::get('/consultas', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'index'])->name('consultas.index');
+    Route::post('/consultas/ia', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'ejecutarConsultaIA'])->name('consultas.ia');
+    Route::post('/consultas/predefinida', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'ejecutarPredefinida'])->name('consultas.predefinida');
 });
 
 require __DIR__.'/auth.php';

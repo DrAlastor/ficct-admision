@@ -107,6 +107,11 @@ class DashboardController extends Controller
                 $materias = [];
                 $grupoAsignado = '';
                 
+                $gestionActual = \Illuminate\Support\Facades\DB::table('gestion')->orderByDesc('id')->first();
+                $inscripcionesAbiertas = $gestionActual ? $gestionActual->inscripciones_abiertas : false;
+                $yaInscrito = false;
+                $gruposDisponibles = [];
+                
                 if ($perfil) {
                     $postulacion = \Illuminate\Support\Facades\DB::table('postulacion')
                         ->where('postulante_id', $perfil->id)
@@ -133,17 +138,36 @@ class DashboardController extends Controller
                             )
                             ->get();
                             
-                        foreach ($inscripciones as $inscripcion) {
-                            $grupoAsignado = $inscripcion->grupo; // They belong to the same cohort usually
-                            $docente = $inscripcion->docente_nombres ? $inscripcion->docente_nombres . ' ' . $inscripcion->docente_paterno : null;
-                            $materias[] = [
-                                'materia' => $inscripcion->materia,
-                                'dia' => $inscripcion->dia,
-                                'hora_inicio' => substr($inscripcion->hora_inicio, 0, 5),
-                                'hora_fin' => substr($inscripcion->hora_fin, 0, 5),
-                                'aula' => $inscripcion->aula,
-                                'docente' => $docente
-                            ];
+                        if ($inscripciones->count() > 0) {
+                            $yaInscrito = true;
+                            foreach ($inscripciones as $inscripcion) {
+                                $grupoAsignado = $inscripcion->grupo; // They belong to the same cohort usually
+                                $docente = $inscripcion->docente_nombres ? $inscripcion->docente_nombres . ' ' . $inscripcion->docente_paterno : null;
+                                $materias[] = [
+                                    'materia' => $inscripcion->materia,
+                                    'dia' => $inscripcion->dia,
+                                    'hora_inicio' => substr($inscripcion->hora_inicio, 0, 5),
+                                    'hora_fin' => substr($inscripcion->hora_fin, 0, 5),
+                                    'aula' => $inscripcion->aula,
+                                    'docente' => $docente
+                                ];
+                            }
+                        } else if ($inscripcionesAbiertas && $gestionActual) {
+                            // Fetch available groups for enrollment
+                            $gruposDisponibles = \Illuminate\Support\Facades\DB::table('grupo')
+                                ->where('gestion_id', $gestionActual->id)
+                                ->select('nombre', 'cupo', 'inscritos_actuales', 'modalidad')
+                                ->groupBy('nombre', 'cupo', 'inscritos_actuales', 'modalidad')
+                                ->orderBy('nombre')
+                                ->get()
+                                ->map(function($g) {
+                                    $turno = 'Mañana';
+                                    if(str_starts_with($g->nombre, 'T')) $turno = 'Tarde';
+                                    if(str_starts_with($g->nombre, 'N')) $turno = 'Noche';
+                                    $g->turno = $turno;
+                                    $g->disponible = $g->cupo - $g->inscritos_actuales;
+                                    return $g;
+                                });
                         }
                     }
                 }
@@ -151,7 +175,10 @@ class DashboardController extends Controller
                 return Inertia::render('Paneles/Postulante/EstudianteDashboard', [
                     'user' => $user,
                     'materias' => $materias,
-                    'grupoAsignado' => $grupoAsignado
+                    'grupoAsignado' => $grupoAsignado,
+                    'inscripcionesAbiertas' => $inscripcionesAbiertas,
+                    'yaInscrito' => $yaInscrito,
+                    'gruposDisponibles' => $gruposDisponibles
                 ]);
             default:
                 abort(403, 'Rol no autorizado.');

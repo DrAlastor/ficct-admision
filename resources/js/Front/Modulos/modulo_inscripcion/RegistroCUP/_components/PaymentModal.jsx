@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiCheckCircle, FiShield } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiShield, FiAlertTriangle } from 'react-icons/fi';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
@@ -13,16 +13,22 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
     const [error, setError] = useState(null);
     const [processing, setProcessing] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Create PaymentIntent as soon as the component loads
+        setLoading(true);
         axios.post('/api/create-payment-intent', {
             postulacion_codigo: postulacionCodigo,
             monto: monto
         }).then(res => {
             setClientSecret(res.data.clientSecret);
+            setLoading(false);
         }).catch(err => {
-            setError(err.response?.data?.error || 'Error al inicializar el pago con Stripe.');
+            console.error('Error creando PaymentIntent:', err.response?.status, err.response?.data);
+            const msg = err.response?.data?.error || err.response?.data?.message || 'Error al inicializar el pago con Stripe.';
+            setError(msg);
+            setLoading(false);
         });
     }, [monto, postulacionCodigo]);
 
@@ -34,6 +40,7 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
         }
 
         setProcessing(true);
+        setError(null);
 
         const result = await stripe.confirmCardPayment(clientSecret, {
             payment_method: {
@@ -74,7 +81,18 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
                 }} />
             </div>
             
-            {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
+            {loading && (
+                <div className="text-blue-500 text-sm font-medium text-center">
+                    Conectando con Stripe...
+                </div>
+            )}
+
+            {error && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <FiAlertTriangle className="text-red-500 mt-0.5 flex-shrink-0" size={16} />
+                    <span className="text-red-600 text-sm font-medium">{error}</span>
+                </div>
+            )}
 
             <button 
                 type="submit" 
@@ -88,6 +106,8 @@ const StripeForm = ({ monto, postulacionCodigo, onPaymentSuccess }) => {
 };
 
 export default function PaymentModal({ show, onClose, monto, metodoPago, postulacionCodigo, onPaymentSuccess }) {
+    const [paypalError, setPaypalError] = useState(null);
+
     if (!show) return null;
 
     return (
@@ -126,27 +146,60 @@ export default function PaymentModal({ show, onClose, monto, metodoPago, postula
                     )}
 
                     {metodoPago === 'PayPal' && (
-                        <PayPalScriptProvider options={{ "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID, currency: "USD" }}>
-                            <PayPalButtons 
-                                style={{ layout: "vertical", shape: "rect", color: "blue" }}
-                                createOrder={(data, actions) => {
-                                    return axios.post('/api/paypal/create-order', {
-                                        postulacion_codigo: postulacionCodigo,
-                                        monto: monto
-                                    }).then(res => res.data.id);
-                                }}
-                                onApprove={(data, actions) => {
-                                    return axios.post('/api/paypal/capture-order', {
-                                        order_id: data.orderID,
-                                        postulacion_codigo: postulacionCodigo
-                                    }).then(res => {
-                                        if (res.data.status === 'COMPLETED') {
-                                            onPaymentSuccess();
+                        <>
+                            <PayPalScriptProvider options={{ "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID, currency: "USD" }}>
+                                <PayPalButtons 
+                                    style={{ layout: "vertical", shape: "rect", color: "blue" }}
+                                    createOrder={(data, actions) => {
+                                        setPaypalError(null);
+                                        return axios.post('/api/paypal/create-order', {
+                                            postulacion_codigo: postulacionCodigo,
+                                            monto: monto
+                                        }).then(res => {
+                                            if (res.data.id) {
+                                                return res.data.id;
+                                            }
+                                            throw new Error('No se recibió ID de orden de PayPal.');
+                                        }).catch(err => {
+                                            const msg = err.response?.data?.error || err.message || 'Error al crear la orden de PayPal.';
+                                            console.error('Error PayPal createOrder:', msg, err.response?.data);
+                                            setPaypalError(typeof msg === 'object' ? JSON.stringify(msg) : msg);
+                                            throw err; // Re-throw para que PayPal sepa que falló
+                                        });
+                                    }}
+                                    onApprove={(data, actions) => {
+                                        return axios.post('/api/paypal/capture-order', {
+                                            order_id: data.orderID,
+                                            postulacion_codigo: postulacionCodigo
+                                        }).then(res => {
+                                            if (res.data.status === 'COMPLETED') {
+                                                onPaymentSuccess();
+                                            }
+                                        }).catch(err => {
+                                            const msg = err.response?.data?.error || err.message || 'Error al capturar el pago.';
+                                            setPaypalError(typeof msg === 'object' ? JSON.stringify(msg) : msg);
+                                        });
+                                    }}
+                                    onError={(err) => {
+                                        console.error('PayPal SDK Error:', err);
+                                        // Solo mostrar error si no es el que ya capturamos en createOrder
+                                        if (!paypalError) {
+                                            setPaypalError('Error en la conexión con PayPal. Verifica las credenciales o intenta más tarde.');
                                         }
-                                    });
-                                }}
-                            />
-                        </PayPalScriptProvider>
+                                    }}
+                                    onCancel={() => {
+                                        setPaypalError(null); // Limpiar error si el usuario cancela
+                                    }}
+                                />
+                            </PayPalScriptProvider>
+
+                            {paypalError && (
+                                <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
+                                    <FiAlertTriangle className="text-red-500 mt-0.5 flex-shrink-0" size={16} />
+                                    <span className="text-red-600 text-sm font-medium">{paypalError}</span>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* BOTÓN DE BYPASS PARA PRUEBAS LOCALES */}

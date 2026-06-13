@@ -53,7 +53,7 @@ export default function Index({ auth, bitacora, usuarios, filters }) {
                         </div>
                     </div>
 
-                    {/* Selector de Empleado */}
+                    {/* Selector de Usuario */}
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Empleado</label>
                         <div className="relative">
@@ -65,7 +65,7 @@ export default function Index({ auth, bitacora, usuarios, filters }) {
                                 onChange={(e) => setSelectedUser(e.target.value)}
                                 className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:ring-2 focus:ring-[#07074E] focus:border-transparent transition-all outline-none appearance-none"
                             >
-                                <option value="">Seleccionar empleado...</option>
+                                <option value="">Seleccionar usuario...</option>
                                 {usuarios.map(user => (
                                     <option key={user.id} value={user.id}>
                                         {user.perfil?.nombres} {user.perfil?.apellido_paterno}

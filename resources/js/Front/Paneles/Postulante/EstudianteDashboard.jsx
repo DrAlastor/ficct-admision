@@ -3,7 +3,10 @@ import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { FiCalendar, FiMapPin, FiCheckCircle, FiClock, FiUserCheck, FiBook, FiAward, FiAlertCircle, FiTrendingUp } from 'react-icons/fi';
 
-export default function EstudianteDashboard({ materias = [], grupoAsignado }) {
+import { useState } from 'react';
+import InscribirGrupoModal from './InscribirGrupoModal';
+
+export default function EstudianteDashboard({ materias = [], grupoAsignado, inscripcionesAbiertas = false, yaInscrito = false, gruposDisponibles = [] }) {
     const { auth } = usePage().props;
     // Agrupar materias para evitar repeticiones por días
     const materiasUnicasMap = new Map();
@@ -15,6 +18,8 @@ export default function EstudianteDashboard({ materias = [], grupoAsignado }) {
     const materiasUnicas = Array.from(materiasUnicasMap.values());
 
     const totalMaterias = materiasUnicas.length;
+    const [showEnrollModal, setShowEnrollModal] = useState(false);
+
     // Simulación de promedios para UI (esto vendría del backend en un caso real)
     const promedioGeneral = 85; 
 
@@ -37,7 +42,7 @@ export default function EstudianteDashboard({ materias = [], grupoAsignado }) {
                             Bienvenido a tu panel estudiantil. Aquí podrás revisar tus materias asignadas, conocer a tus docentes y ver tus horarios de clase.
                         </p>
                     </div>
-                    <div className="mt-8 md:mt-0 flex items-center space-x-3">
+                    <div className="mt-8 md:mt-0 flex flex-col items-end space-y-3">
                         <span className="bg-white/10 backdrop-blur-xl border border-white/20 px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center shadow-lg transition-transform hover:scale-105">
                             <span className="w-3 h-3 rounded-full bg-emerald-400 mr-3 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></span>
                             Activo
@@ -45,6 +50,27 @@ export default function EstudianteDashboard({ materias = [], grupoAsignado }) {
                     </div>
                 </div>
             </div>
+
+            {/* CTA Inscripción */}
+            {!yaInscrito && inscripcionesAbiertas && (
+                <div className="mb-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-center relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/3 -translate-y-1/4 group-hover:scale-110 transition-transform duration-700">
+                        <FiCheckCircle size={250} />
+                    </div>
+                    <div className="relative z-10 mb-6 md:mb-0">
+                        <h3 className="text-3xl font-black mb-2 drop-shadow-md">¡Inscripciones Abiertas!</h3>
+                        <p className="text-green-50 font-medium text-lg max-w-2xl">
+                            Es hora de elegir tu grupo para el semestre. Tienes la oportunidad de seleccionar el grupo y turno de tu preferencia antes de que se agoten los cupos.
+                        </p>
+                    </div>
+                    <button 
+                        onClick={() => setShowEnrollModal(true)}
+                        className="relative z-10 bg-white text-green-700 hover:bg-green-50 px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-1"
+                    >
+                        Inscribir Grupo Ahora
+                    </button>
+                </div>
+            )}
 
             {/* Tarjetas de Estadísticas Estilo Premium */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -57,7 +83,7 @@ export default function EstudianteDashboard({ materias = [], grupoAsignado }) {
                     </div>
                     <div className="relative z-10">
                         <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Estado General</div>
-                        <div className="text-2xl font-black text-gray-800 tracking-tight leading-none mt-1">Habilitado</div>
+                        <div className="text-2xl font-black text-gray-800 tracking-tight leading-none">Habilitado</div>
                     </div>
                 </div>
 
@@ -100,6 +126,12 @@ export default function EstudianteDashboard({ materias = [], grupoAsignado }) {
                     </div>
                 </div>
             </div>
+
+            <InscribirGrupoModal 
+                show={showEnrollModal} 
+                onClose={() => setShowEnrollModal(false)} 
+                grupos={gruposDisponibles} 
+            />
 
             {/* Contenido Principal */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

@@ -101,7 +101,9 @@ export default function RegistroIndex({ precio_matricula, metodos_activos = [] }
                     alert('Ocurrió un error de validación. Revisa los datos.');
                 }
             } else {
-                alert('Ocurrió un error inesperado al procesar tu solicitud.');
+                const serverMsg = error.response?.data?.message || error.response?.data?.error || error.message || '';
+                alert('Ocurrió un error inesperado al procesar tu solicitud.' + (serverMsg ? '\n\nDetalle: ' + serverMsg : ''));
+                console.error('Error en iniciar-inscripcion:', error.response?.status, error.response?.data);
             }
         } finally {
             setProcesando(false);

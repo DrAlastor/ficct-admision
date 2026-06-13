@@ -139,7 +139,11 @@ export default function SidebarLayout({ children, title, subtitle }) {
                                             'Gestionar Aulas': 'aulas.admin.index',
                                             'Gestionar Exámenes': 'gestion_examenes.index',
                                             'Gestionar Pagos': 'pagos.admin.index',
-                                            'Gestionar Carreras': 'carreras.admin.index'
+                                            'Gestionar Carreras': 'carreras.admin.index',
+                                            'Gestionar Docente': 'docentes.index',
+                                            'Gestionar Carga Horaria': 'carga_horaria.index',
+                                            'Gestionar Estadísticas': 'estadisticas.index',
+                                            'Gestionar Consultas': 'consultas.index',
                                         };
                                         const routeName = routeMap[func.nombre];
                                         const hrefUrl = routeName ? route(routeName) : '#';

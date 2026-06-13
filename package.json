@@ -25,6 +25,13 @@
         "@paypal/react-paypal-js": "^10.0.0",
         "@stripe/react-stripe-js": "^6.6.0",
         "@stripe/stripe-js": "^9.8.0",
-        "react-icons": "^5.6.0"
+        "apexcharts": "^5.15.0",
+        "html2pdf.js": "^0.14.0",
+        "jspdf": "^4.2.1",
+        "jspdf-autotable": "^5.0.8",
+        "lucide-react": "^1.18.0",
+        "react-apexcharts": "^2.1.0",
+        "react-icons": "^5.6.0",
+        "xlsx": "^0.18.5"
     }
 }
