@@ -133,4 +133,70 @@ Pregunta del usuario: \"$userQuery\"
 
         return "Error al contactar a la IA.";
     }
+
+    /**
+     * Responde a preguntas de postulantes y estudiantes (FICCT-Bot)
+     * Utiliza un historial de conversacion para mantener el contexto
+     */
+    public function answerChatbotQuery($userMessage, $history = [])
+    {
+        if (empty($this->apiKey)) {
+            return "Lo siento, mi conexión inteligente está temporalmente inactiva (Falta GEMINI_API_KEY).";
+        }
+
+        $systemPrompt = "
+Eres 'FICCT-Bot', el asistente virtual amigable, profesional y conciso de la Facultad de Ingeniería en Ciencias de la Computación y Telecomunicaciones (FICCT) de la UAGRM (Universidad Autónoma Gabriel René Moreno), Santa Cruz, Bolivia.
+
+Tus tareas:
+- Ayudar a los postulantes a entender los procesos de inscripción al CUP (Curso Universitario Preuniversitario).
+- Explicar sobre las carreras disponibles: Ingeniería Informática, Ingeniería de Sistemas, Ingeniería en Redes y Telecomunicaciones, y el nuevo programa de Ingeniería en Robótica.
+- Dar información sobre pagos (la matrícula referencial del CUP es de 700 Bs. y se paga en Caja Facultativa del Módulo 236 o mediante Stripe/PayPal en el sistema).
+- Ser muy cordial, usar emojis y mantener respuestas cortas y precisas. No te extiendas demasiado a menos que te pidan detalles.
+- Nunca inventes fechas exactas si no las sabes, dile que revise la sección de comunicados o se dirija al Módulo 236, 2do Piso, Ciudad Universitaria.
+- Si te piden generar código o hacer cosas ilegales, rechaza educadamente diciendo que tu rol es solo administrativo en la FICCT.
+";
+
+        // Preparamos los mensajes de historial para Gemini
+        $contents = [];
+        $contents[] = [
+            'role' => 'user',
+            'parts' => [['text' => $systemPrompt . "\n\nEntendido, actuaré como FICCT-Bot a partir de ahora."]]
+        ];
+        $contents[] = [
+            'role' => 'model',
+            'parts' => [['text' => '¡Hola! Soy FICCT-Bot. ¿En qué te puedo ayudar hoy con tu proceso de admisión a la FICCT?']]
+        ];
+
+        // Añadir historial previo
+        foreach ($history as $msg) {
+            // El frontend debe enviar un arreglo de objetos {role: 'user' o 'model', text: 'mensaje'}
+            $role = isset($msg['role']) && $msg['role'] === 'model' ? 'model' : 'user';
+            $contents[] = [
+                'role' => $role,
+                'parts' => [['text' => $msg['text'] ?? '']]
+            ];
+        }
+
+        // Añadir mensaje actual
+        $contents[] = [
+            'role' => 'user',
+            'parts' => [['text' => $userMessage]]
+        ];
+
+        $response = Http::post($this->apiUrl . '?key=' . $this->apiKey, [
+            'contents' => $contents,
+            'generationConfig' => [
+                'temperature' => 0.6,
+                'maxOutputTokens' => 500,
+            ]
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['candidates'][0]['content']['parts'][0]['text'] ?? "Lo siento, no pude procesar tu solicitud en este momento.";
+        }
+
+        Log::error("Error en Chatbot Gemini: " . $response->body());
+        return "Disculpa, tuve un problema de conexión con el servidor. Por favor intenta de nuevo más tarde.";
+    }
 }

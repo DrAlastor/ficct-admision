@@ -31,6 +31,10 @@ Route::post('/registro-cup/iniciar-inscripcion', [PostulanteRegistroController::
 Route::post('/registro-cup/pago-ficticio', [PostulanteRegistroController::class, 'procesarPagoFicticio'])->name('registro.pago.ficticio');
 Route::post('/registro-cup/consultar', [PostulanteRegistroController::class, 'consultarRegistro'])->name('registro.consultar');
 
+// Ruta del Asistente FICCT-Bot (Disponible sin autenticación)
+use Backend\consulta_reporte\Controllers\ChatbotController;
+Route::post('/chatbot/ask', [ChatbotController::class, 'ask'])->name('chatbot.ask')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 Route::get('/', function () {
     return Inertia::render('Modulos/modulo_inscripcion/PaginaInicio/Index', [
         'canLogin' => Route::has('login'),

@@ -11,6 +11,7 @@ import {
     FiSettings,
     FiActivity
 } from 'react-icons/fi';
+import ChatbotWidget from '@/Front/Components/ChatbotWidget';
 
 export default function SidebarLayout({ children, title, subtitle }) {
     const { auth } = usePage().props;
@@ -233,6 +234,7 @@ export default function SidebarLayout({ children, title, subtitle }) {
                     {children}
                 </main>
             </div>
+            <ChatbotWidget />
         </div>
     );
 }

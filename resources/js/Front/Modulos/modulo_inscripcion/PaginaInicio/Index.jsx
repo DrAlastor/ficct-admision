@@ -10,6 +10,7 @@ import {
     FaQuestionCircle,
     FaRobot,
 } from 'react-icons/fa';
+import ChatbotWidget from '@/Front/Components/ChatbotWidget';
 
 const carreras = [
     {
@@ -431,6 +432,8 @@ export default function Welcome({ auth }) {
                     </div>
                 </section>
             </main>
+            
+            <ChatbotWidget />
         </div>
     );
 }
