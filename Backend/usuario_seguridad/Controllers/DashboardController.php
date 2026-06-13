@@ -32,7 +32,7 @@ class DashboardController extends Controller
         
         switch ($user->rol_id) {
             case 1:
-            case 1:
+            case 3:
                 $usuariosQuery = \Backend\usuario_seguridad\Models\Usuario::where('eliminado', false)->get();
                 
                 // Asegurarnos de que el usuario actual se marque y cuente como Activo (útil si se reinició la BD)
@@ -118,7 +118,7 @@ class DashboardController extends Controller
                     'perfil' => $perfil,
                     'materias' => $materias
                 ]);
-            case 3:
+            case 4:
                 // Fetch postulante's schedule
                 $perfil = \Backend\usuario_seguridad\Models\Perfil::where('usuario_id', $user->id)->first();
                 $materias = [];

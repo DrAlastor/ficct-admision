@@ -30,7 +30,7 @@ class ExamenController extends Controller
         
         if ($user->rol_id == 1 || $user->rol_id == 2) {
             return $this->vistaAdminDocente($user);
-        } elseif ($user->rol_id == 3) {
+        } elseif ($user->rol_id == 4) {
             return $this->vistaPostulante($user);
         }
 
@@ -153,7 +153,7 @@ class ExamenController extends Controller
     public function exportarNotas($grupo_codigo, $format)
     {
         $user = auth()->user();
-        if ($user->rol_id == 3) abort(403);
+        if ($user->rol_id == 4) abort(403);
 
         $grupo = DB::table('grupo as g')
             ->join('materia as m', 'g.materia_id', '=', 'm.id')
@@ -316,7 +316,7 @@ class ExamenController extends Controller
     public function rendir($id, Request $request)
     {
         $user = $request->user();
-        if ($user->rol_id != 3) abort(403);
+        if ($user->rol_id != 4) abort(403);
 
         $request->validate([
             'password' => 'required|string'
@@ -404,7 +404,7 @@ class ExamenController extends Controller
     public function calificar($id, Request $request)
     {
         $user = $request->user();
-        if ($user->rol_id != 3) abort(403);
+        if ($user->rol_id != 4) abort(403);
 
         $request->validate([
             'respuestas' => 'required|array'

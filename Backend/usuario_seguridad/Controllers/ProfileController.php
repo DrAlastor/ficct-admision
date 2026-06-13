@@ -31,7 +31,7 @@ class ProfileController extends Controller
         $perfil = clone $usuario->perfil;
 
         // Optionally load more data based on role
-        if ($usuario->rol_id == 3) {
+        if ($usuario->rol_id == 4) {
             $postulante = \Backend\modulo_inscripcion\Models\Postulante::find($perfil->id);
             if ($postulante) {
                 $perfil->colegio_procedencia = $postulante->colegio_procedencia;
