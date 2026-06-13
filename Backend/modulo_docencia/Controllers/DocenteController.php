@@ -102,7 +102,7 @@ class DocenteController extends Controller
             $usuario = Usuario::create([
                 'codigo_inicio' => $codigoInicio,
                 'password' => Hash::make($request->ci), // Default password
-                'estado' => 'Activo',
+                'estado' => 'Inactivo',
                 'rol_id' => 2 // Rol Docente
             ]);
 

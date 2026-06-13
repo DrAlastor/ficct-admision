@@ -421,14 +421,15 @@ class PostulanteRegistroController extends Controller
             DB::beginTransaction();
 
             // 1. Generar el Código de Postulante (Ej. POS26059999)
-            $codigoPostulante = 'POS' . date('ym') . rand(1000, 9999);
+            $siguienteId = \Backend\usuario_seguridad\Models\Perfil::max('id') + 1;
+            $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
 
             // 2. Crear el Usuario (Autenticación)
             $usuario = Usuario::create([
                 'codigo_inicio' => $codigoPostulante,
                 'password' => Hash::make($datosPostulante['ci']), 
-                'estado' => 'Activo',
-                'rol_id' => 3 
+                'estado' => 'Inactivo',
+                'rol_id' => 4 
             ]);
 
             // 3. Crear el Perfil (Demografía)
@@ -455,9 +456,12 @@ class PostulanteRegistroController extends Controller
             ]);
 
             // 4. Crear la Postulación (Gestión actual)
+            $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+            $gestionId = $gestionActual ? $gestionActual->id : 1;
+            
             $postulacion = Postulacion::create([
                 'postulante_id' => $postulante->id,
-                'gestion_id' => 1, // Se debe asignar dinámicamente según la gestión activa
+                'gestion_id' => $gestionId,
                 'fecha' => now()->toDateString(),
                 'hora' => now()->toTimeString(),
                 'estado' => 'Habilitado CUP'

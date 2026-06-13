@@ -152,7 +152,7 @@ class PostulanteController extends Controller
                 'codigo_inicio' => $perfil->codigo,
                 'password' => Hash::make($perfil->ci),
                 'estado' => 'Inactivo',
-                'rol_id' => 3 
+                'rol_id' => 4 
             ]);
 
             // Vincular Usuario al Perfil y asignar cargo
