@@ -7,8 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU22 - Gestionar Exámenes
+ */
 class GestionExamenController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -19,10 +27,17 @@ class GestionExamenController extends Controller
         $materias = DB::table('materia')->get();
         
         $examenes = DB::table('examen as e')
-            ->join('materia as m', 'e.materia_id', '=', 'm.id')
-            ->select('e.*', 'm.nombre as materia_nombre')
+            ->select('e.*')
             ->orderBy('e.fecha_inicio', 'desc')
             ->get();
+
+        foreach ($examenes as $examen) {
+            $examen->materias = DB::table('examen_materia as em')
+                ->join('materia as m', 'em.materia_id', '=', 'm.id')
+                ->where('em.examen_id', $examen->id)
+                ->select('m.nombre', 'em.cantidad_preguntas')
+                ->get();
+        }
 
         $bancoStats = DB::table('pregunta')
             ->select('materia_id', DB::raw('count(*) as total'))
@@ -40,6 +55,11 @@ class GestionExamenController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'preguntas' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function preguntas(Request $request)
     {
         $user = $request->user();
@@ -59,29 +79,62 @@ class GestionExamenController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'storeExamen' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function storeExamen(Request $request)
     {
         $request->validate([
-            'materia_id' => 'required|integer',
+            'turno' => 'required|string',
             'tipo' => 'required|string', 
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after:fecha_inicio',
             'duracion_minutos' => 'required|integer|min:5',
-            'cantidad_preguntas' => 'required|integer|min:1'
+            'password' => 'required|string',
+            'preguntas_por_materia' => 'required|array'
         ]);
 
-        DB::table('examen')->insert([
-            'materia_id' => $request->materia_id,
-            'tipo' => $request->tipo,
-            'fecha_inicio' => $request->fecha_inicio,
-            'fecha_fin' => $request->fecha_fin,
-            'duracion_minutos' => $request->duracion_minutos,
-            'cantidad_preguntas' => $request->cantidad_preguntas
-        ]);
+        DB::beginTransaction();
+        try {
+            $examenId = DB::table('examen')->insertGetId([
+                'turno' => $request->turno,
+                'tipo' => $request->tipo,
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'duracion_minutos' => $request->duracion_minutos,
+                'password' => $request->password
+            ]);
 
-        return back()->with('success', 'Examen programado correctamente.');
+            $inserts = [];
+            foreach ($request->preguntas_por_materia as $materiaId => $cantidad) {
+                if ($cantidad > 0) {
+                    $inserts[] = [
+                        'examen_id' => $examenId,
+                        'materia_id' => $materiaId,
+                        'cantidad_preguntas' => $cantidad
+                    ];
+                }
+            }
+
+            if (!empty($inserts)) {
+                DB::table('examen_materia')->insert($inserts);
+            }
+
+            DB::commit();
+            return back()->with('success', 'Examen programado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Error al programar el examen: ' . $e->getMessage()]);
+        }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'storePregunta' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function storePregunta(Request $request)
     {
         $request->validate([
@@ -98,6 +151,11 @@ class GestionExamenController extends Controller
         return back()->with('success', 'Pregunta añadida al banco.');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'seederPreguntas' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function seederPreguntas()
     {
         $materias = DB::table('materia')->get();
@@ -221,12 +279,22 @@ class GestionExamenController extends Controller
         return back()->with('success', 'Se generaron ' . count($preguntas) . ' preguntas de prueba exitosamente con los temarios oficiales.');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'destroyPregunta' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function destroyPregunta($id)
     {
         DB::table('pregunta')->where('id', $id)->delete();
         return back()->with('success', 'Pregunta eliminada del banco exitosamente.');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'clearPreguntas' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function clearPreguntas()
     {
         DB::table('pregunta')->truncate();

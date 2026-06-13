@@ -12,11 +12,19 @@ use Illuminate\Support\Facades\DB;
 use Backend\modulo_inscripcion\Models\Pago;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * CU00 - Pagos Stripe
+ */
 class PaymentController extends Controller
 {
     // ==========================================
     // STRIPE
     // ==========================================
+    /**
+     * Ejecuta la acción o procedimiento 'createPaymentIntent' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function createPaymentIntent(Request $request)
     {
         $request->validate([
@@ -46,6 +54,11 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'stripeWebhook' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function stripeWebhook(Request $request)
     {
         $payload = $request->getContent();
@@ -83,24 +96,39 @@ class PaymentController extends Controller
     // ==========================================
     // PAYPAL
     // ==========================================
+    /**
+     * Ejecuta la acción o procedimiento 'getPayPalAccessToken' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     private function getPayPalAccessToken()
     {
         $clientId = env('PAYPAL_CLIENT_ID');
         $secret = env('PAYPAL_SECRET');
 
-        $response = Http::withBasicAuth($clientId, $secret)
+        Log::info('PayPal: Solicitando access token...', ['client_id_prefix' => substr($clientId ?? '', 0, 10)]);
+
+        $response = Http::withoutVerifying()
+            ->withBasicAuth($clientId, $secret)
             ->asForm()
             ->post('https://api-m.sandbox.paypal.com/v1/oauth2/token', [
                 'grant_type' => 'client_credentials',
             ]);
 
         if ($response->successful()) {
+            Log::info('PayPal: Access token obtenido exitosamente.');
             return $response->json()['access_token'];
         }
 
-        throw new \Exception('No se pudo obtener el Access Token de PayPal.');
+        Log::error('PayPal: Error obteniendo access token', ['status' => $response->status(), 'body' => $response->body()]);
+        throw new \Exception('No se pudo obtener el Access Token de PayPal. Status: ' . $response->status());
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'createPayPalOrder' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function createPayPalOrder(Request $request)
     {
         $request->validate([
@@ -111,30 +139,42 @@ class PaymentController extends Controller
         try {
             $accessToken = $this->getPayPalAccessToken();
 
-            $response = Http::withToken($accessToken)
+            $montoUSD = strval(round($request->monto / 6.96, 2));
+            Log::info('PayPal: Creando orden', ['monto_bob' => $request->monto, 'monto_usd' => $montoUSD, 'postulacion' => $request->postulacion_codigo]);
+
+            $response = Http::withoutVerifying()
+                ->withToken($accessToken)
                 ->post('https://api-m.sandbox.paypal.com/v2/checkout/orders', [
                     'intent' => 'CAPTURE',
                     'purchase_units' => [
                         [
                             'reference_id' => strval($request->postulacion_codigo),
                             'amount' => [
-                                'currency_code' => 'USD', // PayPal a menudo no soporta BOB directamente, usamos USD para el sandbox
-                                'value' => strval(round($request->monto / 6.96, 2)) // Asumiendo conversión si es necesario, o directamente monto si es USD
+                                'currency_code' => 'USD',
+                                'value' => $montoUSD
                             ]
                         ]
                     ]
                 ]);
 
             if ($response->successful()) {
+                Log::info('PayPal: Orden creada exitosamente', ['order_id' => $response->json()['id'] ?? 'N/A']);
                 return response()->json($response->json());
             }
 
-            return response()->json(['error' => $response->json()], 500);
+            Log::error('PayPal: Error creando orden', ['status' => $response->status(), 'body' => $response->body()]);
+            return response()->json(['error' => 'Error de PayPal: ' . $response->body()], 500);
         } catch (\Exception $e) {
+            Log::error('PayPal: Excepción en createPayPalOrder', ['message' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'capturePayPalOrder' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function capturePayPalOrder(Request $request)
     {
         $request->validate([
@@ -145,7 +185,8 @@ class PaymentController extends Controller
         try {
             $accessToken = $this->getPayPalAccessToken();
 
-            $response = Http::withToken($accessToken)
+            $response = Http::withoutVerifying()
+                ->withToken($accessToken)
                 ->post("https://api-m.sandbox.paypal.com/v2/checkout/orders/{$request->order_id}/capture", [
                     'headers' => [
                         'Content-Type' => 'application/json'
@@ -177,6 +218,11 @@ class PaymentController extends Controller
     // ==========================================
     // MÉTODO COMÚN PARA REGISTRAR PAGOS
     // ==========================================
+    /**
+     * Ejecuta la acción o procedimiento 'registrarPagoExitoso' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     private function registrarPagoExitoso($postulacionCodigo, $transaccionId, $metodoNombre, $monto)
     {
         // Verificar si ya existe el pago para no duplicar en webhooks

@@ -7,8 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU21 - Gestionar Aulas
+ */
 class AulaController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index()
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -76,6 +84,11 @@ class AulaController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'getAulasDisponibles' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function getAulasDisponibles(Request $request)
     {
         $horaInicio = $request->query('hora_inicio');
@@ -121,6 +134,11 @@ class AulaController extends Controller
         return response()->json($aulasDisponibles);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'asignarAula' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function asignarAula(Request $request)
     {
         $request->validate([
@@ -179,6 +197,11 @@ class AulaController extends Controller
         return redirect()->back()->with('success', 'Aula asignada correctamente.');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'autogenerar' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function autogenerar(Request $request)
     {
         DB::beginTransaction();

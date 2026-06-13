@@ -7,13 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
+/**
+ * CU00 - Panel Principal
+ */
 class DashboardController extends Controller
 {
     /**
      * Muestra el panel principal (Dashboard) correspondiente al rol del usuario.
      * - Administrador (1): Ve estadísticas globales (cantidad de usuarios, activos, inactivos) y bitácora reciente.
      * - Docente (2): Ve un resumen de las materias y grupos que dicta (incluyendo cupos y horarios).
-     * - Postulante (3): Ve su grupo asignado y su propio horario de clases.
+     * - Postulante (4): Ve su grupo asignado y su propio horario de clases.
      *
      * @return \Inertia\Response
      */
@@ -24,18 +27,32 @@ class DashboardController extends Controller
         // Determinar a qué dashboard redirigir según el rol_id
         // 1: Admin
         // 2: Docente
-        // 3: Postulante / Estudiante
+        // 3: Coordinador
+        // 4: Postulante / Estudiante
         
         switch ($user->rol_id) {
             case 1:
             case 1:
                 $usuariosQuery = \Backend\usuario_seguridad\Models\Usuario::where('eliminado', false)->get();
+                
+                // Asegurarnos de que el usuario actual se marque y cuente como Activo (útil si se reinició la BD)
+                if ($user->estado !== 'Activo') {
+                    $user->estado = 'Activo';
+                    $user->save();
+                    
+                    // Actualizar en la colección para el conteo
+                    $userEnColeccion = $usuariosQuery->firstWhere('id', $user->id);
+                    if ($userEnColeccion) {
+                        $userEnColeccion->estado = 'Activo';
+                    }
+                }
+
                 $totalUsuarios = $usuariosQuery->count();
                 $totalActivos = $usuariosQuery->where('estado', 'Activo')->count();
                 $totalInactivos = $usuariosQuery->where('estado', 'Inactivo')->count();
                 $totalAdmins = $usuariosQuery->where('rol_id', 1)->count();
                 $totalDocentes = $usuariosQuery->where('rol_id', 2)->count();
-                $totalPostulantes = $usuariosQuery->where('rol_id', 3)->count();
+                $totalPostulantes = $usuariosQuery->where('rol_id', 4)->count();
 
                 $bitacora = \Illuminate\Support\Facades\DB::table('bitacora')
                     ->leftJoin('perfil', 'bitacora.usuario_id', '=', 'perfil.usuario_id')
@@ -107,6 +124,11 @@ class DashboardController extends Controller
                 $materias = [];
                 $grupoAsignado = '';
                 
+                $gestionActual = \Illuminate\Support\Facades\DB::table('gestion')->orderByDesc('id')->first();
+                $inscripcionesAbiertas = $gestionActual ? $gestionActual->inscripciones_abiertas : false;
+                $yaInscrito = false;
+                $gruposDisponibles = [];
+                
                 if ($perfil) {
                     $postulacion = \Illuminate\Support\Facades\DB::table('postulacion')
                         ->where('postulante_id', $perfil->id)
@@ -133,17 +155,36 @@ class DashboardController extends Controller
                             )
                             ->get();
                             
-                        foreach ($inscripciones as $inscripcion) {
-                            $grupoAsignado = $inscripcion->grupo; // They belong to the same cohort usually
-                            $docente = $inscripcion->docente_nombres ? $inscripcion->docente_nombres . ' ' . $inscripcion->docente_paterno : null;
-                            $materias[] = [
-                                'materia' => $inscripcion->materia,
-                                'dia' => $inscripcion->dia,
-                                'hora_inicio' => substr($inscripcion->hora_inicio, 0, 5),
-                                'hora_fin' => substr($inscripcion->hora_fin, 0, 5),
-                                'aula' => $inscripcion->aula,
-                                'docente' => $docente
-                            ];
+                        if ($inscripciones->count() > 0) {
+                            $yaInscrito = true;
+                            foreach ($inscripciones as $inscripcion) {
+                                $grupoAsignado = $inscripcion->grupo; // They belong to the same cohort usually
+                                $docente = $inscripcion->docente_nombres ? $inscripcion->docente_nombres . ' ' . $inscripcion->docente_paterno : null;
+                                $materias[] = [
+                                    'materia' => $inscripcion->materia,
+                                    'dia' => $inscripcion->dia,
+                                    'hora_inicio' => substr($inscripcion->hora_inicio, 0, 5),
+                                    'hora_fin' => substr($inscripcion->hora_fin, 0, 5),
+                                    'aula' => $inscripcion->aula,
+                                    'docente' => $docente
+                                ];
+                            }
+                        } else if ($inscripcionesAbiertas && $gestionActual) {
+                            // Fetch available groups for enrollment
+                            $gruposDisponibles = \Illuminate\Support\Facades\DB::table('grupo')
+                                ->where('gestion_id', $gestionActual->id)
+                                ->select('nombre', 'cupo', 'inscritos_actuales', 'modalidad')
+                                ->groupBy('nombre', 'cupo', 'inscritos_actuales', 'modalidad')
+                                ->orderBy('nombre')
+                                ->get()
+                                ->map(function($g) {
+                                    $turno = 'Mañana';
+                                    if(str_starts_with($g->nombre, 'T')) $turno = 'Tarde';
+                                    if(str_starts_with($g->nombre, 'N')) $turno = 'Noche';
+                                    $g->turno = $turno;
+                                    $g->disponible = $g->cupo - $g->inscritos_actuales;
+                                    return $g;
+                                });
                         }
                     }
                 }
@@ -151,7 +192,10 @@ class DashboardController extends Controller
                 return Inertia::render('Paneles/Postulante/EstudianteDashboard', [
                     'user' => $user,
                     'materias' => $materias,
-                    'grupoAsignado' => $grupoAsignado
+                    'grupoAsignado' => $grupoAsignado,
+                    'inscripcionesAbiertas' => $inscripcionesAbiertas,
+                    'yaInscrito' => $yaInscrito,
+                    'gruposDisponibles' => $gruposDisponibles
                 ]);
             default:
                 abort(403, 'Rol no autorizado.');

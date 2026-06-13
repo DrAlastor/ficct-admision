@@ -46,6 +46,7 @@ class AuthenticatedSessionController extends Controller
         if ($user) {
             $user->estado = 'Activo';
             $user->save();
+            \Backend\usuario_seguridad\Services\AuditService::log('Inicio de Sesión', 'El usuario ha iniciado sesión en el sistema.');
         }
 
         return redirect()->intended(route('dashboard', absolute: false));
@@ -65,6 +66,7 @@ class AuthenticatedSessionController extends Controller
         if ($user) {
             $user->estado = 'Inactivo';
             $user->save();
+            \Backend\usuario_seguridad\Services\AuditService::log('Cierre de Sesión', 'El usuario ha cerrado sesión en el sistema.');
         }
 
         Auth::guard('web')->logout();

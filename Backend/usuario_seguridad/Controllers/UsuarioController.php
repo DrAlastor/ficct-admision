@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Backend\usuario_seguridad\Services\AuditService;
 
+/**
+ * CU01 - Gestionar Usuarios
+ */
 class UsuarioController extends Controller
 {
     /**

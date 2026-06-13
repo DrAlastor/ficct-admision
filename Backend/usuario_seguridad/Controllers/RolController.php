@@ -10,6 +10,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Backend\usuario_seguridad\Services\AuditService;
 
+/**
+ * CU02 - Roles y Permisos
+ */
 class RolController extends Controller
 {
     /**

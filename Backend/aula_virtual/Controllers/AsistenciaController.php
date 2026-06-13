@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
+/**
+ * CU15 - Consultar Asistencia
+ */
 class AsistenciaController extends Controller
 {
     /**

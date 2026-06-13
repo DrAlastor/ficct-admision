@@ -1,19 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
-import { FiClock, FiCheckCircle, FiAlertTriangle, FiArrowRight, FiArrowLeft, FiSend } from 'react-icons/fi';
+import { FiClock, FiCheckCircle, FiSend, FiArrowLeft, FiArrowRight } from 'react-icons/fi';
 
-/**
- * Componente interactivo para que el postulante rinda su examen en tiempo real.
- * Incluye un temporizador automático, barra lateral de navegación entre preguntas
- * y sistema de autoenvío al finalizar el tiempo.
- *
- * @param {Object} props
- * @param {Object} props.examen Datos del examen actual.
- * @param {Array} props.preguntas Banco de preguntas aleatorias asignadas.
- * @param {number} props.inscripcion_id ID de inscripción en la materia evaluada.
- * @returns {JSX.Element}
- */
-export default function Rendir({ examen, preguntas, inscripcion_id }) {
+export default function Rendir({ examen, preguntas }) {
     const [respuestas, setRespuestas] = useState({});
     const [timeLeft, setTimeLeft] = useState(examen.duracion_minutos * 60);
     const [preguntaActual, setPreguntaActual] = useState(0);
@@ -56,7 +45,6 @@ export default function Rendir({ examen, preguntas, inscripcion_id }) {
         }));
 
         router.post(route('examenes.calificar', examen.id), {
-            inscripcion_id,
             respuestas: respuestasArray
         });
     };
@@ -65,9 +53,9 @@ export default function Rendir({ examen, preguntas, inscripcion_id }) {
         const contestadas = Object.keys(respuestas).length;
         const faltantes = preguntas.length - contestadas;
         
-        let msg = `Estás a punto de enviar el examen. Has contestado ${contestadas} de ${preguntas.length} preguntas.`;
+        let msg = `Estás a punto de enviar el Examen Global. Has contestado ${contestadas} de ${preguntas.length} preguntas.`;
         if (faltantes > 0) msg += `\n\nATENCIÓN: Tienes ${faltantes} preguntas sin contestar.`;
-        msg += '\n\n¿Estás seguro que deseas enviar? Esta acción no se puede deshacer.';
+        msg += '\n\n¿Estás seguro que deseas enviar? Tus respuestas se calificarán y asignarán a cada materia inscrita automáticamente. Esta acción no se puede deshacer.';
 
         if (confirm(msg)) {
             submitExamen();
@@ -76,19 +64,17 @@ export default function Rendir({ examen, preguntas, inscripcion_id }) {
 
     const currentP = preguntas[preguntaActual];
     const opcionSeleccionada = respuestas[currentP?.id];
-    
-    // Alerta roja si quedan menos de 5 min
     const isWarning = timeLeft < 300; 
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Head title={`Rendir Examen - ${examen.materia_nombre}`} />
+            <Head title={`Rendir Examen Global - Turno ${examen.turno}`} />
 
             {/* Navbar fijo superior */}
             <header className={`sticky top-0 z-50 border-b shadow-sm ${isWarning ? 'bg-red-600 text-white border-red-700' : 'bg-indigo-900 text-white border-indigo-950'}`}>
                 <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div>
-                        <h1 className="font-black text-lg tracking-tight truncate max-w-[200px] sm:max-w-md">{examen.materia_nombre}</h1>
+                        <h1 className="font-black text-lg tracking-tight truncate">Examen Global - Turno {examen.turno}</h1>
                         <span className="text-xs font-bold opacity-80 uppercase tracking-widest">{examen.tipo}</span>
                     </div>
                     <div className="flex items-center gap-4">
@@ -111,7 +97,7 @@ export default function Rendir({ examen, preguntas, inscripcion_id }) {
                 {/* Navegador de preguntas (Sidebar) */}
                 <div className="md:col-span-1">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sticky top-24">
-                        <h3 className="font-black text-gray-800 uppercase tracking-wide mb-4 text-sm border-b pb-2">Navegación</h3>
+                        <h3 className="font-black text-gray-800 uppercase tracking-wide mb-4 text-sm border-b pb-2">Navegación Mixta</h3>
                         <div className="grid grid-cols-5 gap-2">
                             {preguntas.map((p, idx) => {
                                 const respondida = !!respuestas[p.id];
@@ -134,6 +120,7 @@ export default function Rendir({ examen, preguntas, inscripcion_id }) {
                                         key={p.id}
                                         onClick={() => setPreguntaActual(idx)}
                                         className={btnClass}
+                                        title={`Pregunta de ${p.materia_nombre}`}
                                     >
                                         {idx + 1}
                                     </button>
@@ -154,9 +141,14 @@ export default function Rendir({ examen, preguntas, inscripcion_id }) {
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 min-h-[400px] flex flex-col relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-bl-full -z-10"></div>
                             
-                            <h2 className="text-sm font-black text-indigo-600 uppercase tracking-widest mb-4">
-                                Pregunta {preguntaActual + 1} de {preguntas.length}
-                            </h2>
+                            <div className="flex justify-between items-start mb-4">
+                                <h2 className="text-sm font-black text-indigo-600 uppercase tracking-widest">
+                                    Pregunta {preguntaActual + 1} de {preguntas.length}
+                                </h2>
+                                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-md text-xs font-bold shadow-sm uppercase">
+                                    {currentP.materia_nombre}
+                                </span>
+                            </div>
                             
                             <p className="text-xl font-bold text-gray-800 leading-relaxed mb-8">
                                 {currentP.enunciado}

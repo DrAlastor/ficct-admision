@@ -16,34 +16,18 @@ export default function ResultadosView({ grupos = [], notas = [] }) {
 
     const exportToCSV = () => {
         if (!grupoActualInfo || filteredEstudiantes.length === 0) return;
-
-        const headers = ['CI', 'Apellido Paterno', 'Apellido Materno', 'Nombres', 'Parcial 1', 'Parcial 2', 'Examen Final', 'Promedio Final', 'Estado'];
-        const csvRows = [headers.join(',')];
-
-        filteredEstudiantes.forEach(e => {
-            const row = [
-                e.ci,
-                e.apellido_paterno,
-                e.apellido_materno || '',
-                e.nombres,
-                Number(e.nota_p1).toFixed(2),
-                Number(e.nota_p2).toFixed(2),
-                Number(e.nota_p3).toFixed(2),
-                Number(e.promedio_final).toFixed(2),
-                e.estado_materia
-            ].map(v => `"${v}"`);
-            csvRows.push(row.join(','));
+        window.location.href = route('examenes.exportar_notas', { 
+            grupo_codigo: selectedGrupo, 
+            format: 'csv' 
         });
+    };
 
-        const csvString = csvRows.join('\n');
-        const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Resultados_${grupoActualInfo.materia_nombre}_Grupo_${grupoActualInfo.grupo_nombre}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const exportToPDF = () => {
+        if (!grupoActualInfo || filteredEstudiantes.length === 0) return;
+        window.open(route('examenes.exportar_notas', { 
+            grupo_codigo: selectedGrupo, 
+            format: 'pdf' 
+        }), '_blank');
     };
 
     return (
@@ -70,13 +54,22 @@ export default function ResultadosView({ grupos = [], notas = [] }) {
                                 </option>
                             ))}
                         </select>
-                        <button
-                            onClick={exportToCSV}
-                            className="flex items-center justify-center bg-indigo-50 text-indigo-600 px-4 py-2.5 rounded-xl font-bold hover:bg-indigo-100 transition-colors"
-                            title="Exportar a CSV"
-                        >
-                            <FiDownload className="mr-2" /> CSV
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={exportToCSV}
+                                className="flex items-center justify-center bg-green-50 text-green-700 px-4 py-2.5 rounded-xl font-bold hover:bg-green-100 transition-colors"
+                                title="Exportar a CSV"
+                            >
+                                <FiDownload className="mr-2" /> CSV
+                            </button>
+                            <button
+                                onClick={exportToPDF}
+                                className="flex items-center justify-center bg-red-50 text-red-700 px-4 py-2.5 rounded-xl font-bold hover:bg-red-100 transition-colors"
+                                title="Descargar PDF"
+                            >
+                                <FiDownload className="mr-2" /> PDF
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

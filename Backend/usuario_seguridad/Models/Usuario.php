@@ -28,6 +28,11 @@ class Usuario extends Authenticatable
         'password',
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'casts' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     protected function casts(): array
     {
         return [
@@ -35,11 +40,21 @@ class Usuario extends Authenticatable
         ];
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'perfil' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function perfil()
     {
         return $this->hasOne(Perfil::class, 'usuario_id');
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'rol' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function rol()
     {
         return $this->belongsTo(Rol::class, 'rol_id');

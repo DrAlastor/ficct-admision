@@ -7,7 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Response;
 
+/**
+ * CU16 - Rendir Exámenes
+ */
 class ExamenController extends Controller
 {
     /**
@@ -142,6 +147,81 @@ class ExamenController extends Controller
         ]);
     }
 
+    /**
+     * Exportar lista de notas en formato PDF o CSV
+     */
+    public function exportarNotas($grupo_codigo, $format)
+    {
+        $user = auth()->user();
+        if ($user->rol_id == 3) abort(403);
+
+        $grupo = DB::table('grupo as g')
+            ->join('materia as m', 'g.materia_id', '=', 'm.id')
+            ->where('g.codigo', $grupo_codigo)
+            ->select('g.codigo as grupo_codigo', 'g.nombre as grupo_nombre', 'm.nombre as materia_nombre')
+            ->first();
+
+        if (!$grupo) abort(404);
+
+        $estudiantes = DB::table('inscripciones_cup as i')
+            ->join('postulacion as p', 'i.postulacion_codigo', '=', 'p.codigo')
+            ->join('postulante as pos', 'p.postulante_id', '=', 'pos.id')
+            ->join('perfil as perf', 'pos.id', '=', 'perf.id') // Ensure we get correct profile info
+            ->leftJoin('evaluaciones as ev', 'i.id', '=', 'ev.inscripcion_id')
+            ->where('i.grupo_codigo', $grupo_codigo)
+            ->select(
+                'perf.ci', 'perf.nombres', 'perf.apellido_paterno', 'perf.apellido_materno',
+                'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia'
+            )
+            ->orderBy('perf.apellido_paterno')
+            ->get();
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('reportes.notas_alumnos', [
+                'grupo' => $grupo,
+                'estudiantes' => $estudiantes
+            ]);
+            return $pdf->download("Notas_{$grupo->materia_nombre}_{$grupo_codigo}.pdf");
+        }
+
+        if ($format === 'csv') {
+            $headers = [
+                "Content-type"        => "text/csv; charset=UTF-8",
+                "Content-Disposition" => "attachment; filename=Notas_{$grupo->materia_nombre}_{$grupo_codigo}.csv",
+                "Pragma"              => "no-cache",
+                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+                "Expires"             => "0"
+            ];
+
+            $callback = function() use($estudiantes) {
+                $file = fopen('php://output', 'w');
+                // UTF-8 BOM for Excel
+                fputs($file, $bom =(chr(0xEF) . chr(0xBB) . chr(0xBF)));
+                fputcsv($file, ['Nro', 'C.I.', 'Apellido Paterno', 'Apellido Materno', 'Nombres', 'Parcial 1', 'Parcial 2', 'Examen Final', 'Promedio Final', 'Estado']);
+                
+                foreach ($estudiantes as $index => $alumno) {
+                    fputcsv($file, [
+                        $index + 1,
+                        $alumno->ci,
+                        $alumno->apellido_paterno,
+                        $alumno->apellido_materno,
+                        $alumno->nombres,
+                        $alumno->nota_p1 ?? '0.00',
+                        $alumno->nota_p2 ?? '0.00',
+                        $alumno->nota_p3 ?? '0.00',
+                        $alumno->promedio_final ?? '0.00',
+                        $alumno->estado_materia ?? 'Reprobado'
+                    ]);
+                }
+                fclose($file);
+            };
+
+            return Response::stream($callback, 200, $headers);
+        }
+
+        abort(404);
+    }
+
 
     /**
      * ==========================================
@@ -169,30 +249,45 @@ class ExamenController extends Controller
             return Inertia::render('Modulos/aula_virtual/Examenes/Index', ['rol' => 'error', 'message' => 'No estás registrado como postulante.']);
         }
 
-        // Obtener materias inscritas
+        // Obtener todas sus inscripciones a materias (grupo)
         $inscripciones = DB::table('postulacion as p')
             ->join('inscripciones_cup as i', 'p.codigo', '=', 'i.postulacion_codigo')
             ->join('grupo as g', 'i.grupo_codigo', '=', 'g.codigo')
             ->join('materia as m', 'g.materia_id', '=', 'm.id')
             ->leftJoin('evaluaciones as ev', 'i.id', '=', 'ev.inscripcion_id')
             ->where('p.postulante_id', $postulante->id)
-            ->select('i.id as inscripcion_id', 'm.id as materia_id', 'm.nombre as materia_nombre', 'g.nombre as grupo_nombre', 'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia')
+            ->select('i.id as inscripcion_id', 'm.id as materia_id', 'm.nombre as materia_nombre', 'g.codigo as grupo_codigo', 'g.nombre as grupo_nombre', 'ev.nota_p1', 'ev.nota_p2', 'ev.nota_p3', 'ev.promedio_final', 'ev.estado_materia')
             ->get();
 
-        $materiasIds = $inscripciones->pluck('materia_id')->toArray();
+        if ($inscripciones->isEmpty()) {
+            return Inertia::render('Modulos/aula_virtual/Examenes/Index', [
+                'rol' => 'postulante',
+                'inscripciones' => [],
+                'examenes' => []
+            ]);
+        }
 
-        // Buscar exámenes para esas materias
+        // Determinar el turno del postulante basándonos en el código de su grupo
+        $grupoCodigo = $inscripciones->first()->grupo_codigo;
+        $letra = strtoupper(substr($grupoCodigo, 0, 1));
+        $turno = 'Virtual';
+        if ($letra === 'M') $turno = 'Mañana';
+        elseif ($letra === 'T') $turno = 'Tarde';
+        elseif ($letra === 'N') $turno = 'Noche';
+        elseif ($letra === 'V') $turno = 'Virtual';
+
         $ahora = Carbon::now();
         
+        // Buscar exámenes programados para su turno global
         $examenes_disponibles = DB::table('examen as e')
-            ->join('materia as m', 'e.materia_id', '=', 'm.id')
-            ->whereIn('e.materia_id', $materiasIds)
+            ->where('e.turno', $turno)
             ->where('e.fecha_inicio', '<=', $ahora)
             ->where('e.fecha_fin', '>=', $ahora)
-            ->select('e.*', 'm.nombre as materia_nombre')
+            ->select('e.*')
             ->get();
 
-        // Obtener intentos realizados para saber si ya dio un examen disponible
+        // Obtener intentos realizados para saber si ya dio este examen global
+        // Basta con verificar si rindió el examen para AL MENOS UNA de sus materias (pues se califica todo junto)
         $inscripcionesIds = $inscripciones->pluck('inscripcion_id')->toArray();
         $intentos = DB::table('intento_examen')
             ->whereIn('inscripcion_id', $inscripcionesIds)
@@ -201,98 +296,110 @@ class ExamenController extends Controller
 
         foreach ($examenes_disponibles as $e) {
             $e->ya_realizado = isset($intentos[$e->id]);
-            if ($e->ya_realizado) {
-                $e->nota_obtenida = $intentos[$e->id]->nota_obtenida;
-            }
+            // No enviar el password al frontend en la lista por seguridad
+            unset($e->password);
         }
 
         return Inertia::render('Modulos/aula_virtual/Examenes/Index', [
             'rol' => 'postulante',
             'inscripciones' => $inscripciones,
-            'examenes' => $examenes_disponibles
+            'examenes' => $examenes_disponibles,
+            'turno' => $turno
         ]);
     }
 
     /**
-     * Inicia el proceso de rendir un examen para un postulante.
-     * Valida la fecha activa, que no haya sido rendido antes y extrae un número de preguntas 
-     * aleatorias según la configuración del examen. No envía la respuesta correcta al frontend.
+     * Ejecuta la acción o procedimiento 'rendir' dentro del módulo.
      *
-     * @param int $id ID del examen a rendir.
-     * @param Request $request Petición HTTP.
-     * @return \Inertia\Response|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
      */
     public function rendir($id, Request $request)
     {
         $user = $request->user();
         if ($user->rol_id != 3) abort(403);
 
+        $request->validate([
+            'password' => 'required|string'
+        ]);
+
         $perfil = DB::table('perfil')->where('usuario_id', $user->id)->first();
         $postulante = DB::table('postulante')->where('id', $perfil->id)->first();
 
-        $examen = DB::table('examen as e')
-            ->join('materia as m', 'e.materia_id', '=', 'm.id')
-            ->where('e.id', $id)
-            ->select('e.*', 'm.nombre as materia_nombre')
-            ->first();
-
+        $examen = DB::table('examen')->where('id', $id)->first();
         if (!$examen) abort(404, 'Examen no encontrado');
+
+        // Validar contraseña
+        if ($examen->password !== $request->password) {
+            return redirect()->route('examenes.index')->with('error', 'Contraseña incorrecta.');
+        }
 
         $ahora = Carbon::now();
         if ($ahora < Carbon::parse($examen->fecha_inicio) || $ahora > Carbon::parse($examen->fecha_fin)) {
             return redirect()->route('examenes.index')->with('error', 'El examen no está en su periodo activo.');
         }
 
-        // Buscar la inscripción correspondiente a esta materia
-        $inscripcion = DB::table('postulacion as p')
+        // Obtener inscripciones del postulante para saber de qué materias extraer preguntas
+        $inscripciones = DB::table('postulacion as p')
             ->join('inscripciones_cup as i', 'p.codigo', '=', 'i.postulacion_codigo')
             ->join('grupo as g', 'i.grupo_codigo', '=', 'g.codigo')
             ->where('p.postulante_id', $postulante->id)
-            ->where('g.materia_id', $examen->materia_id)
-            ->select('i.id')
-            ->first();
+            ->select('i.id as inscripcion_id', 'g.materia_id')
+            ->get();
 
-        if (!$inscripcion) {
-            return redirect()->route('examenes.index')->with('error', 'No estás inscrito en esta materia.');
+        if ($inscripciones->isEmpty()) {
+            return redirect()->route('examenes.index')->with('error', 'No estás inscrito en ninguna materia.');
         }
 
-        // Verificar si ya lo rindió
+        // Verificar doble intento con cualquiera de sus inscripciones
+        $inscripcionesIds = $inscripciones->pluck('inscripcion_id')->toArray();
         $intento = DB::table('intento_examen')
             ->where('examen_id', $examen->id)
-            ->where('inscripcion_id', $inscripcion->id)
+            ->whereIn('inscripcion_id', $inscripcionesIds)
             ->first();
 
         if ($intento) {
-            return redirect()->route('examenes.index')->with('error', 'Ya realizaste este examen. No puedes volver a enviarlo.');
+            return redirect()->route('examenes.index')->with('error', 'Ya realizaste este examen.');
         }
 
-        // Obtener preguntas aleatorias (no mandar la respuesta correcta al frontend)
-        $preguntas = DB::table('pregunta')
-            ->where('materia_id', $examen->materia_id)
-            ->inRandomOrder()
-            ->limit($examen->cantidad_preguntas)
-            ->select('id', 'enunciado', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d')
-            ->get();
+        // Extraer preguntas según la configuración global del examen
+        $configuracionMaterias = DB::table('examen_materia')->where('examen_id', $examen->id)->get();
+        $preguntas = collect();
+        $materiasInscritasIds = $inscripciones->pluck('materia_id')->toArray();
+
+        foreach ($configuracionMaterias as $config) {
+            // Solo extraemos preguntas si el postulante está inscrito en esa materia (generalmente están en todas)
+            if (in_array($config->materia_id, $materiasInscritasIds)) {
+                $preguntasMateria = DB::table('pregunta')
+                    ->join('materia', 'pregunta.materia_id', '=', 'materia.id')
+                    ->where('pregunta.materia_id', $config->materia_id)
+                    ->inRandomOrder()
+                    ->limit($config->cantidad_preguntas)
+                    ->select('pregunta.id', 'pregunta.materia_id', 'materia.nombre as materia_nombre', 'pregunta.enunciado', 'pregunta.opcion_a', 'pregunta.opcion_b', 'pregunta.opcion_c', 'pregunta.opcion_d')
+                    ->get();
+                
+                $preguntas = $preguntas->merge($preguntasMateria);
+            }
+        }
 
         if ($preguntas->isEmpty()) {
-            return redirect()->route('examenes.index')->with('error', 'No hay preguntas suficientes en el banco para esta materia.');
+            return redirect()->route('examenes.index')->with('error', 'No hay preguntas disponibles para este examen global.');
         }
 
+        // Shuffle all questions so they are mixed
+        $preguntas = $preguntas->shuffle();
+
+        unset($examen->password); // No mandarla al frontend Rendir.jsx
+        
         return Inertia::render('Modulos/aula_virtual/Examenes/Rendir', [
             'examen' => $examen,
-            'preguntas' => $preguntas,
-            'inscripcion_id' => $inscripcion->id
+            'preguntas' => $preguntas
         ]);
     }
 
     /**
-     * Recibe y evalúa el examen enviado por el postulante.
-     * Valida respuestas, calcula el porcentaje de aciertos y actualiza 
-     * directamente la nota correspondiente en la tabla EVALUACIONES según el tipo de examen.
+     * Ejecuta la acción o procedimiento 'calificar' dentro del módulo.
      *
-     * @param int $id ID del examen rendido.
-     * @param Request $request Contiene 'inscripcion_id' y el arreglo de 'respuestas'.
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
      */
     public function calificar($id, Request $request)
     {
@@ -300,89 +407,116 @@ class ExamenController extends Controller
         if ($user->rol_id != 3) abort(403);
 
         $request->validate([
-            'inscripcion_id' => 'required|integer',
             'respuestas' => 'required|array'
         ]);
+
+        $perfil = DB::table('perfil')->where('usuario_id', $user->id)->first();
+        $postulante = DB::table('postulante')->where('id', $perfil->id)->first();
 
         $examen = DB::table('examen')->where('id', $id)->first();
         if (!$examen) abort(404);
 
-        // Validar doble envío
+        // Obtener todas las inscripciones del postulante
+        $inscripciones = DB::table('postulacion as p')
+            ->join('inscripciones_cup as i', 'p.codigo', '=', 'i.postulacion_codigo')
+            ->join('grupo as g', 'i.grupo_codigo', '=', 'g.codigo')
+            ->where('p.postulante_id', $postulante->id)
+            ->select('i.id as inscripcion_id', 'g.materia_id')
+            ->get();
+
+        if ($inscripciones->isEmpty()) {
+            return redirect()->route('examenes.index')->with('error', 'No estás inscrito en ninguna materia.');
+        }
+
+        // Validar doble envío global
+        $inscripcionesIds = $inscripciones->pluck('inscripcion_id')->toArray();
         $intento = DB::table('intento_examen')
             ->where('examen_id', $examen->id)
-            ->where('inscripcion_id', $request->inscripcion_id)
+            ->whereIn('inscripcion_id', $inscripcionesIds)
             ->first();
 
         if ($intento) {
-            return redirect()->route('examenes.index')->with('error', 'Ya se registró la calificación de este examen.');
+            return redirect()->route('examenes.index')->with('error', 'Ya se registró la calificación de este examen global.');
         }
 
-        $correctas = 0;
-        $total = count($request->respuestas);
-        
-        if ($total == 0) {
-            $total = $examen->cantidad_preguntas; // Evitar division por cero si enviaron vacio
+        // Configuración de cantidades por materia
+        $configuracionMaterias = DB::table('examen_materia')->where('examen_id', $examen->id)->get()->keyBy('materia_id');
+
+        // Agrupar respuestas por materia evaluándolas en el camino
+        $resultadosPorMateria = [];
+        foreach ($inscripciones as $insc) {
+            if (isset($configuracionMaterias[$insc->materia_id])) {
+                $resultadosPorMateria[$insc->materia_id] = [
+                    'correctas' => 0,
+                    'total' => $configuracionMaterias[$insc->materia_id]->cantidad_preguntas,
+                    'inscripcion_id' => $insc->inscripcion_id
+                ];
+            }
         }
 
         foreach ($request->respuestas as $res) {
             $pregunta = DB::table('pregunta')->where('id', $res['pregunta_id'])->first();
-            if ($pregunta && $pregunta->respuesta_correcta === $res['seleccionada']) {
-                $correctas++;
+            if ($pregunta && isset($resultadosPorMateria[$pregunta->materia_id])) {
+                if ($pregunta->respuesta_correcta === $res['seleccionada']) {
+                    $resultadosPorMateria[$pregunta->materia_id]['correctas']++;
+                }
             }
         }
 
-        // Nota sobre 100
-        $notaPura100 = ($correctas / $total) * 100;
+        DB::beginTransaction();
+        try {
+            foreach ($resultadosPorMateria as $materiaId => $data) {
+                $notaPura100 = 0;
+                if ($data['total'] > 0) {
+                    $notaPura100 = ($data['correctas'] / $data['total']) * 100;
+                }
 
-        // Registrar intento
-        DB::table('intento_examen')->insert([
-            'examen_id' => $examen->id,
-            'inscripcion_id' => $request->inscripcion_id,
-            'nota_obtenida' => $notaPura100,
-            'fecha_realizacion' => Carbon::now()
-        ]);
+                // Registrar intento por cada materia
+                DB::table('intento_examen')->insert([
+                    'examen_id' => $examen->id,
+                    'inscripcion_id' => $data['inscripcion_id'],
+                    'nota_obtenida' => $notaPura100,
+                    'fecha_realizacion' => Carbon::now()
+                ]);
 
-        // Asegurarnos de que exista un registro en EVALUACIONES
-        $eval = DB::table('evaluaciones')->where('inscripcion_id', $request->inscripcion_id)->first();
-        
-        if (!$eval) {
-            $evalId = DB::table('evaluaciones')->insertGetId([
-                'inscripcion_id' => $request->inscripcion_id,
-                'nota_p1' => 0, 'nota_p2' => 0, 'nota_p3' => 0, 'promedio_final' => 0,
-                'estado_materia' => 'Reprobado'
-            ]);
-            $eval = DB::table('evaluaciones')->where('id', $evalId)->first();
+                // Actualizar o crear Evaluaciones
+                $eval = DB::table('evaluaciones')->where('inscripcion_id', $data['inscripcion_id'])->first();
+                if (!$eval) {
+                    $evalId = DB::table('evaluaciones')->insertGetId([
+                        'inscripcion_id' => $data['inscripcion_id'],
+                        'nota_p1' => 0, 'nota_p2' => 0, 'nota_p3' => 0, 'promedio_final' => 0,
+                        'estado_materia' => 'Reprobado'
+                    ]);
+                    $eval = DB::table('evaluaciones')->where('id', $evalId)->first();
+                }
+
+                $updateData = [];
+                // Ponderar: 30% Parcial 1 y 2, 40% Final
+                if ($examen->tipo === 'Parcial 1') {
+                    $updateData['nota_p1'] = $notaPura100 * 0.30;
+                } elseif ($examen->tipo === 'Parcial 2') {
+                    $updateData['nota_p2'] = $notaPura100 * 0.30;
+                } elseif ($examen->tipo === 'Examen Final' || $examen->tipo === 'Final') {
+                    $updateData['nota_p3'] = $notaPura100 * 0.40;
+                }
+
+                $p1 = isset($updateData['nota_p1']) ? $updateData['nota_p1'] : $eval->nota_p1;
+                $p2 = isset($updateData['nota_p2']) ? $updateData['nota_p2'] : $eval->nota_p2;
+                $p3 = isset($updateData['nota_p3']) ? $updateData['nota_p3'] : $eval->nota_p3;
+                
+                $promedioFinal = $p1 + $p2 + $p3;
+                $updateData['promedio_final'] = $promedioFinal;
+                $updateData['estado_materia'] = $promedioFinal >= 60 ? 'Aprobado' : 'Reprobado';
+
+                DB::table('evaluaciones')
+                    ->where('inscripcion_id', $data['inscripcion_id'])
+                    ->update($updateData);
+            }
+            DB::commit();
+            return redirect()->route('examenes.index')->with('success', 'Examen Global enviado correctamente. Se han calificado tus materias correspondientes.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('examenes.index')->with('error', 'Error al procesar calificación: ' . $e->getMessage());
         }
-
-        $updateData = [];
-        
-        // Ponderar: 30% para Parcial 1 y 2, 40% para Final
-        if ($examen->tipo === 'Parcial 1') {
-            $updateData['nota_p1'] = $notaPura100 * 0.30;
-        } elseif ($examen->tipo === 'Parcial 2') {
-            $updateData['nota_p2'] = $notaPura100 * 0.30;
-        } elseif ($examen->tipo === 'Examen Final' || $examen->tipo === 'Final') {
-            $updateData['nota_p3'] = $notaPura100 * 0.40;
-        }
-
-        // Calcular nuevo promedio usando las notas existentes (solo actualizando la actual)
-        $p1 = isset($updateData['nota_p1']) ? $updateData['nota_p1'] : $eval->nota_p1;
-        $p2 = isset($updateData['nota_p2']) ? $updateData['nota_p2'] : $eval->nota_p2;
-        $p3 = isset($updateData['nota_p3']) ? $updateData['nota_p3'] : $eval->nota_p3;
-        
-        $promedioFinal = $p1 + $p2 + $p3;
-        $updateData['promedio_final'] = $promedioFinal;
-        
-        if ($promedioFinal >= 60) {
-            $updateData['estado_materia'] = 'Aprobado';
-        } else {
-            $updateData['estado_materia'] = 'Reprobado';
-        }
-
-        DB::table('evaluaciones')
-            ->where('inscripcion_id', $request->inscripcion_id)
-            ->update($updateData);
-
-        return redirect()->route('examenes.index')->with('success', 'Examen enviado correctamente. Calificación: ' . round($notaPura100, 2) . '/100');
     }
 }

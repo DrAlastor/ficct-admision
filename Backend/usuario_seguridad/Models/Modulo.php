@@ -14,6 +14,11 @@ class Modulo extends Model
         'descripcion'
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'funciones' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function funciones()
     {
         return $this->hasMany(Funcion::class, 'modulo_id');

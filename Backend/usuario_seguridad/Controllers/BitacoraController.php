@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
+/**
+ * CU03 - Auditoría y Bitácora
+ */
 class BitacoraController extends Controller
 {
     /**

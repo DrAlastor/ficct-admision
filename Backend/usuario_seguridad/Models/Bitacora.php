@@ -17,6 +17,11 @@ class Bitacora extends Model
         'fecha_hora'
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'casts' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     protected function casts(): array
     {
         return [
@@ -24,6 +29,11 @@ class Bitacora extends Model
         ];
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'usuario' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function usuario()
     {
         return $this->belongsTo(Usuario::class, 'usuario_id');

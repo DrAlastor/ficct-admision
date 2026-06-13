@@ -19,6 +19,9 @@ use Inertia\Inertia;
 use App\APIS\StripeAPI;
 use App\APIS\PayPalAPI;
 
+/**
+ * CU00 - Registro de Postulantes
+ */
 class PostulanteRegistroController extends Controller
 {
     /**
@@ -117,6 +120,11 @@ class PostulanteRegistroController extends Controller
         }
     }
     
+    /**
+     * Ejecuta la acción o procedimiento 'procesarPagoFicticio' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function procesarPagoFicticio(Request $request)
     {
         $request->validate([
@@ -155,6 +163,11 @@ class PostulanteRegistroController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'iniciarInscripcion' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function iniciarInscripcion(Request $request)
     {
         $request->validate([
@@ -317,6 +330,11 @@ class PostulanteRegistroController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'consultarRegistro' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function consultarRegistro(Request $request)
     {
         $request->validate(['email' => 'required|email']);

@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
+/**
+ * CU11 - Gestionar Contraseña
+ */
 class PasswordController extends Controller
 {
     /**

@@ -22,7 +22,7 @@ class SeedPostulantesData extends Command
      *
      * @var string
      */
-    protected $description = 'Generar datos aleatorios masivos de postulantes para una gestión (ej. 1-2025).';
+    protected $description = 'Generar datos aleatorios masivos de postulantes para una gesti??n (ej. 1-2025).';
 
     /**
      * Execute the console command.
@@ -34,26 +34,26 @@ class SeedPostulantesData extends Command
         $count = (int) $this->option('count');
 
         if (!preg_match('/^([12])-(\d{4})$/', $gestionStr, $matches)) {
-            $this->error('Formato de gestión inválido. Usa el formato Semestre-Año (ej. 1-2025).');
+            $this->error('Formato de gesti??n inv??lido. Usa el formato Semestre-A??o (ej. 1-2025).');
             return;
         }
 
         $semestre = (int) $matches[1];
         $anio = (int) $matches[2];
 
-        $this->info("Iniciando la generación de {$count} postulantes para la gestión {$gestionStr}...");
+        $this->info("Iniciando la generaci??n de {$count} postulantes para la gesti??n {$gestionStr}...");
 
         DB::beginTransaction();
         try {
-            // 1. Verificar o crear la gestión
-            $gestion = DB::table('gestion')->where('semestre', $semestre)->where('año', $anio)->first();
+            // 1. Verificar o crear la gesti??n
+            $gestion = DB::table('gestion')->where('semestre', $semestre)->where('a??o', $anio)->first();
             if (!$gestion) {
                 $gestionId = DB::table('gestion')->insertGetId([
                     'semestre' => $semestre,
-                    'año' => $anio
+                    'a??o' => $anio
                 ]);
                 $gestion = DB::table('gestion')->where('id', $gestionId)->first();
-                $this->info("Se creó la nueva gestión: {$gestionStr} (ID: {$gestionId})");
+                $this->info("Se cre?? la nueva gesti??n: {$gestionStr} (ID: {$gestionId})");
             }
 
             // 2. Obtener materias y carreras
@@ -88,7 +88,7 @@ class SeedPostulantesData extends Command
             }
             $carreraIds = $carreras->pluck('codigo')->toArray();
             
-            // Cupos por carrera (copia para simular la lógica de admisión)
+            // Cupos por carrera (copia para simular la l??gica de admisi??n)
             $cuposDisponibles = [];
             foreach ($carreras as $c) {
                 $cuposDisponibles[$c->codigo] = $c->cupo_maximo;
@@ -103,7 +103,7 @@ class SeedPostulantesData extends Command
 
             $postulantesGenerados = [];
 
-            // Contraseña genérica (solo se hashea una vez por rendimiento)
+            // Contrase??a gen??rica (solo se hashea una vez por rendimiento)
             $hashedPassword = Hash::make('password123');
 
             for ($i = 0; $i < $count; $i++) {
@@ -115,7 +115,7 @@ class SeedPostulantesData extends Command
                     'rol_id' => 3, // Postulante
                     'codigo_inicio' => $codigoInicio,
                     'password' => $hashedPassword,
-                    'estado' => 'Activo',
+                    'estado' => 'Inactivo',
                     'eliminado' => false
                 ]);
 
@@ -156,7 +156,7 @@ class SeedPostulantesData extends Command
                     'gestion_id' => $gestion->id,
                     'fecha' => Carbon::now()->format('Y-m-d'),
                     'hora' => Carbon::now()->format('H:i:s'),
-                    'estado' => 'Evaluando' // Estado inicial antes de la admisión
+                    'estado' => 'Evaluando' // Estado inicial antes de la admisi??n
                 ]);
 
                 // Generar Postulacion_Carrera
@@ -190,52 +190,54 @@ class SeedPostulantesData extends Command
                 ]);
 
                 // Inscribir a los 4 grupos
-                $misGrupos = $faker->randomElement([$gruposManana, $gruposTarde]);
                 $promedioGeneral = 0;
                 $aproboCUP = true;
                 
-                foreach ($misGrupos as $grupoId) {
-                    $inscripcionId = DB::table('inscripciones_cup')->insertGetId([
-                        'postulacion_codigo' => $postulacionId,
-                        'grupo_codigo' => $grupoId,
-                        'fecha_inscripcion' => Carbon::now()->format('Y-m-d'),
-                        'estado' => 'Inscrito'
-                    ]);
-
-                    // Probabilidad de que el estudiante pase la materia: ~40% general
-                    $isGoodStudent = $faker->boolean(40);
+                if (!$esGestionActual) {
+                    $misGrupos = $faker->randomElement([$gruposManana, $gruposTarde]);
                     
-                    if ($isGoodStudent) {
-                        $p1 = $faker->randomFloat(2, 60, 100);
-                        $p2 = $faker->randomFloat(2, 60, 100);
-                        $p3 = $faker->randomFloat(2, 60, 100);
-                    } else {
-                        // Podría aplazarse en alguna evaluación
-                        $p1 = $faker->randomFloat(2, 0, 90);
-                        $p2 = $faker->randomFloat(2, 0, 90);
-                        $p3 = $faker->randomFloat(2, 0, 59); // Forzamos reprobación
+                    foreach ($misGrupos as $grupoId) {
+                        $inscripcionId = DB::table('inscripciones_cup')->insertGetId([
+                            'postulacion_codigo' => $postulacionId,
+                            'grupo_codigo' => $grupoId,
+                            'fecha_inscripcion' => Carbon::now()->format('Y-m-d'),
+                            'estado' => 'Inscrito'
+                        ]);
+
+                        // Probabilidad de que el estudiante pase la materia: ~40% general
+                        $isGoodStudent = $faker->boolean(40);
+                        
+                        if ($isGoodStudent) {
+                            $p1 = $faker->randomFloat(2, 60, 100);
+                            $p2 = $faker->randomFloat(2, 60, 100);
+                            $p3 = $faker->randomFloat(2, 60, 100);
+                        } else {
+                            // Podr??a aplazarse en alguna evaluaci??n
+                            $p1 = $faker->randomFloat(2, 0, 90);
+                            $p2 = $faker->randomFloat(2, 0, 90);
+                            $p3 = $faker->randomFloat(2, 0, 59); // Forzamos reprobaci??n
+                        }
+
+                        $promedioMateria = round(($p1 + $p2 + $p3) / 3, 2);
+                        $estadoMateria = ($promedioMateria >= 60) ? 'Aprobado' : 'Reprobado';
+
+                        if ($estadoMateria === 'Reprobado') {
+                            $aproboCUP = false; // Reprueba el CUP si alguna materia es < 60
+                        }
+
+                        $promedioGeneral += $promedioMateria;
+
+                        DB::table('evaluaciones')->insert([
+                            'inscripcion_id' => $inscripcionId,
+                            'nota_p1' => $p1,
+                            'nota_p2' => $p2,
+                            'nota_p3' => $p3,
+                            'promedio_final' => $promedioMateria,
+                            'estado_materia' => $estadoMateria
+                        ]);
                     }
-
-                    $promedioMateria = round(($p1 + $p2 + $p3) / 3, 2);
-                    $estadoMateria = ($promedioMateria >= 60) ? 'Aprobado' : 'Reprobado';
-
-                    if ($estadoMateria === 'Reprobado') {
-                        $aproboCUP = false; // Reprueba el CUP si alguna materia es < 60
-                    }
-
-                    $promedioGeneral += $promedioMateria;
-
-                    DB::table('evaluaciones')->insert([
-                        'inscripcion_id' => $inscripcionId,
-                        'nota_p1' => $p1,
-                        'nota_p2' => $p2,
-                        'nota_p3' => $p3,
-                        'promedio_final' => $promedioMateria,
-                        'estado_materia' => $estadoMateria
-                    ]);
+                    $promedioGeneral = round($promedioGeneral / 4, 2);
                 }
-
-                $promedioGeneral = round($promedioGeneral / 4, 2);
 
                 $postulantesGenerados[] = [
                     'postulacion_id' => $postulacionId,
@@ -252,84 +254,89 @@ class SeedPostulantesData extends Command
             }
 
             $this->output->progressFinish();
-            $this->info("Generación finalizada. Procesando lógica de admisión basada en cupos...");
+            $this->info("Generaci??n finalizada. Procesando l??gica de admisi??n basada en cupos...");
 
-            // 3. Lógica de Admisión
-            $aprobados = array_filter($postulantesGenerados, function($p) {
-                return $p['aprobo_cup'] === true;
-            });
+            // 3. L??gica de Admisi??n
+            if (!$esGestionActual) {
+                $aprobados = array_filter($postulantesGenerados, function($p) {
+                    return $p['aprobo_cup'] === true;
+                });
 
-            // Ordenar aprobados por promedio descendente
-            usort($aprobados, function($a, $b) {
-                return $b['promedio_general'] <=> $a['promedio_general'];
-            });
+                // Ordenar aprobados por promedio descendente
+                usort($aprobados, function($a, $b) {
+                    return $b['promedio_general'] <=> $a['promedio_general'];
+                });
 
-            $admitidos1raOpcion = [];
-            $admitidos2daOpcion = [];
-            $rechazados = [];
-            $reprobados = array_filter($postulantesGenerados, function($p) {
-                return $p['aprobo_cup'] === false;
-            });
+                $admitidos1raOpcion = [];
+                $admitidos2daOpcion = [];
+                $rechazados = [];
+                $reprobados = array_filter($postulantesGenerados, function($p) {
+                    return $p['aprobo_cup'] === false;
+                });
 
-            $noAsignados = [];
-            foreach ($aprobados as $postulante) {
-                $carreraOpt1 = $postulante['opcion_1'];
-                if ($cuposDisponibles[$carreraOpt1] > 0) {
-                    $cuposDisponibles[$carreraOpt1]--;
-                    $admitidos1raOpcion[] = [
-                        'postulacion_id' => $postulante['postulacion_id'],
-                        'carrera_id' => $carreraOpt1
-                    ];
-                } else {
-                    $noAsignados[] = $postulante;
+                $noAsignados = [];
+                foreach ($aprobados as $postulante) {
+                    $carreraOpt1 = $postulante['opcion_1'];
+                    if ($cuposDisponibles[$carreraOpt1] > 0) {
+                        $cuposDisponibles[$carreraOpt1]--;
+                        $admitidos1raOpcion[] = [
+                            'postulacion_id' => $postulante['postulacion_id'],
+                            'carrera_id' => $carreraOpt1
+                        ];
+                    } else {
+                        $noAsignados[] = $postulante;
+                    }
                 }
-            }
 
-            foreach ($noAsignados as $postulante) {
-                $carreraOpt2 = $postulante['opcion_2'];
-                if ($cuposDisponibles[$carreraOpt2] > 0) {
-                    $cuposDisponibles[$carreraOpt2]--;
-                    $admitidos2daOpcion[] = [
-                        'postulacion_id' => $postulante['postulacion_id'],
-                        'carrera_id' => $carreraOpt2
-                    ];
-                } else {
-                    $rechazados[] = $postulante['postulacion_id'];
+                foreach ($noAsignados as $postulante) {
+                    $carreraOpt2 = $postulante['opcion_2'];
+                    if ($cuposDisponibles[$carreraOpt2] > 0) {
+                        $cuposDisponibles[$carreraOpt2]--;
+                        $admitidos2daOpcion[] = [
+                            'postulacion_id' => $postulante['postulacion_id'],
+                            'carrera_id' => $carreraOpt2
+                        ];
+                    } else {
+                        $rechazados[] = $postulante['postulacion_id'];
+                    }
                 }
-            }
 
-            $carrerasMap = $carreras->keyBy('codigo');
+                $carrerasMap = $carreras->keyBy('codigo');
 
-            foreach ($admitidos1raOpcion as $adm) {
-                $nombreCarrera = $carrerasMap[$adm['carrera_id']]->nombre;
-                DB::table('postulacion')->where('codigo', $adm['postulacion_id'])
-                  ->update(['estado' => "Aceptado: {$nombreCarrera}"]);
-            }
+                foreach ($admitidos1raOpcion as $adm) {
+                    $nombreCarrera = $carrerasMap[$adm['carrera_id']]->nombre;
+                    DB::table('postulacion')->where('codigo', $adm['postulacion_id'])
+                      ->update(['estado' => "Aceptado: {$nombreCarrera}"]);
+                }
 
-            foreach ($admitidos2daOpcion as $adm) {
-                $nombreCarrera = $carrerasMap[$adm['carrera_id']]->nombre;
-                DB::table('postulacion')->where('codigo', $adm['postulacion_id'])
-                  ->update(['estado' => "Aceptado: {$nombreCarrera}"]);
-            }
+                foreach ($admitidos2daOpcion as $adm) {
+                    $nombreCarrera = $carrerasMap[$adm['carrera_id']]->nombre;
+                    DB::table('postulacion')->where('codigo', $adm['postulacion_id'])
+                      ->update(['estado' => "Aceptado: {$nombreCarrera}"]);
+                }
 
-            foreach ($rechazados as $pId) {
-                DB::table('postulacion')->where('codigo', $pId)
-                  ->update(['estado' => "Rechazado (Sin Cupo)"]);
-            }
+                foreach ($rechazados as $pId) {
+                    DB::table('postulacion')->where('codigo', $pId)
+                      ->update(['estado' => "Rechazado (Sin Cupo)"]);
+                }
 
-            foreach ($reprobados as $p) {
-                DB::table('postulacion')->where('codigo', $p['postulacion_id'])
-                  ->update(['estado' => "Reprobado"]);
+                foreach ($reprobados as $p) {
+                    DB::table('postulacion')->where('codigo', $p['postulacion_id'])
+                      ->update(['estado' => "Reprobado"]);
+                }
+            } else {
+                // Gesti??n Actual: Todos quedan en "Habilitado"
+                foreach ($postulantesGenerados as $p) {
+                    DB::table('postulacion')->where('codigo', $p['postulacion_id'])
+                      ->update(['estado' => 'Habilitado']);
+                }
             }
 
             DB::commit();
             
-            $this->info("¡Completado! Resumen de Admisión para la Gestión {$gestionStr}:");
+            $this->info("??Completado! Resumen de Admisi??n para la Gesti??n {$gestionStr}:");
             $this->info("- Total Postulantes Generados: {$count}");
-            $this->info("- Reprobados (Alguna materia < 60): " . count($reprobados));
-            $this->info("- Aprobados el CUP (Todas >= 60): " . count($aprobados));
-            $this->info("- Aceptados (1ra Opción): " . count($admitidos1raOpcion));
-            $this->info("- Aceptados (2da Opción): " . count($admitidos2daOpcion));
+            $this->info("- Aceptados (2da Opci??n): " . count($admitidos2daOpcion));
             $this->info("- Rechazados (Sin Cupo): " . count($rechazados));
 
         } catch (\Exception $e) {

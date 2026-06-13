@@ -14,8 +14,16 @@ use Backend\modulo_inscripcion\Models\Postulacion;
 use Backend\modulo_inscripcion\Models\Documento;
 use Inertia\Inertia;
 
+/**
+ * CU17 - Gestionar Postulantes
+ */
 class PostulanteController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index(Request $request)
     {
         // Obtain current management (latest term)
@@ -72,6 +80,11 @@ class PostulanteController extends Controller
         ]);
     }
 
+    /**
+     * Valida y actualiza los datos de un registro existente en la base de datos.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -118,6 +131,11 @@ class PostulanteController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'aceptar' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function aceptar($id)
     {
         DB::beginTransaction();

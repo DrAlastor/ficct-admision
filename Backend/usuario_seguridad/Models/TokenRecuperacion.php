@@ -23,6 +23,11 @@ class TokenRecuperacion extends Model
         'usado' => 'boolean',
     ];
 
+    /**
+     * Ejecuta la acción o procedimiento 'usuario' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function usuario()
     {
         return $this->belongsTo(Usuario::class, 'usuario_id');

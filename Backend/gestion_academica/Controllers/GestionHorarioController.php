@@ -7,8 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+/**
+ * CU20 - Gestionar Horarios
+ */
 class GestionHorarioController extends Controller
 {
+    /**
+     * Obtiene y muestra la lista principal de registros o la vista por defecto.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function index()
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
@@ -73,6 +81,11 @@ class GestionHorarioController extends Controller
         ]);
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'generar' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function generar(Request $request)
     {
         $gestionActual = DB::table('gestion')->orderByDesc('id')->first();

@@ -3,7 +3,7 @@ import { router } from '@inertiajs/react';
 
 export default function BitacoraTable({ bitacora }) {
     const formatDate = (dateString) => {
-        const safeDate = dateString.includes('T') ? dateString : dateString.replace(' ', 'T') + 'Z';
+        const safeDate = dateString.includes('T') ? dateString.replace('Z', '') : dateString.replace(' ', 'T');
         const date = new Date(safeDate);
         return date.toLocaleDateString('es-ES', {
             day: '2-digit', month: '2-digit', year: 'numeric'
@@ -11,7 +11,7 @@ export default function BitacoraTable({ bitacora }) {
     };
 
     const formatTime = (dateString) => {
-        const safeDate = dateString.includes('T') ? dateString : dateString.replace(' ', 'T') + 'Z';
+        const safeDate = dateString.includes('T') ? dateString.replace('Z', '') : dateString.replace(' ', 'T');
         const date = new Date(safeDate);
         return date.toLocaleTimeString('es-ES', {
             hour: '2-digit', minute: '2-digit', second: '2-digit'

@@ -8,8 +8,8 @@ export default function AdminDashboard({ stats, bitacoraReciente = [] }) {
     
     // Formatear Fecha Exacta (Igual a la tabla de Bitácora)
     const formatExactDate = (dateString) => {
-        // Asegurar que JS interprete la fecha como UTC para que la convierta correctamente a la hora local (Bolivia)
-        const safeDate = dateString.includes('T') ? dateString : dateString.replace(' ', 'T') + 'Z';
+        // La base de datos ya entrega la hora en formato local (Bolivia)
+        const safeDate = dateString.includes('T') ? dateString.replace('Z', '') : dateString.replace(' ', 'T');
         const date = new Date(safeDate);
         const fecha = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const hora = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
