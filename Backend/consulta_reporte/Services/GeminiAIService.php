@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * CU30 - Chat de voz con IA
+ * CU30 - Consultar Asistente Virtual IA (Chat con IA)
  */
 class GeminiAIService
 {
@@ -65,7 +65,7 @@ Tabla: pago (id SERIAL, postulacion_codigo VARCHAR, monto DECIMAL, metodo_pago V
 Pregunta del usuario: \"$userQuery\"
         ";
 
-        $response = Http::withHeaders([
+        $response = Http::withoutVerifying()->withHeaders([
             'Content-Type' => 'application/json',
         ])->post($this->apiUrl . '?key=' . $this->apiKey, [
             'contents' => [
@@ -116,7 +116,7 @@ JSON DATA:
 Pregunta del usuario: \"$userQuery\"
         ";
 
-        $response = Http::post($this->apiUrl . '?key=' . $this->apiKey, [
+        $response = Http::withoutVerifying()->post($this->apiUrl . '?key=' . $this->apiKey, [
             'contents' => [
                 [
                     'parts' => [
@@ -183,7 +183,7 @@ Tus tareas:
             'parts' => [['text' => $userMessage]]
         ];
 
-        $response = Http::post($this->apiUrl . '?key=' . $this->apiKey, [
+        $response = Http::withoutVerifying()->post($this->apiUrl . '?key=' . $this->apiKey, [
             'contents' => $contents,
             'generationConfig' => [
                 'temperature' => 0.6,

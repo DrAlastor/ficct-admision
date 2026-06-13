@@ -207,13 +207,13 @@ class AulaController extends Controller
         DB::beginTransaction();
 
         try {
-            $aulas = DB::table('aula')->get();
+            $aulas = DB::table('aula')->orderBy('capacidad', 'asc')->get(); // Ordenar de menor a mayor capacidad para optimizar
             $normalAulas = $aulas->filter(fn($a) => !str_contains($a->nro_aula, 'Lab'))->values();
             $labs = $aulas->filter(fn($a) => str_contains($a->nro_aula, 'Lab'))->values();
 
             $grupos = DB::table('grupo')
                 ->join('materia', 'grupo.materia_id', '=', 'materia.id')
-                ->select('grupo.codigo', 'materia.nombre as materia')
+                ->select('grupo.codigo', 'grupo.inscritos_actuales', 'materia.nombre as materia')
                 ->get()->keyBy('codigo');
 
             $bloquesHorarios = DB::table('horario')
@@ -226,7 +226,6 @@ class AulaController extends Controller
             foreach ($bloquesHorarios as $hora_inicio) {
                 $horariosBloque = DB::table('horario')->where('hora_inicio', $hora_inicio)->get();
                 
-                // Rastrear aulas ocupadas: $occupied[$dia][$aula_id] = true
                 $occupied = []; 
                 foreach($horariosBloque as $hb) {
                     if ($hb->aula_id) {
@@ -250,15 +249,24 @@ class AulaController extends Controller
                     }
                 }
 
-                // Asignar Materias Normales (5 días en la misma aula)
+                // Asignar Materias Normales
                 foreach ($normalGrupos as $gCode) {
-                    // Ver si ya tiene aula
                     if ($horariosBloque->where('grupo_codigo', $gCode)->whereNotNull('aula_id')->isNotEmpty()) {
-                        continue; // Ya tiene aulas asignadas, ignorar
+                        continue;
                     }
 
+                    $inscritos = $grupos[$gCode]->inscritos_actuales;
                     $assigned = false;
-                    foreach ($normalAulas as $aula) {
+
+                    // Para hacer la asignación de aulas normales aleatoria
+                    $normalAulasRandom = $normalAulas->shuffle();
+
+                    foreach ($normalAulasRandom as $aula) {
+                        // 1. Validar Capacidad Física
+                        if ($aula->capacidad < $inscritos) {
+                            continue;
+                        }
+
                         $isFreeAllDays = true;
                         foreach ($dias as $dia) {
                             if (isset($occupied[$dia][$aula->id])) {
@@ -266,6 +274,7 @@ class AulaController extends Controller
                                 break;
                             }
                         }
+
                         if ($isFreeAllDays) {
                             DB::table('horario')
                                 ->where('grupo_codigo', $gCode)
@@ -279,25 +288,35 @@ class AulaController extends Controller
                             break;
                         }
                     }
+
+                    if (!$assigned) {
+                        throw new \Exception("Capacidad insuficiente o sin aulas disponibles para el grupo " . $grupos[$gCode]->materia . " con $inscritos inscritos.");
+                    }
                 }
 
                 // Asignar Computación (Múltiples aulas, mezcla de lab y normal)
                 $cCount = count($computacionGrupos);
-                // Si hay pocos grupos (<= 15), damos 2 días de lab. Si hay muchos, 1 día.
                 $diasLabTarget = ($cCount <= 15) ? 2 : 1; 
 
                 foreach ($computacionGrupos as $gCode) {
-                    // Si el grupo ya tiene alguna aula asignada, lo saltamos por seguridad
                     if ($horariosBloque->where('grupo_codigo', $gCode)->whereNotNull('aula_id')->isNotEmpty()) {
                         continue;
                     }
 
+                    $inscritos = $grupos[$gCode]->inscritos_actuales;
                     $diasAsignadosLab = 0;
                     
+                    // Mezclar laboratorios y aulas normales para aleatoriedad
+                    $labsRandom = $labs->shuffle();
+                    $normalAulasRandom = $normalAulas->shuffle();
+
                     foreach ($dias as $dia) {
+                        $diaAsignado = false;
                         if ($diasAsignadosLab < $diasLabTarget) {
-                            $labFound = false;
-                            foreach ($labs as $lab) {
+                            // Intentar Lab
+                            foreach ($labsRandom as $lab) {
+                                if ($lab->capacidad < $inscritos) continue;
+
                                 if (!isset($occupied[$dia][$lab->id])) {
                                     DB::table('horario')
                                         ->where('grupo_codigo', $gCode)
@@ -306,28 +325,17 @@ class AulaController extends Controller
                                         ->update(['aula_id' => $lab->id]);
                                     $occupied[$dia][$lab->id] = true;
                                     $diasAsignadosLab++;
-                                    $labFound = true;
+                                    $diaAsignado = true;
                                     break;
                                 }
                             }
-                            
-                            // Si no halló lab, intenta dar aula normal para no dejar vacío
-                            if (!$labFound) {
-                                foreach ($normalAulas as $aula) {
-                                    if (!isset($occupied[$dia][$aula->id])) {
-                                        DB::table('horario')
-                                            ->where('grupo_codigo', $gCode)
-                                            ->where('hora_inicio', $hora_inicio)
-                                            ->where('dia', $dia)
-                                            ->update(['aula_id' => $aula->id]);
-                                        $occupied[$dia][$aula->id] = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        } else {
-                            // Días restantes en Aula Normal
-                            foreach ($normalAulas as $aula) {
+                        }
+                        
+                        // Si no halló lab o ya cumplió cuota, dar aula normal
+                        if (!$diaAsignado) {
+                            foreach ($normalAulasRandom as $aula) {
+                                if ($aula->capacidad < $inscritos) continue;
+
                                 if (!isset($occupied[$dia][$aula->id])) {
                                     DB::table('horario')
                                         ->where('grupo_codigo', $gCode)
@@ -335,20 +343,25 @@ class AulaController extends Controller
                                         ->where('dia', $dia)
                                         ->update(['aula_id' => $aula->id]);
                                     $occupied[$dia][$aula->id] = true;
+                                    $diaAsignado = true;
                                     break;
                                 }
                             }
+                        }
+
+                        if (!$diaAsignado) {
+                            throw new \Exception("No hay aulas ni laboratorios con capacidad para $inscritos estudiantes el día $dia.");
                         }
                     }
                 }
             }
 
             DB::commit();
-            return redirect()->back()->with('success', 'Aulas autogeneradas y asignadas correctamente para toda la semana.');
+            return redirect()->back()->with('success', 'Aulas autogeneradas de forma aleatoria (Validando capacidad de aulas).');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Error al autogenerar aulas: ' . $e->getMessage()]);
+            return redirect()->back()->withErrors(['error' => 'Error en Autogeneración: ' . $e->getMessage()]);
         }
     }
 }

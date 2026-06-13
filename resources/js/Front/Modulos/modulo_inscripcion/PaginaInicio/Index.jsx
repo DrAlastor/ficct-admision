@@ -10,7 +10,7 @@ import {
     FaQuestionCircle,
     FaRobot,
 } from 'react-icons/fa';
-import ChatbotWidget from '@/Front/Components/ChatbotWidget';
+import ChatbotWidget from '@/Components/ChatbotWidget';
 
 const carreras = [
     {

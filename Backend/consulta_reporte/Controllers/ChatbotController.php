@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Backend\consulta_reporte\Services\GeminiAIService;
 
+/**
+ * CU30 - Consultar Asistente Virtual IA
+ */
 class ChatbotController extends Controller
 {
     /**
@@ -31,6 +34,7 @@ class ChatbotController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('ChatbotController Error: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
             return response()->json([
                 'success' => false,
                 'reply' => "Hubo un error al procesar tu solicitud. Por favor intenta de nuevo más tarde."
