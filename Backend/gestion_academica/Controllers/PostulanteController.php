@@ -148,12 +148,13 @@ class PostulanteController extends Controller
             }
 
             // Crear Usuario
-            $usuario = Usuario::create([
-                'codigo_inicio' => $perfil->codigo,
-                'password' => Hash::make($perfil->ci),
-                'estado' => 'Inactivo',
-                'rol_id' => 4 
-            ]);
+            $usuario = new Usuario();
+            $usuario->id = Usuario::max('id') + 1;
+            $usuario->codigo_inicio = $perfil->codigo;
+            $usuario->password = Hash::make($perfil->ci);
+            $usuario->estado = 'Inactivo';
+            $usuario->rol_id = 4;
+            $usuario->save();
 
             // Vincular Usuario al Perfil y asignar cargo
             $perfil->usuario_id = $usuario->id;

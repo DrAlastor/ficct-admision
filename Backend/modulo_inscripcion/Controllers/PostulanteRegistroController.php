@@ -281,27 +281,28 @@ class PostulanteRegistroController extends Controller
                 $siguienteId = \Backend\usuario_seguridad\Models\Perfil::max('id') + 1;
                 $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
 
-                $perfilExistente = \Backend\usuario_seguridad\Models\Perfil::create([
-                    'usuario_id' => null, // NO creamos usuario todavía!
-                    'codigo' => $codigoPostulante,
-                    'ci' => $request->ci,
-                    'nombres' => $request->nombres,
-                    'apellido_paterno' => $request->apellido_paterno,
-                    'apellido_materno' => $request->apellido_materno ?? null,
-                    'fecha_nacimiento' => $request->fecha_nacimiento,
-                    'nacionalidad' => $request->nacionalidad,
-                    'sexo' => $request->sexo,
-                    'direccion' => $request->direccion,
-                    'telefono' => $request->telefono,
-                    'email' => $request->email,
-                    'cargo' => 'POSTULANTE'
-                ]);
+                $perfilExistente = new \Backend\usuario_seguridad\Models\Perfil();
+                $perfilExistente->id = $siguienteId;
+                $perfilExistente->usuario_id = null; // NO creamos usuario todavía!
+                $perfilExistente->codigo = $codigoPostulante;
+                $perfilExistente->ci = $request->ci;
+                $perfilExistente->nombres = $request->nombres;
+                $perfilExistente->apellido_paterno = $request->apellido_paterno;
+                $perfilExistente->apellido_materno = $request->apellido_materno ?? null;
+                $perfilExistente->fecha_nacimiento = $request->fecha_nacimiento;
+                $perfilExistente->nacionalidad = $request->nacionalidad;
+                $perfilExistente->sexo = $request->sexo;
+                $perfilExistente->direccion = $request->direccion;
+                $perfilExistente->telefono = $request->telefono;
+                $perfilExistente->email = $request->email;
+                $perfilExistente->cargo = 'POSTULANTE';
+                $perfilExistente->save();
 
-                $postulante = Postulante::create([
-                    'id' => $perfilExistente->id,
-                    'colegio_procedencia' => $request->tipo_colegio,
-                    'ciudad' => null
-                ]);
+                $postulante = new Postulante();
+                $postulante->id = $perfilExistente->id;
+                $postulante->colegio_procedencia = $request->tipo_colegio;
+                $postulante->ciudad = null;
+                $postulante->save();
 
                 $postulacion = Postulacion::create([
                     'postulante_id' => $postulante->id,
@@ -425,35 +426,37 @@ class PostulanteRegistroController extends Controller
             $codigoPostulante = 'POS' . date('ym') . str_pad($siguienteId, 4, '0', STR_PAD_LEFT);
 
             // 2. Crear el Usuario (Autenticación)
-            $usuario = Usuario::create([
-                'codigo_inicio' => $codigoPostulante,
-                'password' => Hash::make($datosPostulante['ci']), 
-                'estado' => 'Inactivo',
-                'rol_id' => 4 
-            ]);
+            $usuario = new Usuario();
+            $usuario->id = Usuario::max('id') + 1;
+            $usuario->codigo_inicio = $codigoPostulante;
+            $usuario->password = Hash::make($datosPostulante['ci']);
+            $usuario->estado = 'Inactivo';
+            $usuario->rol_id = 4;
+            $usuario->save();
 
             // 3. Crear el Perfil (Demografía)
-            $perfil = Perfil::create([
-                'usuario_id' => $usuario->id,
-                'codigo' => $codigoPostulante,
-                'ci' => $datosPostulante['ci'],
-                'nombres' => $datosPostulante['nombres'],
-                'apellido_paterno' => $datosPostulante['apellido_paterno'],
-                'apellido_materno' => $datosPostulante['apellido_materno'] ?? null,
-                'fecha_nacimiento' => $datosPostulante['fecha_nacimiento'],
-                'nacionalidad' => $datosPostulante['nacionalidad'],
-                'sexo' => $datosPostulante['sexo'],
-                'direccion' => $datosPostulante['direccion'],
-                'telefono' => $datosPostulante['telefono'],
-                'email' => $datosPostulante['email']
-            ]);
+            $perfil = new Perfil();
+            $perfil->id = $siguienteId;
+            $perfil->usuario_id = $usuario->id;
+            $perfil->codigo = $codigoPostulante;
+            $perfil->ci = $datosPostulante['ci'];
+            $perfil->nombres = $datosPostulante['nombres'];
+            $perfil->apellido_paterno = $datosPostulante['apellido_paterno'];
+            $perfil->apellido_materno = $datosPostulante['apellido_materno'] ?? null;
+            $perfil->fecha_nacimiento = $datosPostulante['fecha_nacimiento'];
+            $perfil->nacionalidad = $datosPostulante['nacionalidad'];
+            $perfil->sexo = $datosPostulante['sexo'];
+            $perfil->direccion = $datosPostulante['direccion'];
+            $perfil->telefono = $datosPostulante['telefono'];
+            $perfil->email = $datosPostulante['email'];
+            $perfil->save();
 
             // 3.1 Crear el registro específico de Postulante
-            $postulante = Postulante::create([
-                'id' => $perfil->id,
-                'colegio_procedencia' => $datosPostulante['tipo_colegio'] ?? null,
-                'ciudad' => null
-            ]);
+            $postulante = new Postulante();
+            $postulante->id = $perfil->id;
+            $postulante->colegio_procedencia = $datosPostulante['tipo_colegio'] ?? null;
+            $postulante->ciudad = null;
+            $postulante->save();
 
             // 4. Crear la Postulación (Gestión actual)
             $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
