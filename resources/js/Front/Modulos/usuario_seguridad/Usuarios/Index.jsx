@@ -1,8 +1,9 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { FiPlus, FiSearch, FiUserX } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiUserX, FiUpload } from 'react-icons/fi';
 import UsuarioModal from './_components/UsuarioModal';
+import ImportUsuariosModal from './_components/ImportUsuariosModal';
 import UsuariosTable from './_components/UsuariosTable';
 import useUsuarios from './_hooks/useUsuarios';
 
@@ -17,7 +18,9 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
         deleteConfirmUser,
         setDeleteConfirmUser,
         handleDelete,
-        confirmDelete
+        confirmDelete,
+        isImportModalOpen,
+        setIsImportModalOpen
     } = useUsuarios(filters);
 
     return (
@@ -30,13 +33,22 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
                     <p className="text-gray-500 font-medium">Administra la información de los usuarios del sistema.</p>
                 </div>
                 
-                <button 
-                    onClick={() => openModal()}
-                    className="flex items-center justify-center bg-[#07074E] text-white px-6 py-3 rounded-full font-bold uppercase text-sm hover:bg-[#06063b] transition-all shadow-md hover:shadow-lg"
-                >
-                    <FiPlus className="mr-2" size={18} />
-                    Crear Usuario
-                </button>
+                <div className="flex items-center space-x-3">
+                    <button 
+                        onClick={() => setIsImportModalOpen(true)}
+                        className="flex items-center justify-center bg-white border border-[#07074E] text-[#07074E] px-6 py-3 rounded-full font-bold uppercase text-sm hover:bg-gray-50 transition-all shadow-sm hover:shadow-md"
+                    >
+                        <FiUpload className="mr-2" size={18} />
+                        Importar Lote
+                    </button>
+                    <button 
+                        onClick={() => openModal()}
+                        className="flex items-center justify-center bg-[#07074E] text-white px-6 py-3 rounded-full font-bold uppercase text-sm hover:bg-[#06063b] transition-all shadow-md hover:shadow-lg"
+                    >
+                        <FiPlus className="mr-2" size={18} />
+                        Crear Usuario
+                    </button>
+                </div>
             </div>
 
             {/* Search Bar */}
@@ -67,6 +79,13 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
                 usuario={selectedUsuario}
                 roles={roles}
                 nextId={nextId}
+            />
+
+            {/* Modal de Importación Masiva */}
+            <ImportUsuariosModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                roles={roles}
             />
 
             {/* Modal de Confirmación de Eliminación */}

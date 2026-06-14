@@ -405,4 +405,334 @@ class EstadisticaController extends Controller
 
         return response()->json($data);
     }
+
+    /**
+     * Importar historial de notas, postulaciones y grupos desde un CSV/Excel
+     */
+    public function importarHistorial(Request $request)
+    {
+        set_time_limit(300);
+
+        $validated = $request->validate([
+            'gestion_id' => 'required|exists:gestion,id',
+            'registros' => 'required|array|min:1',
+            'registros.*.ci' => 'required|string',
+            'registros.*.nombres' => 'required|string',
+            'registros.*.apellido_paterno' => 'nullable|string',
+            'registros.*.apellido_materno' => 'nullable|string',
+            'registros.*.email' => 'nullable|string',
+            'registros.*.sexo' => 'nullable|string',
+            'registros.*.colegio' => 'nullable|string',
+            'registros.*.ciudad' => 'nullable|string',
+            'registros.*.carrera' => 'required|string',
+            'registros.*.materia' => 'required|string',
+            'registros.*.grupo' => 'required|string',
+            'registros.*.nota_p1' => 'nullable|numeric',
+            'registros.*.nota_p2' => 'nullable|numeric',
+            'registros.*.nota_p3' => 'nullable|numeric',
+            'registros.*.promedio_final' => 'required|numeric',
+            'registros.*.estado_materia' => 'required|string',
+            'registros.*.monto_pago' => 'nullable|numeric',
+            'registros.*.metodo_pago' => 'nullable|string',
+            'registros.*.nro_recibo' => 'nullable|string',
+            'registros.*.ci_docente' => 'nullable|string',
+            'registros.*.nombre_docente' => 'nullable|string',
+            'registros.*.apellido_docente' => 'nullable|string',
+            'registros.*.profesion_docente' => 'nullable|string',
+        ]);
+
+        $gestionId = $validated['gestion_id'];
+        $registros = $validated['registros'];
+
+        DB::beginTransaction();
+        try {
+            // Cargar diccionarios en memoria para no saturar Supabase
+            $carreras = DB::table('carrera')->get()->keyBy(fn($c) => strtolower(trim($c->nombre)));
+            $carrerasSigla = DB::table('carrera')->get()->keyBy(fn($c) => strtolower(trim($c->sigla)));
+            $materias = DB::table('materia')->get()->keyBy(fn($m) => strtolower(trim($m->sigla)));
+            
+            // Grupos de esta gestión
+            $grupos = DB::table('grupo')->where('gestion_id', $gestionId)->get();
+            $gruposDict = [];
+            foreach ($grupos as $g) {
+                $gruposDict[$g->materia_id . '-' . strtolower(trim($g->nombre))] = $g->codigo;
+            }
+
+            // Perfiles existentes
+            $cisAImportar = array_unique(array_column($registros, 'ci'));
+            $perfiles = DB::table('perfil')->whereIn('ci', $cisAImportar)->get()->keyBy('ci');
+            $postulantes = DB::table('postulante')->whereIn('id', $perfiles->pluck('id'))->get()->keyBy('id');
+
+            // Postulaciones de esta gestión
+            $postulaciones = DB::table('postulacion')
+                ->where('gestion_id', $gestionId)
+                ->whereIn('postulante_id', $perfiles->pluck('id'))
+                ->get()
+                ->keyBy('postulante_id');
+
+            // IDs autoincrementables
+            $nextUsuarioId = DB::table('usuario')->max('id') + 1;
+            $nextPerfilId = DB::table('perfil')->max('id') + 1;
+            $nextMateriaId = DB::table('materia')->max('id') + 1;
+            $nextGrupoCodigo = DB::table('grupo')->max('codigo') + 1;
+            $nextPostulacionCodigo = DB::table('postulacion')->max('codigo') + 1;
+            $nextInscripcionId = DB::table('inscripciones_cup')->max('id') + 1;
+            $nextEvaluacionId = DB::table('evaluaciones')->max('id') + 1;
+            
+            // Caches for Pagos and Docentes to avoid duplicates in the loop
+            $pagosInsertados = []; // by postulacion_codigo
+            $docentesInsertados = []; // by ci_docente
+            $cargaHorariaInsertada = []; // by docente_id-grupo_codigo
+
+            // Arreglos para Bulk Insert
+            $insertsUsuario = [];
+            $insertsPerfil = [];
+            $insertsPostulante = [];
+            $insertsPostulacion = [];
+            $insertsPostulacionCarrera = [];
+            $insertsInscripciones = [];
+            $insertsEvaluaciones = [];
+            $insertsPago = [];
+            $insertsDocente = [];
+            $insertsCargaHoraria = [];
+
+            foreach ($registros as $idx => $row) {
+                $ci = $row['ci'];
+                
+                // 1. OBTENER O CREAR CARRERA
+                $carreraKey = strtolower(trim($row['carrera']));
+                $carreraId = null;
+                if (isset($carreras[$carreraKey])) {
+                    $carreraId = $carreras[$carreraKey]->codigo;
+                } elseif (isset($carrerasSigla[$carreraKey])) {
+                    $carreraId = $carrerasSigla[$carreraKey]->codigo;
+                } else {
+                    $carreraId = $carreras->first()->codigo ?? 1;
+                }
+
+                // 2. OBTENER O CREAR MATERIA
+                $materiaKey = strtolower(trim($row['materia']));
+                if (!isset($materias[$materiaKey])) {
+                    DB::table('materia')->insert([
+                        'id' => $nextMateriaId,
+                        'nombre' => strtoupper(trim($row['materia'])),
+                        'sigla' => strtoupper(trim($row['materia']))
+                    ]);
+                    $materias[$materiaKey] = (object)['id' => $nextMateriaId, 'sigla' => strtoupper(trim($row['materia']))];
+                    $materiaId = $nextMateriaId;
+                    $nextMateriaId++;
+                } else {
+                    $materiaId = $materias[$materiaKey]->id;
+                }
+
+                // 3. OBTENER O CREAR GRUPO
+                $grupoNombre = strtoupper(trim($row['grupo']));
+                $grupoKey = $materiaId . '-' . strtolower($grupoNombre);
+                if (!isset($gruposDict[$grupoKey])) {
+                    DB::table('grupo')->insert([
+                        'codigo' => $nextGrupoCodigo,
+                        'materia_id' => $materiaId,
+                        'gestion_id' => $gestionId,
+                        'nombre' => $grupoNombre,
+                        'cupo' => 50,
+                        'inscritos_actuales' => 0
+                    ]);
+                    $gruposDict[$grupoKey] = $nextGrupoCodigo;
+                    $grupoCodigo = $nextGrupoCodigo;
+                    $nextGrupoCodigo++;
+                } else {
+                    $grupoCodigo = $gruposDict[$grupoKey];
+                }
+
+                // 4. OBTENER O CREAR POSTULANTE
+                $perfilId = null;
+                if (!isset($perfiles[$ci])) {
+                    $insertsUsuario[] = [
+                        'id' => $nextUsuarioId,
+                        'rol_id' => 4, // Postulante
+                        'gestion_id' => $gestionId,
+                        'codigo_inicio' => 'P' . $ci,
+                        'password' => \Illuminate\Support\Facades\Hash::make($ci),
+                        'estado' => 'Inactivo',
+                    ];
+
+                    $email = empty($row['email']) ? "{$ci}@postulante.com" : $row['email'];
+                    $insertsPerfil[] = [
+                        'id' => $nextPerfilId,
+                        'usuario_id' => $nextUsuarioId,
+                        'codigo' => 'P' . $ci,
+                        'ci' => $ci,
+                        'nombres' => $row['nombres'],
+                        'apellido_paterno' => $row['apellido_paterno'] ?? '',
+                        'apellido_materno' => $row['apellido_materno'] ?? '',
+                        'email' => $email,
+                        'sexo' => strtoupper(trim($row['sexo'])) === 'M' ? 'M' : 'F',
+                    ];
+
+                    $insertsPostulante[] = [
+                        'id' => $nextPerfilId,
+                        'colegio_procedencia' => $row['colegio'] ?? 'S/N',
+                        'ciudad' => $row['ciudad'] ?? 'S/N',
+                    ];
+
+                    $perfiles[$ci] = (object)['id' => $nextPerfilId];
+                    $perfilId = $nextPerfilId;
+                    
+                    $nextUsuarioId++;
+                    $nextPerfilId++;
+                } else {
+                    $perfilId = $perfiles[$ci]->id;
+                }
+
+                // 5. OBTENER O CREAR POSTULACION
+                if (!isset($postulaciones[$perfilId])) {
+                    $insertsPostulacion[] = [
+                        'codigo' => $nextPostulacionCodigo,
+                        'postulante_id' => $perfilId,
+                        'gestion_id' => $gestionId,
+                        'fecha' => date('Y-m-d'),
+                        'hora' => date('H:i:s'),
+                        'estado' => $row['promedio_final'] >= 60 ? 'Aceptado' : 'Rechazado'
+                    ];
+
+                    $insertsPostulacionCarrera[] = [
+                        'postulacion_codigo' => $nextPostulacionCodigo,
+                        'carrera_codigo' => $carreraId,
+                        'prioridad' => 1
+                    ];
+
+                    $postulaciones[$perfilId] = (object)['codigo' => $nextPostulacionCodigo];
+                    $postulacionCodigo = $nextPostulacionCodigo;
+                    $nextPostulacionCodigo++;
+                } else {
+                    $postulacionCodigo = $postulaciones[$perfilId]->codigo;
+                }
+
+                // 6. CREAR INSCRIPCION CUP
+                $insertsInscripciones[] = [
+                    'id' => $nextInscripcionId,
+                    'postulacion_codigo' => $postulacionCodigo,
+                    'grupo_codigo' => $grupoCodigo,
+                    'fecha_inscripcion' => date('Y-m-d'),
+                    'estado' => 'Activo'
+                ];
+
+                // 7. CREAR EVALUACION
+                $insertsEvaluaciones[] = [
+                    'id' => $nextEvaluacionId,
+                    'inscripcion_id' => $nextInscripcionId,
+                    'nota_p1' => $row['nota_p1'] ?? 0,
+                    'nota_p2' => $row['nota_p2'] ?? 0,
+                    'nota_p3' => $row['nota_p3'] ?? 0,
+                    'promedio_final' => $row['promedio_final'] ?? 0,
+                    'estado_materia' => $row['estado_materia'] ?? 'Reprobado'
+                ];
+
+                // 8. CREAR PAGO
+                if (!empty($row['monto_pago']) && $row['monto_pago'] > 0) {
+                    if (!isset($pagosInsertados[$postulacionCodigo])) {
+                        $insertsPago[] = [
+                            'postulacion_codigo' => $postulacionCodigo,
+                            'nro_recibo' => $row['nro_recibo'] ?? 'REC-AUTO-' . $postulacionCodigo,
+                            'monto' => $row['monto_pago'],
+                            'metodo_pago' => $row['metodo_pago'] ?? 'Efectivo',
+                            'estado' => 'Completado',
+                            'fecha' => date('Y-m-d')
+                        ];
+                        $pagosInsertados[$postulacionCodigo] = true;
+                    }
+                }
+
+                // 9. CREAR DOCENTE Y CARGA HORARIA
+                if (!empty($row['ci_docente'])) {
+                    $ciDocente = $row['ci_docente'];
+                    $docenteId = null;
+
+                    if (!isset($docentesInsertados[$ciDocente])) {
+                        $docPerfil = DB::table('perfil')->where('ci', $ciDocente)->first();
+                        if (!$docPerfil) {
+                            $insertsUsuario[] = [
+                                'id' => $nextUsuarioId,
+                                'rol_id' => 2, // Docente
+                                'gestion_id' => $gestionId,
+                                'codigo_inicio' => 'D' . $ciDocente,
+                                'password' => \Illuminate\Support\Facades\Hash::make($ciDocente),
+                                'estado' => 'Inactivo',
+                            ];
+
+                            $insertsPerfil[] = [
+                                'id' => $nextPerfilId,
+                                'usuario_id' => $nextUsuarioId,
+                                'codigo' => 'D' . $ciDocente,
+                                'ci' => $ciDocente,
+                                'nombres' => $row['nombre_docente'] ?? 'Docente',
+                                'apellido_paterno' => $row['apellido_docente'] ?? '',
+                                'apellido_materno' => '',
+                                'email' => "{$ciDocente}@docente.com",
+                                'sexo' => 'M',
+                            ];
+
+                            $insertsDocente[] = [
+                                'id' => $nextPerfilId,
+                                'profesion' => $row['profesion_docente'] ?? 'Profesional',
+                                'grado_academico' => 'Licenciatura'
+                            ];
+
+                            $docenteId = $nextPerfilId;
+                            $nextUsuarioId++;
+                            $nextPerfilId++;
+                        } else {
+                            $docenteId = $docPerfil->id;
+                            $docEntry = DB::table('docente')->where('id', $docenteId)->first();
+                            if (!$docEntry) {
+                                $insertsDocente[] = [
+                                    'id' => $docenteId,
+                                    'profesion' => $row['profesion_docente'] ?? 'Profesional',
+                                    'grado_academico' => 'Licenciatura'
+                                ];
+                            }
+                        }
+                        $docentesInsertados[$ciDocente] = $docenteId;
+                    } else {
+                        $docenteId = $docentesInsertados[$ciDocente];
+                    }
+
+                    // Carga Horaria
+                    $cargaKey = $docenteId . '-' . $grupoCodigo;
+                    if (!isset($cargaHorariaInsertada[$cargaKey])) {
+                        $existsCH = DB::table('carga_horaria')->where('docente_id', $docenteId)->where('grupo_codigo', $grupoCodigo)->exists();
+                        if (!$existsCH) {
+                            $insertsCargaHoraria[] = [
+                                'docente_id' => $docenteId,
+                                'grupo_codigo' => $grupoCodigo
+                            ];
+                        }
+                        $cargaHorariaInsertada[$cargaKey] = true;
+                    }
+                }
+
+                $nextInscripcionId++;
+                $nextEvaluacionId++;
+            }
+
+            // EJECUTAR BULK INSERTS (Evita timeout de DB)
+            if (count($insertsUsuario) > 0) DB::table('usuario')->insert($insertsUsuario);
+            if (count($insertsPerfil) > 0) DB::table('perfil')->insert($insertsPerfil);
+            if (count($insertsPostulante) > 0) DB::table('postulante')->insert($insertsPostulante);
+            if (count($insertsDocente) > 0) DB::table('docente')->insert($insertsDocente);
+            if (count($insertsPostulacion) > 0) DB::table('postulacion')->insert($insertsPostulacion);
+            if (count($insertsPostulacionCarrera) > 0) DB::table('postulacion_carrera')->insert($insertsPostulacionCarrera);
+            if (count($insertsInscripciones) > 0) DB::table('inscripciones_cup')->insert($insertsInscripciones);
+            if (count($insertsEvaluaciones) > 0) DB::table('evaluaciones')->insert($insertsEvaluaciones);
+            if (count($insertsPago) > 0) DB::table('pago')->insert($insertsPago);
+            if (count($insertsCargaHoraria) > 0) DB::table('carga_horaria')->insert($insertsCargaHoraria);
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Historial importado correctamente']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Error al importar: ' . $e->getMessage()], 500);
+        }
+    }
 }

@@ -270,4 +270,114 @@ class UsuarioController extends Controller
             return back()->withErrors(['error' => 'Hubo un error al reactivar el usuario.']);
         }
     }
+
+    /**
+     * Obtiene la lista de gestiones académicas disponibles para el modal de importación
+     */
+    public function getGestiones()
+    {
+        $gestiones = DB::table('gestion')->orderByDesc('id')->get();
+        return response()->json($gestiones);
+    }
+
+    /**
+     * Importación masiva de usuarios desde Excel/CSV
+     */
+    public function importar(Request $request)
+    {
+        // Aumentar el tiempo límite por la latencia de red con Supabase
+        set_time_limit(300);
+
+        $validated = $request->validate([
+            'gestion_id' => 'required|exists:gestion,id',
+            'usuarios' => 'required|array|min:1',
+            'usuarios.*.ci' => 'required|string',
+            'usuarios.*.nombres' => 'required|string',
+            'usuarios.*.apellido_paterno' => 'required|string',
+            'usuarios.*.email' => 'required|email',
+            'usuarios.*.rol_id' => 'required|exists:rol,id',
+        ]);
+
+        $usuariosImportar = $validated['usuarios'];
+        $gestionId = $validated['gestion_id'];
+        
+        $insertedCount = 0;
+        $errorsList = [];
+
+        DB::beginTransaction();
+        try {
+            $nextUserId = Usuario::max('id') + 1;
+            $nextPerfilId = Perfil::max('id') + 1;
+
+            // Extraer todos los CI y correos para hacer UNA sola consulta
+            $cisAImportar = array_column($usuariosImportar, 'ci');
+            $emailsAImportar = array_column($usuariosImportar, 'email');
+            
+            // Buscar perfiles que ya existan con esos CI o correos
+            $perfilesExistentes = Perfil::whereIn('ci', $cisAImportar)
+                                        ->orWhereIn('email', $emailsAImportar)
+                                        ->get(['ci', 'email']);
+                                        
+            $cisExistentes = $perfilesExistentes->pluck('ci')->toArray();
+            $emailsExistentes = $perfilesExistentes->pluck('email')->toArray();
+
+            foreach ($usuariosImportar as $index => $userData) {
+                // Verificar en la lista precargada en memoria (0 milisegundos)
+                if (in_array($userData['ci'], $cisExistentes) || in_array($userData['email'], $emailsExistentes)) {
+                    $errorsList[] = "Fila " . ($index + 1) . ": CI o Email ya registrado ({$userData['ci']} / {$userData['email']})";
+                    continue;
+                }
+
+                $codigo = $this->generarCodigo($userData['rol_id']);
+                $passwordRaw = !empty($userData['password']) ? $userData['password'] : $userData['ci'];
+
+                // Crear Usuario
+                $usuario = new Usuario();
+                $usuario->id = $nextUserId;
+                $usuario->rol_id = $userData['rol_id'];
+                $usuario->gestion_id = $gestionId; // Relación con la gestión académica
+                $usuario->codigo_inicio = $codigo;
+                $usuario->password = Hash::make($passwordRaw);
+                $usuario->estado = 'Inactivo';
+                $usuario->save();
+
+                // Crear Perfil
+                $perfil = new Perfil();
+                $perfil->id = $nextPerfilId;
+                $perfil->usuario_id = $usuario->id;
+                $perfil->codigo = $codigo;
+                $perfil->ci = $userData['ci'];
+                $perfil->nombres = $userData['nombres'];
+                $perfil->apellido_paterno = $userData['apellido_paterno'];
+                $perfil->apellido_materno = $userData['apellido_materno'] ?? null;
+                $perfil->telefono = $userData['telefono'] ?? null;
+                $perfil->email = $userData['email'];
+                $perfil->cargo = $userData['cargo'] ?? null;
+                $perfil->save();
+
+                $nextUserId++;
+                $nextPerfilId++;
+                $insertedCount++;
+            }
+
+            if ($insertedCount === 0 && count($errorsList) > 0) {
+                DB::rollBack();
+                return back()->withErrors(['error' => 'No se importó ningún usuario. Errores: ' . implode(', ', array_slice($errorsList, 0, 3)) . (count($errorsList) > 3 ? '...' : '')]);
+            }
+
+            DB::commit();
+            AuditService::log('Importación Masiva', "Se importaron {$insertedCount} usuarios para la gestión ID: {$gestionId}");
+
+            $msg = "Se importaron {$insertedCount} usuarios correctamente.";
+            if (count($errorsList) > 0) {
+                $msg .= " Hubo " . count($errorsList) . " usuarios omitidos (ej. ya existían).";
+            }
+
+            return redirect()->route('usuarios.index')->with('success', $msg);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Error crítico al importar usuarios: ' . $e->getMessage()]);
+        }
+    }
 }

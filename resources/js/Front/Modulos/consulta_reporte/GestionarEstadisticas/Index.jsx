@@ -10,7 +10,8 @@ import ChartGrupos from './_components/ChartGrupos';
 import ChartDocentes from './_components/ChartDocentes';
 import ChartAdmision from './_components/ChartAdmision';
 import RankingPanel from './_components/RankingPanel';
-import { FiBarChart2, FiUsers, FiBookOpen, FiCheckCircle, FiLayers, FiAward, FiCreditCard } from 'react-icons/fi';
+import ImportEstadisticasModal from './_components/ImportEstadisticasModal';
+import { FiBarChart2, FiUsers, FiBookOpen, FiCheckCircle, FiLayers, FiAward, FiCreditCard, FiUpload } from 'react-icons/fi';
 
 const TABS = [
     { id: 'postulantes', label: 'Postulantes', icon: FiUsers, emoji: '👥' },
@@ -32,6 +33,7 @@ export default function Index() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('postulantes');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleFiltrar = useCallback(async () => {
         if (!gestion1) return;
@@ -124,16 +126,33 @@ export default function Index() {
                         loading={loading}
                     />
                 </div>
-                {data && data.length > 0 && !loading && (
+                
+                <div className="flex gap-2">
                     <button
-                        onClick={exportToPDF}
-                        className="ml-4 h-[72px] bg-gradient-to-r from-red-500 to-rose-600 text-white px-6 rounded-2xl font-bold shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
+                        onClick={() => setIsModalOpen(true)}
+                        className="ml-4 h-[72px] bg-white border border-[#07074E] text-[#07074E] px-6 rounded-2xl font-bold shadow-sm hover:bg-gray-50 hover:shadow-md transition-all flex flex-col items-center justify-center gap-1"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
-                        <span className="text-[10px] uppercase tracking-wider">Exportar PDF</span>
+                        <FiUpload size={24} />
+                        <span className="text-[10px] uppercase tracking-wider">Importar</span>
                     </button>
-                )}
+
+                    {data && data.length > 0 && !loading && (
+                        <button
+                            onClick={exportToPDF}
+                            className="h-[72px] bg-gradient-to-r from-red-500 to-rose-600 text-white px-6 rounded-2xl font-bold shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
+                            <span className="text-[10px] uppercase tracking-wider">Exportar PDF</span>
+                        </button>
+                    )}
+                </div>
             </div>
+
+            <ImportEstadisticasModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                gestiones={gestiones}
+            />
 
             {/* Estado vacío */}
             {!data && !loading && (

@@ -48,6 +48,7 @@ CREATE TABLE USUARIO (
     ESTADO VARCHAR(20),
     ELIMINADO BOOLEAN DEFAULT FALSE
 );
+-- ALTER TABLE USUARIO ADD COLUMN GESTION_ID INT REFERENCES GESTION(ID) ON DELETE SET NULL ON UPDATE CASCADE;
 
 CREATE TABLE TOKEN_RECUPERACION (
     ID SERIAL PRIMARY KEY,
@@ -338,7 +339,7 @@ DROP TABLE IF EXISTS
     CONCEPTO_PAGO, METODO_PAGO_CONFIG 
 CASCADE;
 
-/*
+
 -- =================================================================
 -- 0. TRUNCATE DE TODAS LAS TABLAS (REINICIO DE DATOS)
 -- =================================================================
@@ -645,3 +646,443 @@ INSERT INTO EVALUACIONES (INSCRIPCION_ID, NOTA_P1, NOTA_P2, NOTA_P3, PROMEDIO_FI
 (46,0,0,0,0,'Cursando'), (47,0,0,0,0,'Cursando'), (48,0,0,0,0,'Cursando'), (49,0,0,0,0,'Cursando'), (50,0,0,0,0,'Cursando'),
 (51,0,0,0,0,'Cursando'), (52,0,0,0,0,'Cursando'), (53,0,0,0,0,'Cursando'), (54,0,0,0,0,'Cursando'), (55,0,0,0,0,'Cursando'),
 (56,0,0,0,0,'Cursando'), (57,0,0,0,0,'Cursando'), (58,0,0,0,0,'Cursando'), (59,0,0,0,0,'Cursando'), (60,0,0,0,0,'Cursando');
+
+-- =================================================================
+-- CONSULTAS SQL
+-- =================================================================
+
+-- 1. Listar todos los usuarios y su rol en el sistema.
+SELECT u.CODIGO_INICIO, p.NOMBRES, p.APELLIDO_PATERNO, r.NOMBRE AS ROL, u.ESTADO
+FROM USUARIO u
+JOIN ROL r ON u.ROL_ID = r.ID
+LEFT JOIN PERFIL p ON p.USUARIO_ID = u.ID;
+
+-- 2. Obtener el perfil completo de todos los postulantes registrados.
+SELECT p.CI, p.NOMBRES, p.APELLIDO_PATERNO, pos.COLEGIO_PROCEDENCIA, pos.CIUDAD, p.EMAIL, p.TELEFONO
+FROM POSTULANTE pos
+JOIN PERFIL p ON pos.ID = p.ID;
+
+-- 3. Listar las carreras disponibles y la cantidad de cupos máximos de cada una.
+SELECT SIGLA, NOMBRE, CUPO_MAXIMO
+FROM CARRERA
+ORDER BY CUPO_MAXIMO DESC;
+
+-- 4. Obtener el historial de la bitácora de un usuario específico (por ejemplo, ID = 1).
+SELECT b.FECHA_HORA, b.ACCION, b.DETALLE, b.IP
+FROM BITACORA b
+WHERE b.USUARIO_ID = 1
+ORDER BY b.FECHA_HORA DESC;
+
+-- 5. Mostrar los docentes que tienen grado académico de "Maestría" o "Doctorado".
+SELECT p.NOMBRES, p.APELLIDO_PATERNO, d.PROFESION, d.GRADO_ACADEMICO
+FROM DOCENTE d
+JOIN PERFIL p ON d.ID = p.ID
+WHERE d.GRADO_ACADEMICO IN ('Maestría', 'Doctorado') OR d.MAESTRIA = 'Si';
+
+-- 6. Listar los postulantes que provienen del colegio "Nacional Florida".
+SELECT p.NOMBRES, p.APELLIDO_PATERNO, pos.COLEGIO_PROCEDENCIA
+FROM POSTULANTE pos
+JOIN PERFIL p ON pos.ID = p.ID
+WHERE pos.COLEGIO_PROCEDENCIA = 'Nacional Florida';
+
+-- 7. Obtener la cantidad de pagos completados y la suma total recaudada por método de pago.
+SELECT METODO_PAGO, COUNT(*) AS CANTIDAD_PAGOS, SUM(MONTO) AS TOTAL_RECAUDADO
+FROM PAGO
+WHERE ESTADO = 'Completado'
+GROUP BY METODO_PAGO;
+
+-- 8. Mostrar los métodos de pago configurados y su estado (activos o inactivos).
+SELECT NOMBRE, ACTIVO 
+FROM METODO_PAGO_CONFIG;
+
+-- 9. Listar las materias asignadas a un grupo específico (ej. Grupo "M001").
+SELECT g.NOMBRE AS GRUPO, m.SIGLA, m.NOMBRE AS MATERIA, g.CUPO
+FROM GRUPO g
+JOIN MATERIA m ON g.MATERIA_ID = m.ID
+WHERE g.NOMBRE = 'M001';
+
+-- 10. Obtener el horario completo de clases para el turno "Mañana".
+SELECT g.NOMBRE AS GRUPO, m.NOMBRE AS MATERIA, h.DIA, h.HORA_INICIO, h.HORA_FIN, a.NRO_AULA
+FROM HORARIO h
+JOIN GRUPO g ON h.GRUPO_CODIGO = g.CODIGO
+JOIN MATERIA m ON g.MATERIA_ID = m.ID
+JOIN AULA a ON h.AULA_ID = a.ID
+JOIN TURNO t ON h.TURNO_ID = t.ID
+WHERE t.DESCRIPCION = 'Mañana'
+ORDER BY h.DIA, h.HORA_INICIO;
+
+-- 11. Listar la carga horaria asignada a todos los docentes.
+SELECT p.NOMBRES, p.APELLIDO_PATERNO, g.NOMBRE AS GRUPO, m.NOMBRE AS MATERIA
+FROM CARGA_HORARIA ch
+JOIN DOCENTE d ON ch.DOCENTE_ID = d.ID
+JOIN PERFIL p ON d.ID = p.ID
+JOIN GRUPO g ON ch.GRUPO_CODIGO = g.CODIGO
+JOIN MATERIA m ON g.MATERIA_ID = m.ID
+ORDER BY p.APELLIDO_PATERNO;
+
+-- 12. Mostrar los postulantes con postulaciones habilitadas en la gestión académica ID 3.
+SELECT p.NOMBRES, p.APELLIDO_PATERNO, post.FECHA, post.ESTADO
+FROM POSTULACION post
+JOIN POSTULANTE pos ON post.POSTULANTE_ID = pos.ID
+JOIN PERFIL p ON pos.ID = p.ID
+WHERE post.GESTION_ID = 3 AND post.ESTADO = 'Habilitado';
+
+-- 13. Obtener las notas de un postulante específico en sus materias inscritas.
+SELECT p.NOMBRES, p.APELLIDO_PATERNO, m.NOMBRE AS MATERIA, e.PROMEDIO_FINAL, e.ESTADO_MATERIA
+FROM EVALUACIONES e
+JOIN INSCRIPCIONES_CUP ic ON e.INSCRIPCION_ID = ic.ID
+JOIN POSTULACION post ON ic.POSTULACION_CODIGO = post.CODIGO
+JOIN POSTULANTE pos ON post.POSTULANTE_ID = pos.ID
+JOIN PERFIL p ON pos.ID = p.ID
+JOIN GRUPO g ON ic.GRUPO_CODIGO = g.CODIGO
+JOIN MATERIA m ON g.MATERIA_ID = m.ID
+WHERE p.CI = '90000001';
+
+-- 14. Listar los documentos subidos por un postulante específico.
+SELECT d.TIPO_DOCUMENTO, d.URL_ARCHIVO, d.ESTADO_VALIDACION
+FROM DOCUMENTOS d
+JOIN POSTULACION p ON d.POSTULACION_CODIGO = p.CODIGO
+JOIN POSTULANTE pos ON p.POSTULANTE_ID = pos.ID
+JOIN PERFIL per ON pos.ID = per.ID
+WHERE per.NOMBRES = 'Luis' AND per.APELLIDO_PATERNO = 'Torres';
+
+-- 15. Consultar los registros de asistencia en una sesión de clases determinada.
+SELECT p.NOMBRES, p.APELLIDO_PATERNO, ra.ESTADO AS ASISTENCIA, ra.HORA_REGISTRO
+FROM REGISTRO_ASISTENCIA ra
+JOIN POSTULANTE pos ON ra.POSTULANTE_ID = pos.ID
+JOIN PERFIL p ON pos.ID = p.ID
+WHERE ra.SESION_ID = 1;
+
+-- 16. Obtener la lista de intentos de exámenes realizados y la nota obtenida.
+SELECT ex.TIPO, ex.TURNO, p.NOMBRES, p.APELLIDO_PATERNO, ie.NOTA_OBTENIDA
+FROM INTENTO_EXAMEN ie
+JOIN EXAMEN ex ON ie.EXAMEN_ID = ex.ID
+JOIN INSCRIPCIONES_CUP ic ON ie.INSCRIPCION_ID = ic.ID
+JOIN POSTULACION post ON ic.POSTULACION_CODIGO = post.CODIGO
+JOIN POSTULANTE pos ON post.POSTULANTE_ID = pos.ID
+JOIN PERFIL p ON pos.ID = p.ID;
+
+-- 17. Listar las funciones y permisos asignados al rol "Administrador".
+SELECT f.NOMBRE AS FUNCION, f.PERMISO, a.NOMBRE AS TIPO_ACCESO
+FROM ROL_FUNCION rf
+JOIN FUNCION f ON rf.FUNCION_ID = f.ID
+JOIN ACCION a ON rf.ID_ACCION = a.ID_ACCION
+JOIN ROL r ON rf.ROL_ID = r.ID
+WHERE r.NOMBRE = 'Administrador';
+
+-- 18. Consultar los inscritos actuales versus el cupo máximo por grupo.
+SELECT g.NOMBRE AS GRUPO, m.NOMBRE AS MATERIA, g.INSCRITOS_ACTUALES, g.CUPO, 
+       (g.CUPO - g.INSCRITOS_ACTUALES) AS CUPOS_DISPONIBLES
+FROM GRUPO g
+JOIN MATERIA m ON g.MATERIA_ID = m.ID;
+
+-- 19. Mostrar los pagos realizados utilizando el método "Stripe".
+SELECT p.NRO_RECIBO, p.MONTO, p.TRANSACCION_ID, p.FECHA, per.NOMBRES, per.APELLIDO_PATERNO
+FROM PAGO p
+JOIN POSTULACION post ON p.POSTULACION_CODIGO = post.CODIGO
+JOIN POSTULANTE pos ON post.POSTULANTE_ID = pos.ID
+JOIN PERFIL per ON pos.ID = per.ID
+WHERE p.METODO_PAGO = 'Stripe' AND p.ESTADO = 'Completado';
+
+-- 20. Obtener las carreras elegidas por un postulante según orden de prioridad.
+SELECT c.NOMBRE AS CARRERA, pc.PRIORIDAD
+FROM POSTULACION_CARRERA pc
+JOIN CARRERA c ON pc.CARRERA_CODIGO = c.CODIGO
+JOIN POSTULACION post ON pc.POSTULACION_CODIGO = post.CODIGO
+JOIN POSTULANTE pos ON post.POSTULANTE_ID = pos.ID
+JOIN PERFIL per ON pos.ID = per.ID
+WHERE per.NOMBRES = 'Luis' AND per.APELLIDO_PATERNO = 'Torres'
+ORDER BY pc.PRIORIDAD ASC;
+
+-- =================================================================
+-- PROCEDIMIENTO ALMACENADO
+-- =================================================================
+
+-- 1. SP_REGISTRAR_PAGO_Y_HABILITAR
+-- Registra el pago del estudiante e inmediatamente lo habilita como postulante apto para el CUP.
+CREATE OR REPLACE PROCEDURE SP_REGISTRAR_PAGO_Y_HABILITAR(
+    p_postulacion_codigo INT,
+    p_nro_recibo VARCHAR(100),
+    p_monto DECIMAL(10,2),
+    p_metodo_pago VARCHAR(50),
+    p_metodo_pago_id INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Insertar el registro de pago
+    INSERT INTO PAGO (POSTULACION_CODIGO, NRO_RECIBO, MONTO, METODO_PAGO, ESTADO, FECHA, METODO_PAGO_ID)
+    VALUES (p_postulacion_codigo, p_nro_recibo, p_monto, p_metodo_pago, 'Completado', CURRENT_DATE, p_metodo_pago_id);
+
+    -- Actualizar el estado de la postulación
+    UPDATE POSTULACION
+    SET ESTADO = 'Habilitado'
+    WHERE CODIGO = p_postulacion_codigo;
+    
+    COMMIT;
+END;
+$$;
+
+-- 2. SP_INSCRIBIR_POSTULANTE_GRUPO
+-- Inscribe un estudiante a un grupo de materia, asegurando que existan cupos disponibles.
+CREATE OR REPLACE PROCEDURE SP_INSCRIBIR_POSTULANTE_GRUPO(
+    p_postulacion_codigo INT,
+    p_grupo_codigo INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_inscritos INT;
+    v_cupo INT;
+BEGIN
+    -- Obtener estado actual de cupos con bloqueo de fila para evitar condiciones de carrera
+    SELECT INSCRITOS_ACTUALES, CUPO INTO v_inscritos, v_cupo
+    FROM GRUPO
+    WHERE CODIGO = p_grupo_codigo FOR UPDATE;
+
+    IF v_inscritos >= v_cupo THEN
+        RAISE EXCEPTION 'Error: El grupo % ya no tiene cupos disponibles.', p_grupo_codigo;
+    END IF;
+
+    -- Registrar la inscripción
+    INSERT INTO INSCRIPCIONES_CUP (POSTULACION_CODIGO, GRUPO_CODIGO, FECHA_INSCRIPCION, ESTADO)
+    VALUES (p_postulacion_codigo, p_grupo_codigo, CURRENT_DATE, 'Inscrito');
+
+    -- Actualizar el contador de cupos del grupo
+    UPDATE GRUPO
+    SET INSCRITOS_ACTUALES = INSCRITOS_ACTUALES + 1
+    WHERE CODIGO = p_grupo_codigo;
+    
+    COMMIT;
+END;
+$$;
+
+-- 3. SP_CALCULAR_PROMEDIO_MATERIA
+-- Promedia las notas de los 3 parciales y define si el estudiante aprobó o reprobó.
+CREATE OR REPLACE PROCEDURE SP_CALCULAR_PROMEDIO_MATERIA(
+    p_inscripcion_id INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_p1 DECIMAL(5,2);
+    v_p2 DECIMAL(5,2);
+    v_p3 DECIMAL(5,2);
+    v_promedio DECIMAL(5,2);
+    v_estado VARCHAR(50);
+BEGIN
+    -- Obtener las notas
+    SELECT NOTA_P1, NOTA_P2, NOTA_P3 INTO v_p1, v_p2, v_p3
+    FROM EVALUACIONES
+    WHERE INSCRIPCION_ID = p_inscripcion_id FOR UPDATE;
+
+    -- Calcular promedio matemático
+    v_promedio := (v_p1 + v_p2 + v_p3) / 3;
+
+    -- Determinar estado lógico de aprobación (Nota de paso > 51)
+    IF v_promedio >= 51.00 THEN
+        v_estado := 'Aprobado';
+    ELSE
+        v_estado := 'Reprobado';
+    END IF;
+
+    -- Actualizar la tabla de evaluación
+    UPDATE EVALUACIONES
+    SET PROMEDIO_FINAL = v_promedio,
+        ESTADO_MATERIA = v_estado
+    WHERE INSCRIPCION_ID = p_inscripcion_id;
+    
+    COMMIT;
+END;
+$$;
+
+-- 4. SP_REGISTRAR_INTENTO_EXAMEN
+-- Registra el examen dado por el estudiante y vuelca automáticamente la nota a su casillero (P1, P2 o P3).
+CREATE OR REPLACE PROCEDURE SP_REGISTRAR_INTENTO_EXAMEN(
+    p_examen_id INT,
+    p_inscripcion_id INT,
+    p_nota DECIMAL(5,2),
+    p_numero_parcial INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Registrar el intento de examen en el historial
+    INSERT INTO INTENTO_EXAMEN (EXAMEN_ID, INSCRIPCION_ID, NOTA_OBTENIDA, FECHA_REALIZACION)
+    VALUES (p_examen_id, p_inscripcion_id, p_nota, CURRENT_TIMESTAMP);
+
+    -- Volcar la nota pura al casillero de evaluaciones correspondiente
+    IF p_numero_parcial = 1 THEN
+        UPDATE EVALUACIONES SET NOTA_P1 = p_nota WHERE INSCRIPCION_ID = p_inscripcion_id;
+    ELSIF p_numero_parcial = 2 THEN
+        UPDATE EVALUACIONES SET NOTA_P2 = p_nota WHERE INSCRIPCION_ID = p_inscripcion_id;
+    ELSIF p_numero_parcial = 3 THEN
+        UPDATE EVALUACIONES SET NOTA_P3 = p_nota WHERE INSCRIPCION_ID = p_inscripcion_id;
+    END IF;
+
+    -- Llamar recursivamente al SP de promedio para actualizar su nota final instantáneamente
+    CALL SP_CALCULAR_PROMEDIO_MATERIA(p_inscripcion_id);
+    
+    COMMIT;
+END;
+$$;
+
+-- 5. SP_INSERTAR_BITACORA
+-- Centraliza la creación de logs de auditoría en la base de datos de forma estándar.
+CREATE OR REPLACE PROCEDURE SP_INSERTAR_BITACORA(
+    p_usuario_id INT,
+    p_accion VARCHAR(255),
+    p_detalle TEXT,
+    p_ip VARCHAR(45)
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO BITACORA (USUARIO_ID, ACCION, DETALLE, IP, FECHA_HORA)
+    VALUES (p_usuario_id, p_accion, p_detalle, p_ip, CURRENT_TIMESTAMP);
+    
+    COMMIT;
+END;
+$$;
+
+-- =================================================================
+-- TRIGGERS (DISPARADORES)
+-- =================================================================
+
+-- 1. TRG_INICIALIZAR_EVALUACIONES
+-- Automatización: Cuando un postulante es inscrito en un grupo, se le crea su casillero de notas vacío.
+CREATE OR REPLACE FUNCTION FN_INICIALIZAR_EVALUACIONES()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO EVALUACIONES (INSCRIPCION_ID, NOTA_P1, NOTA_P2, NOTA_P3, PROMEDIO_FINAL, ESTADO_MATERIA)
+    VALUES (NEW.ID, 0, 0, 0, 0, 'Cursando');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER TRG_INICIALIZAR_EVALUACIONES
+AFTER INSERT ON INSCRIPCIONES_CUP
+FOR EACH ROW
+EXECUTE FUNCTION FN_INICIALIZAR_EVALUACIONES();
+
+
+-- 2. TRG_BORRADO_LOGICO_USUARIO
+-- Seguridad de Datos: Evita el borrado físico de usuarios. Intercepta el DELETE y lo convierte en UPDATE lógico.
+CREATE OR REPLACE FUNCTION FN_BORRADO_LOGICO_USUARIO()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Cambiar banderas lógicas
+    UPDATE USUARIO SET ELIMINADO = TRUE, ESTADO = 'Inactivo' WHERE ID = OLD.ID;
+    -- Retornar NULL cancela la operación de borrado físico original
+    RETURN NULL; 
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER TRG_BORRADO_LOGICO_USUARIO
+BEFORE DELETE ON USUARIO
+FOR EACH ROW
+EXECUTE FUNCTION FN_BORRADO_LOGICO_USUARIO();
+
+
+-- 3. TRG_FORMATO_PERFIL
+-- Limpieza de Datos: Antes de guardar un perfil, formatea nombres y apellidos a mayúsculas y quita espacios extra.
+CREATE OR REPLACE FUNCTION FN_FORMATO_PERFIL()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.NOMBRES := UPPER(TRIM(NEW.NOMBRES));
+    NEW.APELLIDO_PATERNO := UPPER(TRIM(NEW.APELLIDO_PATERNO));
+    IF NEW.APELLIDO_MATERNO IS NOT NULL THEN
+        NEW.APELLIDO_MATERNO := UPPER(TRIM(NEW.APELLIDO_MATERNO));
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER TRG_FORMATO_PERFIL
+BEFORE INSERT OR UPDATE ON PERFIL
+FOR EACH ROW
+EXECUTE FUNCTION FN_FORMATO_PERFIL();
+
+
+-- 4. TRG_VALIDAR_NOTAS
+-- Integridad: Verifica estrictamente que ningún docente pueda poner una nota ilógica (< 0 o > 100) en los parciales.
+CREATE OR REPLACE FUNCTION FN_VALIDAR_NOTAS()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.NOTA_P1 < 0 OR NEW.NOTA_P1 > 100 THEN
+        RAISE EXCEPTION 'Integridad Fallida: La nota del Parcial 1 (% asignada) debe estar entre 0 y 100.', NEW.NOTA_P1;
+    END IF;
+    IF NEW.NOTA_P2 < 0 OR NEW.NOTA_P2 > 100 THEN
+        RAISE EXCEPTION 'Integridad Fallida: La nota del Parcial 2 (% asignada) debe estar entre 0 y 100.', NEW.NOTA_P2;
+    END IF;
+    IF NEW.NOTA_P3 < 0 OR NEW.NOTA_P3 > 100 THEN
+        RAISE EXCEPTION 'Integridad Fallida: La nota del Parcial 3 (% asignada) debe estar entre 0 y 100.', NEW.NOTA_P3;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER TRG_VALIDAR_NOTAS
+BEFORE INSERT OR UPDATE ON EVALUACIONES
+FOR EACH ROW
+EXECUTE FUNCTION FN_VALIDAR_NOTAS();
+
+
+-- 5. TRG_AUDITORIA_PASSWORD
+-- Trazabilidad: Si un usuario actualiza su contraseña, el sistema inserta silenciosamente un log de auditoría.
+CREATE OR REPLACE FUNCTION FN_AUDITORIA_PASSWORD()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Verificar si efectivamente el campo de contraseña fue alterado
+    IF OLD.PASSWORD IS DISTINCT FROM NEW.PASSWORD THEN
+        INSERT INTO BITACORA (USUARIO_ID, ACCION, DETALLE, IP, FECHA_HORA)
+        VALUES (NEW.ID, 'Cambio de Contraseña', 'El usuario ha modificado sus credenciales de acceso', '127.0.0.1 (Sistema)', CURRENT_TIMESTAMP);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER TRG_AUDITORIA_PASSWORD
+AFTER UPDATE ON USUARIO
+FOR EACH ROW
+EXECUTE FUNCTION FN_AUDITORIA_PASSWORD();
+
+-- =================================================================
+-- PRUEBAS DE PROCEDIMIENTOS Y TRIGGERS (TESTS)
+-- =================================================================
+
+/*
+-- PRUEBA 1: Pago y Habilitación (SP_REGISTRAR_PAGO_Y_HABILITAR)
+SELECT CODIGO, ESTADO FROM POSTULACION WHERE CODIGO = 15;
+CALL SP_REGISTRAR_PAGO_Y_HABILITAR(15, 'REC-999', 700.00, 'Transferencia', 3);
+SELECT CODIGO, ESTADO FROM POSTULACION WHERE CODIGO = 15; -- Ahora debe decir 'Habilitado'
+
+-- PRUEBA 2: Inscripción de Grupo y Trigger Inicializador de Evaluaciones
+SELECT CODIGO, NOMBRE, INSCRITOS_ACTUALES FROM GRUPO WHERE CODIGO = 1;
+CALL SP_INSCRIBIR_POSTULANTE_GRUPO(15, 1);
+SELECT CODIGO, NOMBRE, INSCRITOS_ACTUALES FROM GRUPO WHERE CODIGO = 1; -- Debe haber sumado 1
+-- Verificar el Trigger (Debe existir un casillero de evaluación para la nueva inscripción con puros 0)
+SELECT * FROM EVALUACIONES WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
+
+-- PRUEBA 3: Examen, Promedios y Trigger de Validar Notas
+-- Insertar nota de 75.50 al Parcial 1 (Llamará al promedio por dentro)
+CALL SP_REGISTRAR_INTENTO_EXAMEN(1, (SELECT MAX(ID) FROM INSCRIPCIONES_CUP), 75.50, 1);
+SELECT * FROM EVALUACIONES WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
+-- ESTA CONSULTA FALLARÁ Y MOSTRARÁ ERROR (Dispara TRG_VALIDAR_NOTAS por intentar meter 150)
+-- UPDATE EVALUACIONES SET NOTA_P2 = 150 WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
+
+-- PRUEBA 4: Borrado Lógico (TRG_BORRADO_LOGICO_USUARIO)
+SELECT ID, ESTADO, ELIMINADO FROM USUARIO WHERE ID = 5;
+DELETE FROM USUARIO WHERE ID = 5; -- Intentamos borrarlo físicamente
+SELECT ID, ESTADO, ELIMINADO FROM USUARIO WHERE ID = 5; -- Sigue existiendo, pero ELIMINADO=true y ESTADO=Inactivo
+
+-- PRUEBA 5: Auditoría de Contraseña Automática (TRG_AUDITORIA_PASSWORD)
+UPDATE USUARIO SET PASSWORD = 'new_hash_seguro' WHERE ID = 1;
+SELECT * FROM BITACORA ORDER BY FECHA_HORA DESC LIMIT 1; -- Se generó un log automático
+
+-- PRUEBA 6: Limpieza de Perfiles (TRG_FORMATO_PERFIL)
+-- Actualizamos con letras minúsculas y espacios feos
+UPDATE PERFIL SET NOMBRES = '   luis pablo  ', APELLIDO_PATERNO = '  torres ' WHERE ID = 6;
+-- Veremos que lo guardó perfectamente como 'LUIS PABLO' y 'TORRES'
+SELECT NOMBRES, APELLIDO_PATERNO FROM PERFIL WHERE ID = 6;
+*/

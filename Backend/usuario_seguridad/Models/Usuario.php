@@ -20,7 +20,8 @@ class Usuario extends Authenticatable
         'codigo_inicio', 
         'password', 
         'estado', 
-        'rol_id'
+        'rol_id',
+        'gestion_id'
     ];
 
     // Ocultamos la contraseña por seguridad cuando se hacen consultas

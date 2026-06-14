@@ -6,6 +6,7 @@ export default function useUsuarios(filters) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUsuario, setSelectedUsuario] = useState(null);
     const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const isFirstRender = useRef(true);
 
@@ -57,6 +58,8 @@ export default function useUsuarios(filters) {
         deleteConfirmUser,
         setDeleteConfirmUser,
         handleDelete,
-        confirmDelete
+        confirmDelete,
+        isImportModalOpen,
+        setIsImportModalOpen
     };
 }

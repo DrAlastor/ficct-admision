@@ -59,6 +59,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/perfil', [Backend\usuario_seguridad\Controllers\ProfileController::class, 'show'])->name('profile.show');
     
     // Gestión de Usuarios
+    Route::get('/api/gestiones', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'getGestiones']);
+    Route::post('/usuarios/importar', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'importar'])->name('usuarios.importar');
     Route::post('/usuarios/{id}/restore', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'restore'])->name('usuarios.restore');
     Route::resource('usuarios', Backend\usuario_seguridad\Controllers\UsuarioController::class);
     
@@ -163,6 +165,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Consultas y Reportes - Estadísticas (CU27)
     Route::get('/estadisticas', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'index'])->name('estadisticas.index');
     Route::get('/estadisticas/data', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'getData'])->name('estadisticas.data');
+    Route::post('/estadisticas/importar-historial', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'importarHistorial'])->name('estadisticas.importar');
 
     // Consultas y Reportes - Consultas Detalladas e IA (CU28)
     Route::get('/consultas', [\Backend\consulta_reporte\Controllers\ConsultaController::class, 'index'])->name('consultas.index');
