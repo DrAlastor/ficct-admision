@@ -66,6 +66,52 @@ export default function Index() {
         }
     }, [gestion1, gestion2, modo]);
 
+    const handleLimpiar = async () => {
+        if (!gestion1) {
+            alert('Por favor selecciona una gestión en el panel izquierdo (Gestión 1) primero.');
+            return;
+        }
+
+        if (modo === 'versus') {
+            alert('Por favor, cambia a modo individual para limpiar una gestión específica.');
+            return;
+        }
+
+        const gestionName = gestiones.find(g => g.id.toString() === gestion1)?.label || 'seleccionada';
+        
+        if (!window.confirm(`⚠️ ADVERTENCIA CRÍTICA ⚠️\n\n¿Estás seguro que deseas ELIMINAR TODOS los datos importados (postulantes, grupos, notas, pagos, etc.) de la gestión ${gestionName}?\n\n¡ESTA ACCIÓN NO SE PUEDE DESHACER!`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('gestion_id', gestion1);
+
+            const response = await fetch('/estadisticas/limpiar-historial', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al limpiar los datos.');
+            }
+
+            alert(`✅ Todos los datos de la gestión ${gestionName} han sido limpiados exitosamente.`);
+            setData(null); // Limpiar dashboard visualmente
+        } catch (error) {
+            console.error('Error limpiando gestión:', error);
+            alert(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const renderTabContent = () => {
         if (!data || data.length === 0) return null;
 
@@ -134,6 +180,15 @@ export default function Index() {
                     >
                         <FiUpload size={24} />
                         <span className="text-[10px] uppercase tracking-wider">Importar</span>
+                    </button>
+
+                    <button
+                        onClick={handleLimpiar}
+                        className="h-[72px] bg-white border border-red-500 text-red-500 px-6 rounded-2xl font-bold shadow-sm hover:bg-red-50 hover:shadow-md transition-all flex flex-col items-center justify-center gap-1"
+                        title="Borrar todo el historial de esta gestión"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        <span className="text-[10px] uppercase tracking-wider">Limpiar</span>
                     </button>
 
                     {data && data.length > 0 && !loading && (

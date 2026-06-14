@@ -166,6 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/estadisticas', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'index'])->name('estadisticas.index');
     Route::get('/estadisticas/data', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'getData'])->name('estadisticas.data');
     Route::post('/estadisticas/importar-historial', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'importarHistorial'])->name('estadisticas.importar');
+    Route::post('/estadisticas/limpiar-historial', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'limpiarHistorial'])->name('estadisticas.limpiar');
     Route::get('/estadisticas/sync-sequences', [\Backend\consulta_reporte\Controllers\EstadisticaController::class, 'syncSequences'])->name('estadisticas.sync');
 
     // Consultas y Reportes - Consultas Detalladas e IA (CU28)

@@ -410,6 +410,38 @@ class EstadisticaController extends Controller
     }
 
     /**
+     * Limpiar historial (borrar datos importados) de una gestión específica
+     */
+    public function limpiarHistorial(Request $request)
+    {
+        $validated = $request->validate([
+            'gestion_id' => 'required|exists:gestion,id',
+        ]);
+
+        $gestionId = $validated['gestion_id'];
+
+        DB::beginTransaction();
+        try {
+            // Borrar postulantes importados para esta gestión (cascada limpia postulacion, pago, etc.)
+            DB::table('usuario')
+                ->where('gestion_id', $gestionId)
+                ->where('rol_id', 4) // Postulante
+                ->delete();
+
+            // Borrar grupos importados (cascada limpia horarios, carga_horaria de docentes, etc.)
+            DB::table('grupo')
+                ->where('gestion_id', $gestionId)
+                ->delete();
+
+            DB::commit();
+            return response()->json(['message' => 'Historial de la gestión limpiado correctamente.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error al limpiar el historial: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Importar historial de notas, postulaciones y grupos desde un CSV/Excel
      */
     public function importarHistorial(Request $request)
