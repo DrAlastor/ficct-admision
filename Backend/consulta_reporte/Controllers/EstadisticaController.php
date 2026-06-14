@@ -728,11 +728,44 @@ class EstadisticaController extends Controller
             if (count($insertsCargaHoraria) > 0) DB::table('carga_horaria')->insert($insertsCargaHoraria);
 
             DB::commit();
+            $this->syncSequencesInternal();
 
             return response()->json(['success' => true, 'message' => 'Historial importado correctamente']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'Error al importar: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function syncSequencesInternal()
+    {
+        $tables = [
+            'usuario' => 'id',
+            'perfil' => 'id',
+            'materia' => 'id',
+            'grupo' => 'codigo',
+            'postulacion' => 'codigo',
+            'inscripciones_cup' => 'id',
+            'evaluaciones' => 'id',
+        ];
+
+        foreach ($tables as $table => $pk) {
+            try {
+                $query = "SELECT setval(pg_get_serial_sequence('{$table}', '{$pk}'), coalesce(max({$pk}), 1), max({$pk}) IS NOT null) FROM {$table};";
+                DB::statement($query);
+            } catch (\Exception $e) {
+                // Ignore if sequence doesn't exist
+            }
+        }
+    }
+
+    public function syncSequences()
+    {
+        try {
+            $this->syncSequencesInternal();
+            return response()->json(['success' => true, 'message' => 'Secuencias de Postgres sincronizadas correctamente. Ya puedes registrar usuarios sin error 23505.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al sincronizar secuencias: ' . $e->getMessage()], 500);
         }
     }
 }
