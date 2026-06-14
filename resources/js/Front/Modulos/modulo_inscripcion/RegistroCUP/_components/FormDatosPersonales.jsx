@@ -1,140 +1,51 @@
 import React from 'react';
 
+const inputClass = "mt-2 block w-full rounded-xl border border-blue-950/10 bg-[#f8fbff] px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-[#063f7c] focus:bg-white focus:ring-2 focus:ring-[#063f7c]/15";
+const labelClass = "block text-sm font-bold text-slate-700";
+const errorClass = "mt-1 block text-sm font-bold text-red-500";
+
 export default function FormDatosPersonales({ data, handleChange, errores }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Nombres</label>
-                <input
-                    type="text"
-                    name="nombres"
-                    value={data.nombres}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.nombres && <span className="text-red-500 text-sm">{errores.nombres[0]}</span>}
-            </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <Field label="Nombres" name="nombres" value={data.nombres} onChange={handleChange} error={errores.nombres} required />
+            <Field label="Apellido Paterno" name="apellido_paterno" value={data.apellido_paterno} onChange={handleChange} error={errores.apellido_paterno} required />
+            <Field label="Apellido Materno" name="apellido_materno" value={data.apellido_materno} onChange={handleChange} error={errores.apellido_materno} />
+            <Field label="Carnet de Identidad (CI)" name="ci" value={data.ci} onChange={handleChange} error={errores.ci} required />
+            <Field label="Correo Electronico Personal" type="email" name="email" value={data.email} onChange={handleChange} error={errores.email} required />
+            <Field label="Fecha de Nacimiento" type="date" name="fecha_nacimiento" value={data.fecha_nacimiento} onChange={handleChange} error={errores.fecha_nacimiento} required />
+            <Field label="Nacionalidad" name="nacionalidad" value={data.nacionalidad} onChange={handleChange} error={errores.nacionalidad} placeholder="Ej. Boliviana" required />
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Apellido Paterno</label>
-                <input
-                    type="text"
-                    name="apellido_paterno"
-                    value={data.apellido_paterno}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.apellido_paterno && <span className="text-red-500 text-sm">{errores.apellido_paterno[0]}</span>}
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Apellido Materno</label>
-                <input
-                    type="text"
-                    name="apellido_materno"
-                    value={data.apellido_materno}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                />
-                {errores.apellido_materno && <span className="text-red-500 text-sm">{errores.apellido_materno[0]}</span>}
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Carnet de Identidad (CI)</label>
-                <input
-                    type="text"
-                    name="ci"
-                    value={data.ci}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.ci && <span className="text-red-500 text-sm">{errores.ci[0]}</span>}
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Correo Electrónico Personal</label>
-                <input
-                    type="email"
-                    name="email"
-                    value={data.email}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.email && <span className="text-red-500 text-sm">{errores.email[0]}</span>}
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                <input
-                    type="date"
-                    name="fecha_nacimiento"
-                    value={data.fecha_nacimiento}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.fecha_nacimiento && <span className="text-red-500 text-sm">{errores.fecha_nacimiento[0]}</span>}
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Nacionalidad</label>
-                <input
-                    type="text"
-                    name="nacionalidad"
-                    value={data.nacionalidad}
-                    onChange={handleChange}
-                    placeholder="Ej. Boliviana"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.nacionalidad && <span className="text-red-500 text-sm">{errores.nacionalidad[0]}</span>}
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Sexo</label>
+                <label className={labelClass}>Sexo</label>
                 <select
                     name="sexo"
                     value={data.sexo}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border bg-white"
+                    className={inputClass}
                     required
                 >
                     <option value="">Seleccionar...</option>
                     <option value="M">Masculino</option>
                     <option value="F">Femenino</option>
                 </select>
-                {errores.sexo && <span className="text-red-500 text-sm">{errores.sexo[0]}</span>}
+                {errores.sexo && <span className={errorClass}>{errores.sexo[0]}</span>}
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Teléfono / Celular</label>
-                <input
-                    type="tel"
-                    name="telefono"
-                    value={data.telefono}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.telefono && <span className="text-red-500 text-sm">{errores.telefono[0]}</span>}
-            </div>
+            <Field label="Telefono / Celular" type="tel" name="telefono" value={data.telefono} onChange={handleChange} error={errores.telefono} required />
 
             <div className="lg:col-span-3">
-                <label className="block text-sm font-medium text-gray-700">Dirección Domiciliaria</label>
-                <input
-                    type="text"
-                    name="direccion"
-                    value={data.direccion}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                    required
-                />
-                {errores.direccion && <span className="text-red-500 text-sm">{errores.direccion[0]}</span>}
+                <Field label="Direccion Domiciliaria" name="direccion" value={data.direccion} onChange={handleChange} error={errores.direccion} required />
             </div>
+        </div>
+    );
+}
+
+function Field({ label, error, type = 'text', ...props }) {
+    return (
+        <div>
+            <label className={labelClass}>{label}</label>
+            <input type={type} className={inputClass} {...props} />
+            {error && <span className={errorClass}>{error[0]}</span>}
         </div>
     );
 }
