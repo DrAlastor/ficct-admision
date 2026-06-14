@@ -259,9 +259,10 @@ class EstadisticaController extends Controller
             // ─────────────────────────────────────────────
             $docentesData = DB::table('docente as d')
                 ->join('perfil as pf', 'd.id', '=', 'pf.id')
-                ->leftJoin('carga_horaria as ch', 'd.id', '=', 'ch.docente_id')
-                ->leftJoin('grupo as g', 'ch.grupo_codigo', '=', 'g.codigo')
+                ->join('carga_horaria as ch', 'd.id', '=', 'ch.docente_id')
+                ->join('grupo as g', 'ch.grupo_codigo', '=', 'g.codigo')
                 ->leftJoin('horario as h', 'g.codigo', '=', 'h.grupo_codigo')
+                ->where('g.gestion_id', $gestionId)
                 ->select(
                     'd.id',
                     'pf.nombres', 'pf.apellido_paterno',
@@ -275,7 +276,9 @@ class EstadisticaController extends Controller
             // Horas por docente (calculado de horarios)
             $horasPorDocente = DB::table('carga_horaria as ch')
                 ->join('horario as h', 'ch.grupo_codigo', '=', 'h.grupo_codigo')
+                ->join('grupo as g', 'ch.grupo_codigo', '=', 'g.codigo')
                 ->join('perfil as pf', 'ch.docente_id', '=', 'pf.id')
+                ->where('g.gestion_id', $gestionId)
                 ->select(
                     'ch.docente_id',
                     'pf.nombres', 'pf.apellido_paterno',
