@@ -4,6 +4,7 @@ import {
     FaBookOpen,
     FaChevronRight,
     FaComments,
+    FaDownload,
     FaLaptopCode,
     FaMapMarkerAlt,
     FaNetworkWired,
@@ -15,6 +16,8 @@ const carreras = [
     {
         titulo: 'Ingenieria Informatica',
         inicial: 'I',
+        logo: '/ficct/logos/informatica.png',
+        pdf: '/ficct/pdfs/malla-informatica.pdf',
         descripcion:
             'Enfoque en construccion de software, modelado, diseno de algoritmos y aplicacion etica de tecnologia computacional.',
         duracion: '9 semestres',
@@ -41,6 +44,8 @@ const carreras = [
     {
         titulo: 'Ingenieria de Sistemas',
         inicial: 'S',
+        logo: '/ficct/logos/sistemas.png',
+        pdf: '/ficct/pdfs/malla-sistemas.pdf',
         descripcion:
             'Forma profesionales que aplican TI para mejorar la gestion industrial y empresarial, modelando y optimizando sistemas complejos.',
         duracion: '9 semestres + modo de graduacion',
@@ -67,6 +72,8 @@ const carreras = [
     {
         titulo: 'Ingenieria en Redes y Telecomunicaciones',
         inicial: 'R',
+        logo: '/ficct/logos/redes.png',
+        pdf: '/ficct/pdfs/malla-redes.pdf',
         descripcion:
             'Especialistas en conectividad, procesamiento de senales, seguridad de redes y regulacion de telecomunicaciones.',
         duracion: '9 semestres',
@@ -93,6 +100,8 @@ const carreras = [
     {
         titulo: 'Ingenieria en Robotica',
         inicial: 'B',
+        logo: '/ficct/logos/robotica.png',
+        pdf: '/ficct/pdfs/malla-robotica.pdf',
         descripcion:
             'Programa frontera orientado a mecanica, electronica, IA y sistemas de control para resolver problemas industriales y sociales.',
         duracion: '9 semestres',
@@ -118,7 +127,7 @@ const carreras = [
     },
 ];
 
-const tabs = ['Resumen', 'Director', 'Ubicacion'];
+const tabs = ['Resumen', 'Malla', 'Director', 'Ubicacion'];
 
 const preguntas = [
     {
@@ -164,6 +173,30 @@ export default function Welcome({ auth }) {
                 <Lista titulo="Campo laboral" items={carreraSeleccionada.campo} />
             </>
         ),
+        Malla: (
+            <div className="grid gap-5 lg:grid-cols-[180px_1fr]">
+                <div className="flex items-center justify-center rounded-lg border border-blue-950/10 bg-white p-5 shadow-sm">
+                    <img
+                        src={carreraSeleccionada.logo}
+                        alt={`Logo de ${carreraSeleccionada.titulo}`}
+                        className="max-h-36 w-auto object-contain"
+                    />
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-blue-900">{carreraSeleccionada.plan}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{carreraSeleccionada.malla}</p>
+                    <a
+                        href={carreraSeleccionada.pdf}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-5 inline-flex items-center rounded-md bg-[#063f7c] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#052f5d]"
+                    >
+                        <FaDownload className="mr-2 h-4 w-4" />
+                        Abrir malla PDF
+                    </a>
+                </div>
+            </div>
+        ),
         Director: (
             <div className="rounded-lg bg-blue-50 p-5">
                 <p className="text-sm font-semibold text-blue-900">Director de carrera</p>
@@ -195,17 +228,17 @@ export default function Welcome({ auth }) {
         <div className="min-h-screen bg-[#f4f8fc] text-slate-900">
             <Head title="FICCT - Preinscripcion CUP" />
 
-            <header className="border-b border-blue-950/10 bg-white/95 shadow-sm">
+            <header className="border-b border-white/10 bg-[#062d5c] shadow-lg shadow-blue-950/20">
                 <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3">
                         <img
-                            src="/ficct-logo.png"
+                            src="/ficct/logos/escudo-ficct.png"
                             alt="Logo oficial FICCT"
-                            className="h-16 w-14 object-contain"
+                            className="h-16 w-14 object-contain drop-shadow-lg"
                         />
                         <div>
-                            <p className="text-lg font-bold text-[#063f7c]">FICCT</p>
-                            <p className="max-w-md text-sm text-slate-600">
+                            <p className="text-lg font-bold text-white">FICCT</p>
+                            <p className="max-w-md text-sm text-blue-100">
                                 Facultad de Ingenieria en Ciencias de la Computacion y Telecomunicaciones
                             </p>
                         </div>
@@ -214,21 +247,21 @@ export default function Welcome({ auth }) {
                     <div className="flex items-center gap-3">
                         <a
                             href="#carreras"
-                            className="hidden rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:inline-flex"
+                            className="hidden rounded-md px-3 py-2 text-sm font-semibold text-blue-50 hover:bg-white/10 md:inline-flex"
                         >
                             Carreras
                         </a>
                         {auth.user ? (
                             <Link
                                 href={route('dashboard')}
-                            className="rounded-md bg-[#063f7c] px-4 py-2 text-sm font-semibold text-white hover:bg-[#052f5d]"
+                            className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-[#063f7c] hover:bg-blue-50"
                             >
                                 Dashboard
                             </Link>
                         ) : (
                             <Link
                                 href={route('login')}
-                                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                                className="rounded-md border border-white/30 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
                             >
                                 Iniciar sesion
                             </Link>
@@ -239,25 +272,46 @@ export default function Welcome({ auth }) {
 
             <main>
                 <section className="relative overflow-hidden bg-[#063f7c]">
-                    <div className="absolute left-8 top-8 h-24 w-24 rounded-full border-8 border-[#f59e0b]/30" />
-                    <div className="absolute bottom-10 right-16 h-32 w-32 rounded-full bg-[#ef172f]/20 blur-2xl" />
-                    <div className="absolute right-1/3 top-20 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+                    <img
+                        src="/ficct/images/modulo-236.jpg"
+                        alt="Modulo 236 de la FICCT"
+                        className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#021b3a] via-[#063f7c]/92 to-[#063f7c]/30" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(245,158,11,0.28),transparent_28%),radial-gradient(circle_at_12%_80%,rgba(239,23,47,0.22),transparent_30%)]" />
+                    <div className="absolute left-0 top-0 h-full w-2 bg-[#ef172f]" />
+                    <div className="absolute bottom-0 left-0 h-2 w-full bg-gradient-to-r from-[#ef172f] via-[#f59e0b] to-[#38bdf8]" />
 
-                    <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8">
+                    <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:min-h-[620px] lg:grid-cols-[1fr_420px] lg:px-8">
                         <div className="flex flex-col justify-center">
-                            <p className="mb-3 text-sm font-bold uppercase tracking-wide text-[#fbbf24]">
-                                Preinscripcion CUP
+                            <p className="mb-4 inline-flex w-fit rounded-full border border-[#fbbf24]/40 bg-[#fbbf24]/15 px-4 py-2 text-sm font-bold uppercase tracking-wide text-[#fbbf24]">
+                                Facultad de Ingenieria - UAGRM
                             </p>
-                            <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl">
-                                Conoce las carreras de la FICCT antes de llenar tu formulario
+                            <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-6xl">
+                                Construye tu futuro en la
+                                <span className="block text-[#fbbf24]">FICCT</span>
                             </h1>
-                            <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-50">
-                                Revisa informacion de cada carrera, malla, director, plan academico, ubicacion y datos de pago del CUP.
+                            <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-50 sm:text-xl">
+                                Explora las carreras de Ingenieria, revisa sus mallas academicas y comienza tu preinscripcion al CUP con informacion clara y oficial.
                             </p>
+                            <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+                                <div className="border-l-4 border-[#ef172f] bg-white/10 px-4 py-3 backdrop-blur">
+                                    <p className="text-2xl font-black text-white">4</p>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-blue-100">Carreras</p>
+                                </div>
+                                <div className="border-l-4 border-[#f59e0b] bg-white/10 px-4 py-3 backdrop-blur">
+                                    <p className="text-2xl font-black text-white">236</p>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-blue-100">Modulo FICCT</p>
+                                </div>
+                                <div className="border-l-4 border-[#38bdf8] bg-white/10 px-4 py-3 backdrop-blur">
+                                    <p className="text-2xl font-black text-white">CUP</p>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-blue-100">Admision</p>
+                                </div>
+                            </div>
                             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                                 <a
                                     href="#carreras"
-                                    className="inline-flex items-center justify-center rounded-md border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/20"
+                                    className="inline-flex items-center justify-center rounded-md border border-white/30 bg-white/15 px-5 py-3 text-sm font-bold text-white backdrop-blur hover:bg-white/25"
                                 >
                                     Ver carreras
                                 </a>
@@ -271,12 +325,15 @@ export default function Welcome({ auth }) {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center">
-                            <img
-                                src="/ficct-logo.png"
-                                alt="Logo oficial de la Facultad de Ingenieria en Ciencias de la Computacion y Telecomunicaciones"
-                                className="h-72 w-auto object-contain drop-shadow-2xl"
-                            />
+                        <div className="flex items-center justify-center lg:justify-end">
+                            <div className="relative">
+                                <div className="absolute inset-x-8 bottom-2 h-10 rounded-full bg-blue-950/60 blur-2xl" />
+                                <img
+                                    src="/ficct/logos/escudo-ficct.png"
+                                    alt="Logo oficial de la Facultad de Ingenieria en Ciencias de la Computacion y Telecomunicaciones"
+                                    className="relative h-80 w-auto object-contain drop-shadow-[0_24px_34px_rgba(2,6,23,0.55)]"
+                                />
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -296,7 +353,6 @@ export default function Welcome({ auth }) {
                         <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
                             <div className="grid gap-4">
                                 {carreras.map((carrera) => {
-                                    const Icono = carrera.icono;
                                     const activa = carrera.titulo === carreraSeleccionada.titulo;
 
                                     return (
@@ -311,8 +367,12 @@ export default function Welcome({ auth }) {
                                             }`}
                                         >
                                             <div className="flex items-start gap-4">
-                                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#063f7c] text-white">
-                                                    <Icono className="h-6 w-6" />
+                                                <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-blue-950/10 bg-white p-2 shadow-sm">
+                                                    <img
+                                                        src={carrera.logo}
+                                                        alt={`Logo de ${carrera.titulo}`}
+                                                        className="max-h-full max-w-full object-contain"
+                                                    />
                                                 </span>
                                                 <div>
                                                     <h3 className="text-lg font-bold text-slate-950">
@@ -321,6 +381,9 @@ export default function Welcome({ auth }) {
                                                     <p className="mt-2 text-sm leading-6 text-slate-600">
                                                         {carrera.descripcion}
                                                     </p>
+                                                    <span className="mt-3 inline-flex text-xs font-bold uppercase tracking-wide text-[#063f7c]">
+                                                        Ver informacion y malla
+                                                    </span>
                                                 </div>
                                             </div>
                                         </button>
@@ -331,8 +394,12 @@ export default function Welcome({ auth }) {
                             <aside className="rounded-lg border border-blue-950/10 bg-white shadow-lg shadow-blue-950/5">
                                 <div className="border-b border-blue-950/10 bg-gradient-to-r from-[#063f7c] to-[#0a5aa7] p-6 text-white">
                                     <div className="flex items-center gap-4">
-                                        <span className="flex h-14 w-14 items-center justify-center rounded-md bg-white text-xl font-bold text-[#063f7c]">
-                                            {carreraSeleccionada.inicial}
+                                        <span className="flex h-16 w-16 items-center justify-center rounded-md bg-white p-2 shadow-sm">
+                                            <img
+                                                src={carreraSeleccionada.logo}
+                                                alt={`Logo de ${carreraSeleccionada.titulo}`}
+                                                className="max-h-full max-w-full object-contain"
+                                            />
                                         </span>
                                         <div>
                                             <p className="text-sm font-semibold text-blue-100">
@@ -372,7 +439,13 @@ export default function Welcome({ auth }) {
                     <div className="absolute right-8 top-8 h-20 w-20 rounded-full border-8 border-[#f59e0b]/20" />
                     <div className="absolute bottom-8 left-8 h-24 w-24 rounded-full bg-[#6ee76a]/10" />
                     <div className="relative mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-                        <div className="rounded-lg border border-blue-950/10 bg-[#f4f8fc] p-6 shadow-sm">
+                        <div className="overflow-hidden rounded-lg border border-blue-950/10 bg-[#f4f8fc] shadow-sm">
+                            <img
+                                src="/ficct/images/modulo-236.jpg"
+                                alt="Imagen del Modulo 236 FICCT"
+                                className="h-56 w-full object-cover"
+                            />
+                            <div className="p-6">
                             <div className="flex items-center gap-3">
                                 <FaMapMarkerAlt className="h-6 w-6 text-red-700" />
                                 <h2 className="text-2xl font-bold">Ubicacion de la facultad</h2>
@@ -388,6 +461,7 @@ export default function Welcome({ auth }) {
                             >
                                 Abrir en Google Maps
                             </a>
+                            </div>
                         </div>
 
                         <div className="rounded-lg border border-blue-950/10 bg-[#f4f8fc] p-6 shadow-sm">
