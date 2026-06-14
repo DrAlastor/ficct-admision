@@ -514,8 +514,27 @@ class EstadisticaController extends Controller
             $nextInscripcionId = DB::table('inscripciones_cup')->max('id') + 1;
             $nextEvaluacionId = DB::table('evaluaciones')->max('id') + 1;
             
-            // Caches for Pagos and Docentes to avoid duplicates in the loop
+            // Caches for existing data to avoid duplicates
+            $postulacionIdsArray = $postulaciones->pluck('codigo')->toArray();
             $pagosInsertados = []; // by postulacion_codigo
+            if (!empty($postulacionIdsArray)) {
+                $pagosInsertados = DB::table('pago')
+                    ->whereIn('postulacion_codigo', $postulacionIdsArray)
+                    ->pluck('postulacion_codigo')
+                    ->mapWithKeys(fn($code) => [$code => true])
+                    ->toArray();
+            }
+
+            $inscripcionesInsertadas = []; // by postulacion_codigo-grupo_codigo
+            if (!empty($postulacionIdsArray)) {
+                $inscripcionesExistentes = DB::table('inscripciones_cup')
+                    ->whereIn('postulacion_codigo', $postulacionIdsArray)
+                    ->get();
+                foreach ($inscripcionesExistentes as $ins) {
+                    $inscripcionesInsertadas[$ins->postulacion_codigo . '-' . $ins->grupo_codigo] = true;
+                }
+            }
+
             $docentesInsertados = []; // by ci_docente
             $cargaHorariaInsertada = []; // by docente_id-grupo_codigo
 
@@ -643,32 +662,42 @@ class EstadisticaController extends Controller
                     $postulacionCodigo = $postulaciones[$perfilId]->codigo;
                 }
 
-                // 6. CREAR INSCRIPCION CUP
-                $insertsInscripciones[] = [
-                    'id' => $nextInscripcionId,
-                    'postulacion_codigo' => $postulacionCodigo,
-                    'grupo_codigo' => $grupoCodigo,
-                    'fecha_inscripcion' => date('Y-m-d'),
-                    'estado' => 'Activo'
-                ];
+                // 6. CREAR INSCRIPCION CUP Y EVALUACION (si no existen)
+                $inscripcionKey = $postulacionCodigo . '-' . $grupoCodigo;
+                if (!isset($inscripcionesInsertadas[$inscripcionKey])) {
+                    $insertsInscripciones[] = [
+                        'id' => $nextInscripcionId,
+                        'postulacion_codigo' => $postulacionCodigo,
+                        'grupo_codigo' => $grupoCodigo,
+                        'fecha_inscripcion' => date('Y-m-d'),
+                        'estado' => 'Activo'
+                    ];
 
-                // 7. CREAR EVALUACION
-                $insertsEvaluaciones[] = [
-                    'id' => $nextEvaluacionId,
-                    'inscripcion_id' => $nextInscripcionId,
-                    'nota_p1' => $row['nota_p1'] ?? 0,
-                    'nota_p2' => $row['nota_p2'] ?? 0,
-                    'nota_p3' => $row['nota_p3'] ?? 0,
-                    'promedio_final' => $row['promedio_final'] ?? 0,
-                    'estado_materia' => $row['estado_materia'] ?? 'Reprobado'
-                ];
+                    $insertsEvaluaciones[] = [
+                        'id' => $nextEvaluacionId,
+                        'inscripcion_id' => $nextInscripcionId,
+                        'nota_p1' => $row['nota_p1'] ?? 0,
+                        'nota_p2' => $row['nota_p2'] ?? 0,
+                        'nota_p3' => $row['nota_p3'] ?? 0,
+                        'promedio_final' => $row['promedio_final'] ?? 0,
+                        'estado_materia' => $row['estado_materia'] ?? 'Reprobado'
+                    ];
 
-                // 8. CREAR PAGO
+                    $inscripcionesInsertadas[$inscripcionKey] = true;
+                    $nextInscripcionId++;
+                    $nextEvaluacionId++;
+                }
+
+                // 8. CREAR PAGO (si no existe)
                 if (!empty($row['monto_pago']) && $row['monto_pago'] > 0) {
                     if (!isset($pagosInsertados[$postulacionCodigo])) {
+                        // Asegurar nro_recibo único agregando sufijos para evitar SQLSTATE 23505
+                        $nroReciboBase = !empty($row['nro_recibo']) ? $row['nro_recibo'] : 'REC-AUTO';
+                        $nroReciboUnico = $nroReciboBase . '-G' . $gestionId . 'P' . $postulacionCodigo;
+
                         $insertsPago[] = [
                             'postulacion_codigo' => $postulacionCodigo,
-                            'nro_recibo' => $row['nro_recibo'] ?? 'REC-AUTO-' . $postulacionCodigo,
+                            'nro_recibo' => $nroReciboUnico,
                             'monto' => $row['monto_pago'],
                             'metodo_pago' => $row['metodo_pago'] ?? 'Efectivo',
                             'estado' => 'Completado',
@@ -745,9 +774,6 @@ class EstadisticaController extends Controller
                         $cargaHorariaInsertada[$cargaKey] = true;
                     }
                 }
-
-                $nextInscripcionId++;
-                $nextEvaluacionId++;
             }
 
             // EJECUTAR BULK INSERTS (Evita timeout de DB)
