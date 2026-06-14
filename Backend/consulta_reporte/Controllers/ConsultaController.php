@@ -41,12 +41,13 @@ class ConsultaController extends Controller
     public function ejecutarConsultaIA(Request $request)
     {
         $request->validate([
-            'query' => 'required|string|max:500'
+            'query' => 'required|string|max:500',
+            'gestion_id' => 'required|integer'
         ]);
 
         try {
             $gemini = new GeminiAIService();
-            $sql = $gemini->generateSqlFromText($request->input('query'));
+            $sql = $gemini->generateSqlFromText($request->input('query'), $request->input('gestion_id'));
 
             // Validar seguridad muy básica (solo lectura)
             $sqlUpper = strtoupper($sql);
@@ -138,8 +139,9 @@ class ConsultaController extends Controller
             case 'docentes_inasistencias':
                 $resultados = DB::table('sesion_asistencia as sa')
                     ->join('perfil as pf', 'sa.docente_id', '=', 'pf.id')
+                    ->join('grupo as g', 'sa.grupo_codigo', '=', 'g.codigo')
                     ->where('sa.docente_presente', false)
-                    // Faltaría filtrar por gestión en la tabla de asistencia si existiera la relación directa
+                    ->where('g.gestion_id', $gestionId)
                     ->select(
                         'pf.ci as CI',
                         DB::raw("CONCAT(pf.nombres, ' ', pf.apellido_paterno) as Docente"),

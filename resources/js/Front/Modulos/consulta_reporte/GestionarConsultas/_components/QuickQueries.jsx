@@ -9,8 +9,7 @@ const PREDEFINED_QUERIES = [
     { id: 'ingresos_stripe_paypal', label: 'Pagos Stripe/PayPal', icon: '💳' },
 ];
 
-export default function QuickQueries({ gestiones, onSelectQuery, loading }) {
-    const [selectedGestion, setSelectedGestion] = useState('');
+export default function QuickQueries({ gestiones, selectedGestion, setSelectedGestion, onSelectQuery, loading }) {
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">

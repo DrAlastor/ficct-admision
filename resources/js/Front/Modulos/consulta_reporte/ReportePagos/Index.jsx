@@ -4,6 +4,18 @@ import SidebarLayout from '@/Layouts/SidebarLayout';
 import { FiDollarSign, FiCalendar, FiFilter, FiDownload, FiCreditCard } from 'react-icons/fi';
 
 export default function Index({ gestiones, pagos, totalRecaudado, filtroGestionId }) {
+    const [searchTerm, setSearchTerm] = React.useState('');
+
+    const filteredPagos = pagos.filter(pago => {
+        const term = searchTerm.toLowerCase();
+        return (
+            pago.nro_recibo.toLowerCase().includes(term) ||
+            pago.nombre_completo.toLowerCase().includes(term) ||
+            pago.metodo_pago?.toLowerCase().includes(term)
+        );
+    });
+
+    const filteredTotal = filteredPagos.reduce((sum, pago) => sum + parseFloat(pago.monto), 0).toFixed(2);
     const handleFilterChange = (e) => {
         const gestion_id = e.target.value;
         router.get(route('reporte_pagos.index'), { gestion_id }, { preserveState: true, preserveScroll: true });
@@ -38,14 +50,31 @@ export default function Index({ gestiones, pagos, totalRecaudado, filtroGestionI
                         </div>
                     </div>
 
+                    <div className="flex-1 max-w-md w-full md:w-auto">
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Buscar por Nombre, CI, Método o Recibo..."
+                                className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition duration-150 ease-in-out"
+                            />
+                        </div>
+                    </div>
+
                     <div className="flex items-center space-x-4 w-full md:w-auto">
                         <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 shadow-lg shadow-green-500/30 flex items-center w-full md:w-auto">
                             <div className="bg-white/20 p-2 rounded-lg mr-4">
                                 <FiDollarSign className="text-white" size={24} />
                             </div>
                             <div>
-                                <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-0.5">Total Recaudado</p>
-                                <p className="text-white text-2xl font-black tracking-tight">{totalRecaudado} Bs.</p>
+                                <p className="text-green-50 text-xs font-bold uppercase tracking-wider mb-0.5">Total Recaudado (Filtrado)</p>
+                                <p className="text-white text-2xl font-black tracking-tight">{filteredTotal} Bs.</p>
                             </div>
                         </div>
 
@@ -67,7 +96,7 @@ export default function Index({ gestiones, pagos, totalRecaudado, filtroGestionI
                             Detalle de Transacciones
                         </h2>
                         <span className="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
-                            {pagos.length} Pagos
+                            {filteredPagos.length} Pagos
                         </span>
                     </div>
 
@@ -84,8 +113,8 @@ export default function Index({ gestiones, pagos, totalRecaudado, filtroGestionI
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {pagos.length > 0 ? (
-                                    pagos.map((pago, index) => (
+                                {filteredPagos.length > 0 ? (
+                                    filteredPagos.map((pago, index) => (
                                         <tr key={index} className="hover:bg-blue-50/30 transition-colors group">
                                             <td className="px-6 py-4 font-bold text-gray-700 whitespace-nowrap">
                                                 {pago.nro_recibo}

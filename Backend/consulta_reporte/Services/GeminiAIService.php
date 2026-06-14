@@ -26,7 +26,7 @@ class GeminiAIService
     /**
      * Convierte una pregunta en lenguaje natural a una consulta SQL de PostgreSQL (Read-Only)
      */
-    public function generateSqlFromText($userQuery)
+    public function generateSqlFromText($userQuery, $gestionId = null)
     {
         if (empty($this->apiKey)) {
             throw new \Exception("La API Key de Gemini no está configurada en el archivo .env (GEMINI_API_KEY).");
@@ -61,6 +61,8 @@ Tabla: pago (id SERIAL, postulacion_codigo VARCHAR, monto DECIMAL, metodo_pago V
 4. Devuelve los resultados ordenados lógicamente o según lo pida el usuario.
 5. Usa alias amigables para las columnas devueltas con AS (ej: pf.ci AS \"Carnet de Identidad\").
 6. Solo devuelve el código SQL en texto plano, sin formato markdown.
+
+IMPORTANTE: El usuario está filtrando por la gestión actual. DEBES INCLUIR ESTRICTAMENTE el filtro `gestion_id = $gestionId` en las cláusulas WHERE para cualquier consulta relacionada con grupos, postulaciones o evaluaciones (usa JOINs si es necesario para llegar a gestion_id).
 
 Pregunta del usuario: \"$userQuery\"
         ";

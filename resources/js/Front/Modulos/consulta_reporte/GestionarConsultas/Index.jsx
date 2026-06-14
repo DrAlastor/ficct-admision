@@ -11,13 +11,18 @@ export default function Index() {
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(null);
     const [lastSql, setLastSql] = useState('');
+    const [selectedGestion, setSelectedGestion] = useState(gestiones[0]?.id || '');
 
     const handleSearchIA = async (query) => {
+        if (!selectedGestion) {
+            alert('Por favor selecciona una gestión primero en el panel de Consultas Rápidas.');
+            return;
+        }
         setLoading(true);
         setResults(null);
         setLastSql('');
         try {
-            const response = await axios.post(route('consultas.ia'), { query });
+            const response = await axios.post(route('consultas.ia'), { query, gestion_id: selectedGestion });
             setResults(response.data.data);
             setLastSql(response.data.sql);
         } catch (error) {
@@ -51,9 +56,11 @@ export default function Index() {
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
                 {/* Panel Izquierdo: Controles */}
                 <div className="xl:col-span-5 flex flex-col h-full">
-                    <SmartSearch onSearch={handleSearchIA} loading={loading} />
+                    <SmartSearch onSearch={handleSearchIA} loading={loading} selectedGestion={selectedGestion} />
                     <QuickQueries
                         gestiones={gestiones}
+                        selectedGestion={selectedGestion}
+                        setSelectedGestion={setSelectedGestion}
                         onSelectQuery={handleQuickQuery}
                         loading={loading}
                     />

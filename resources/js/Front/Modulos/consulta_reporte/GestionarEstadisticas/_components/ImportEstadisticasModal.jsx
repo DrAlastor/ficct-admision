@@ -75,6 +75,7 @@ export default function ImportEstadisticasModal({ isOpen, onClose, gestiones = [
                         nombre_docente: row['nombre docente'] ? String(row['nombre docente']).trim() : '',
                         apellido_docente: row['apellido docente'] ? String(row['apellido docente']).trim() : '',
                         profesion_docente: row['profesion docente'] ? String(row['profesion docente']).trim() : '',
+                        hora_semanal_docente: row['hora semanal docente'] ? parseInt(row['hora semanal docente']) : 0,
                         nota_p1: row['nota p1'] || row['notap1'] ? parseFloat(row['nota p1'] || row['notap1']) : 0,
                         nota_p2: row['nota p2'] || row['notap2'] ? parseFloat(row['nota p2'] || row['notap2']) : 0,
                         nota_p3: row['nota p3'] || row['notap3'] ? parseFloat(row['nota p3'] || row['notap3']) : 0,

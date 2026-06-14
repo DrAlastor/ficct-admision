@@ -739,7 +739,8 @@ class EstadisticaController extends Controller
                             $insertsDocente[] = [
                                 'id' => $nextPerfilId,
                                 'profesion' => $row['profesion_docente'] ?? 'Profesional',
-                                'grado_academico' => 'Licenciatura'
+                                'grado_academico' => 'Licenciatura',
+                                'horas_semanales' => $row['hora_semanal_docente'] ?? 0
                             ];
 
                             $docenteId = $nextPerfilId;
@@ -752,7 +753,8 @@ class EstadisticaController extends Controller
                                 $insertsDocente[] = [
                                     'id' => $docenteId,
                                     'profesion' => $row['profesion_docente'] ?? 'Profesional',
-                                    'grado_academico' => 'Licenciatura'
+                                    'grado_academico' => 'Licenciatura',
+                                    'horas_semanales' => $row['hora_semanal_docente'] ?? 0
                                 ];
                             }
                         }
