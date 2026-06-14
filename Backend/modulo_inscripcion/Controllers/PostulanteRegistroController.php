@@ -151,15 +151,16 @@ class PostulanteRegistroController extends Controller
             $existe = \Backend\modulo_inscripcion\Models\Pago::where('postulacion_codigo', $request->postulacion_codigo)->exists();
             
             if (!$existe) {
-                \Backend\modulo_inscripcion\Models\Pago::create([
-                    'postulacion_codigo' => $request->postulacion_codigo,
-                    'nro_recibo' => 'REC-FIC-' . rand(10000, 99999),
-                    'monto' => $monto,
-                    'metodo_pago' => $nombreMetodo,
-                    'transaccion_id' => 'bypass_' . uniqid(),
-                    'estado' => 'Completado',
-                    'fecha' => now()->toDateString()
-                ]);
+                $pago = new \Backend\modulo_inscripcion\Models\Pago();
+                $pago->id = \Backend\modulo_inscripcion\Models\Pago::max('id') + 1;
+                $pago->postulacion_codigo = $request->postulacion_codigo;
+                $pago->nro_recibo = 'REC-FIC-' . rand(10000, 99999);
+                $pago->monto = $monto;
+                $pago->metodo_pago = $nombreMetodo;
+                $pago->transaccion_id = 'bypass_' . uniqid();
+                $pago->estado = 'Completado';
+                $pago->fecha = now()->toDateString();
+                $pago->save();
 
                 // No llamamos a finalizarInscripcionPagada aquí, la postulación queda en Pendiente
                 // para que el administrador la acepte manualmente.
@@ -254,13 +255,14 @@ class PostulanteRegistroController extends Controller
 
                 $postulacion = $postulacionExistente;
                 if (!$postulacion) {
-                    $postulacion = Postulacion::create([
-                        'postulante_id' => $postulante->id,
-                        'gestion_id' => $gestionId,
-                        'fecha' => now()->toDateString(),
-                        'hora' => now()->toTimeString(),
-                        'estado' => 'Pendiente'
-                    ]);
+                    $postulacion = new Postulacion();
+                    $postulacion->codigo = Postulacion::max('codigo') + 1;
+                    $postulacion->postulante_id = $postulante->id;
+                    $postulacion->gestion_id = $gestionId;
+                    $postulacion->fecha = now()->toDateString();
+                    $postulacion->hora = now()->toTimeString();
+                    $postulacion->estado = 'Pendiente';
+                    $postulacion->save();
                 }
 
                 // Actualizar documento
@@ -268,12 +270,13 @@ class PostulanteRegistroController extends Controller
                 if ($documento) {
                     $documento->update(['url_archivo' => $rutaRequisitos]);
                 } else {
-                    Documento::create([
-                        'postulacion_codigo' => $postulacion->codigo,
-                        'tipo_documento' => 'Requisitos Completos CUP',
-                        'url_archivo' => $rutaRequisitos,
-                        'estado_validacion' => 'Pendiente'
-                    ]);
+                    $nuevoDoc = new Documento();
+                    $nuevoDoc->id = Documento::max('id') + 1;
+                    $nuevoDoc->postulacion_codigo = $postulacion->codigo;
+                    $nuevoDoc->tipo_documento = 'Requisitos Completos CUP';
+                    $nuevoDoc->url_archivo = $rutaRequisitos;
+                    $nuevoDoc->estado_validacion = 'Pendiente';
+                    $nuevoDoc->save();
                 }
 
                 // Actualizar carreras
