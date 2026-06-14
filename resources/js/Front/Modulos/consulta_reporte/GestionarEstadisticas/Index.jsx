@@ -34,6 +34,12 @@ export default function Index() {
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('postulantes');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ isOpen: false, type: 'warning', message: '' });
+
+    const showAlert = (message, type = 'warning') => {
+        setAlertConfig({ isOpen: true, message, type });
+    };
 
     const handleFiltrar = useCallback(async () => {
         if (!gestion1) return;
@@ -66,23 +72,24 @@ export default function Index() {
         }
     }, [gestion1, gestion2, modo]);
 
-    const handleLimpiar = async () => {
+    const handleLimpiarClick = () => {
         if (!gestion1) {
-            alert('Por favor selecciona una gestión en el panel izquierdo (Gestión 1) primero.');
+            showAlert('Por favor selecciona una gestión en el panel izquierdo (Gestión 1) primero.', 'warning');
             return;
         }
 
         if (modo === 'versus') {
-            alert('Por favor, cambia a modo individual para limpiar una gestión específica.');
+            showAlert('Por favor, cambia a modo individual para limpiar una gestión específica.', 'warning');
             return;
         }
 
+        setIsConfirmModalOpen(true);
+    };
+
+    const confirmarLimpieza = async () => {
+        setIsConfirmModalOpen(false);
         const gestionName = gestiones.find(g => g.id.toString() === gestion1)?.label || 'seleccionada';
         
-        if (!window.confirm(`⚠️ ADVERTENCIA CRÍTICA ⚠️\n\n¿Estás seguro que deseas ELIMINAR TODOS los datos importados (postulantes, grupos, notas, pagos, etc.) de la gestión ${gestionName}?\n\n¡ESTA ACCIÓN NO SE PUEDE DESHACER!`)) {
-            return;
-        }
-
         setLoading(true);
         try {
             const formData = new FormData();
@@ -102,11 +109,11 @@ export default function Index() {
                 throw new Error(errorData.message || 'Error al limpiar los datos.');
             }
 
-            alert(`✅ Todos los datos de la gestión ${gestionName} han sido limpiados exitosamente.`);
+            showAlert(`Todos los datos de la gestión ${gestionName} han sido limpiados exitosamente.`, 'success');
             setData(null); // Limpiar dashboard visualmente
         } catch (error) {
             console.error('Error limpiando gestión:', error);
-            alert(error.message);
+            showAlert(error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -183,7 +190,7 @@ export default function Index() {
                     </button>
 
                     <button
-                        onClick={handleLimpiar}
+                        onClick={handleLimpiarClick}
                         className="h-[72px] bg-white border border-red-500 text-red-500 px-6 rounded-2xl font-bold shadow-sm hover:bg-red-50 hover:shadow-md transition-all flex flex-col items-center justify-center gap-1"
                         title="Borrar todo el historial de esta gestión"
                     >
@@ -208,6 +215,85 @@ export default function Index() {
                 onClose={() => setIsModalOpen(false)}
                 gestiones={gestiones}
             />
+
+            {/* Modal de Confirmación de Limpieza */}
+            {isConfirmModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 opacity-100">
+                        <div className="bg-red-500 p-6 flex flex-col items-center justify-center text-white">
+                            <div className="bg-white/20 p-4 rounded-full mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            </div>
+                            <h3 className="text-2xl font-black text-center">ADVERTENCIA CRÍTICA</h3>
+                        </div>
+                        <div className="p-8 text-center">
+                            <p className="text-gray-700 text-lg mb-4">
+                                ¿Estás seguro que deseas <strong className="text-red-600">ELIMINAR TODOS los datos</strong> importados de la gestión seleccionada?
+                            </p>
+                            <p className="text-gray-500 text-sm mb-8 bg-red-50 p-3 rounded-xl">
+                                Esto incluye postulantes, grupos, notas y pagos asociados únicamente a esta gestión. <br/><br/>
+                                <strong className="text-red-700 uppercase">Esta acción es irreversible.</strong>
+                            </p>
+                            
+                            <div className="flex gap-4 w-full">
+                                <button 
+                                    onClick={() => setIsConfirmModalOpen(false)}
+                                    className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={confirmarLimpieza}
+                                    className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                                >
+                                    Sí, Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Alerta Informativa */}
+            {alertConfig.isOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 opacity-100 text-center p-6">
+                        <div className="flex justify-center mb-4">
+                            {alertConfig.type === 'success' && (
+                                <div className="bg-green-100 text-green-500 p-4 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                </div>
+                            )}
+                            {alertConfig.type === 'warning' && (
+                                <div className="bg-amber-100 text-amber-500 p-4 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </div>
+                            )}
+                            {alertConfig.type === 'error' && (
+                                <div className="bg-red-100 text-red-500 p-4 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                </div>
+                            )}
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">
+                            {alertConfig.type === 'success' ? '¡Éxito!' : alertConfig.type === 'error' ? 'Error' : 'Atención'}
+                        </h3>
+                        <p className="text-gray-600 mb-6 font-medium">
+                            {alertConfig.message}
+                        </p>
+                        <button 
+                            onClick={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+                            className={`w-full py-3 rounded-xl font-bold text-white shadow-md transition-all ${
+                                alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600' :
+                                alertConfig.type === 'error' ? 'bg-red-500 hover:bg-red-600' :
+                                'bg-amber-500 hover:bg-amber-600'
+                            }`}
+                        >
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Estado vacío */}
             {!data && !loading && (
