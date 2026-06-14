@@ -447,8 +447,8 @@ class EstadisticaController extends Controller
         DB::beginTransaction();
         try {
             // Cargar diccionarios en memoria para no saturar Supabase
-            $carreras = DB::table('carrera')->get()->keyBy(fn($c) => strtolower(trim($c->nombre)));
-            $carrerasSigla = DB::table('carrera')->get()->keyBy(fn($c) => strtolower(trim($c->sigla)));
+            $carreras = DB::table('carrera')->get()->keyBy(fn($c) => \Illuminate\Support\Str::slug(trim($c->nombre)));
+            $carrerasSigla = DB::table('carrera')->get()->keyBy(fn($c) => \Illuminate\Support\Str::slug(trim($c->sigla)));
             $materias = DB::table('materia')->get()->keyBy(fn($m) => strtolower(trim($m->sigla)));
             
             // Grupos de esta gestión
@@ -500,7 +500,7 @@ class EstadisticaController extends Controller
                 $ci = $row['ci'];
                 
                 // 1. OBTENER O CREAR CARRERA
-                $carreraKey = strtolower(trim($row['carrera']));
+                $carreraKey = \Illuminate\Support\Str::slug(trim($row['carrera']));
                 $carreraId = null;
                 if (isset($carreras[$carreraKey])) {
                     $carreraId = $carreras[$carreraKey]->codigo;
