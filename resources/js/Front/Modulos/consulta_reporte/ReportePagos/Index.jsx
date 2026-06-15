@@ -25,6 +25,14 @@ export default function Index({ gestiones, pagos, totalRecaudado, filtroGestionI
         window.print();
     };
 
+    const handleExportPdf = () => {
+        let url = route('reporte_pagos.exportar_pdf');
+        if (filtroGestionId) {
+            url += `?gestion_id=${filtroGestionId}`;
+        }
+        window.open(url, '_blank');
+    };
+
     return (
         <SidebarLayout title="REPORTE FINANCIERO" subtitle="Reporte de Pagos">
             <Head title="Reporte de Pagos" />
@@ -78,6 +86,13 @@ export default function Index({ gestiones, pagos, totalRecaudado, filtroGestionI
                             </div>
                         </div>
 
+                        <button
+                            onClick={handleExportPdf}
+                            className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-4 rounded-2xl shadow-sm transition-colors duration-200 flex items-center justify-center font-bold text-sm tracking-wide border border-red-100 h-full hide-on-print"
+                        >
+                            <FiDownload className="mr-2" size={20} />
+                            <span className="hidden md:inline">Descargar PDF</span>
+                        </button>
                         <button
                             onClick={handlePrint}
                             className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-4 rounded-2xl shadow-sm transition-colors duration-200 flex items-center justify-center font-bold text-sm tracking-wide border border-indigo-100 h-full hide-on-print"

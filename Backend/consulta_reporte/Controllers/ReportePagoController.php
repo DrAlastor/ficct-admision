@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * CU29 - Reporte de Pagos
@@ -74,5 +75,50 @@ class ReportePagoController extends Controller
             'totalRecaudado' => number_format((float)$totalRecaudado, 2, '.', ''),
             'filtroGestionId' => $gestionId
         ]);
+    }
+
+    /**
+     * Descargar reporte de pagos en PDF
+     */
+    public function exportarPdf(Request $request)
+    {
+        $gestionId = $request->query('gestion_id');
+
+        $gestion = DB::table('gestion')->where('id', $gestionId)->first();
+        if (!$gestion) {
+            $gestion = DB::table('gestion')->orderBy('anio', 'desc')->orderBy('semestre', 'desc')->first();
+        }
+
+        if (!$gestion) {
+            abort(404, 'No hay gestiones disponibles.');
+        }
+
+        $pagos = DB::table('pago')
+            ->join('postulacion', 'pago.postulacion_codigo', '=', 'postulacion.codigo')
+            ->join('postulante', 'postulacion.postulante_id', '=', 'postulante.id')
+            ->join('perfil', 'postulante.id', '=', 'perfil.id')
+            ->where('postulacion.gestion_id', $gestion->id)
+            ->where('pago.estado', 'Completado')
+            ->select(
+                'pago.nro_recibo',
+                DB::raw("CONCAT(perfil.nombres, ' ', perfil.apellido_paterno, ' ', COALESCE(perfil.apellido_materno, '')) as nombre_completo"),
+                'pago.monto',
+                'pago.fecha',
+                'pago.transaccion_id',
+                'pago.estado',
+                'pago.metodo_pago'
+            )
+            ->orderBy('pago.fecha', 'desc')
+            ->get();
+
+        $totalRecaudado = collect($pagos)->sum('monto');
+
+        $pdf = Pdf::loadView('reportes.reporte_pagos', [
+            'gestion' => $gestion,
+            'pagos' => $pagos,
+            'totalRecaudado' => $totalRecaudado
+        ]);
+
+        return $pdf->download("Reporte_Pagos_{$gestion->semestre}_{$gestion->anio}.pdf");
     }
 }

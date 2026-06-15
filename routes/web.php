@@ -179,6 +179,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Consultas y Reportes - Reporte de Pagos (CU29)
     Route::get('/reporte-pagos', [\Backend\consulta_reporte\Controllers\ReportePagoController::class, 'index'])->name('reporte_pagos.index');
+    Route::get('/reporte-pagos/exportar-pdf', [\Backend\consulta_reporte\Controllers\ReportePagoController::class, 'exportarPdf'])->name('reporte_pagos.exportar_pdf');
 });
 
 require __DIR__.'/auth.php';
