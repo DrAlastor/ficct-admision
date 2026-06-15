@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
     // Gestión de Usuarios
     Route::get('/api/gestiones', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'getGestiones']);
     Route::post('/usuarios/importar', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'importar'])->name('usuarios.importar');
+    Route::delete('/usuarios/limpiar', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'destroyMassive'])->name('usuarios.destroy_massive');
     Route::post('/usuarios/{id}/restore', [\Backend\usuario_seguridad\Controllers\UsuarioController::class, 'restore'])->name('usuarios.restore');
     Route::resource('usuarios', Backend\usuario_seguridad\Controllers\UsuarioController::class);
     
@@ -138,6 +139,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/postulantes/{id}/aceptar', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'aceptar'])->name('postulantes.aceptar');
     Route::get('/postulantes', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'index'])->name('postulantes.index');
     Route::put('/postulantes/{id}', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'update'])->name('postulantes.update');
+    Route::get('/postulantes/{id}/documento', [\Backend\gestion_academica\Controllers\PostulanteController::class, 'verDocumento'])->name('postulantes.documento');
 
     // Gestión de Pagos (CU23)
     Route::get('/pagos', [\Backend\gestion_academica\Controllers\PagoController::class, 'index'])->name('pagos.admin.index');
@@ -147,9 +149,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Gestión de Carreras (CU24)
     Route::get('/carreras', [\Backend\gestion_academica\Controllers\CarreraController::class, 'index'])->name('carreras.admin.index');
-    Route::post('/carreras', [\Backend\gestion_academica\Controllers\CarreraController::class, 'store'])->name('carreras.admin.store');
-    Route::put('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'update'])->name('carreras.admin.update');
-    Route::delete('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'destroy'])->name('carreras.admin.destroy');
+    Route::post('/carreras', [\Backend\gestion_academica\Controllers\CarreraController::class, 'store'])->name('carreras.store');
+    Route::put('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'update'])->name('carreras.update');
+    Route::delete('/carreras/{codigo}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'destroy'])->name('carreras.destroy');
+    Route::post('/carreras/procesar-cupos/{gestion_id}', [\Backend\gestion_academica\Controllers\CarreraController::class, 'procesarAsignacionCupos'])->name('carreras.procesar_cupos');
 
     // Módulo de Docencia (CU25)
     Route::get('/docentes', [\Backend\modulo_docencia\Controllers\DocenteController::class, 'index'])->name('docentes.index');

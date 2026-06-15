@@ -20,7 +20,13 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
         handleDelete,
         confirmDelete,
         isImportModalOpen,
-        setIsImportModalOpen
+        setIsImportModalOpen,
+        selectedIds,
+        toggleSelectAll,
+        toggleSelectOne,
+        deleteMassiveConfirm,
+        setDeleteMassiveConfirm,
+        confirmMassDelete
     } = useUsuarios(filters);
 
     return (
@@ -34,6 +40,15 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
                 </div>
                 
                 <div className="flex items-center space-x-3">
+                    {selectedIds.length > 0 && (
+                        <button 
+                            onClick={() => setDeleteMassiveConfirm(true)}
+                            className="flex items-center justify-center bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-full font-bold uppercase text-sm hover:bg-red-100 transition-all shadow-sm"
+                        >
+                            <FiUserX className="mr-2" size={18} />
+                            Limpiar Seleccionados ({selectedIds.length})
+                        </button>
+                    )}
                     <button 
                         onClick={() => setIsImportModalOpen(true)}
                         className="flex items-center justify-center bg-white border border-[#07074E] text-[#07074E] px-6 py-3 rounded-full font-bold uppercase text-sm hover:bg-gray-50 transition-all shadow-sm hover:shadow-md"
@@ -69,7 +84,10 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
             <UsuariosTable 
                 usuarios={usuarios} 
                 openModal={openModal} 
-                handleDelete={handleDelete} 
+                handleDelete={handleDelete}
+                selectedIds={selectedIds}
+                toggleSelectAll={toggleSelectAll}
+                toggleSelectOne={toggleSelectOne}
             />
 
             {/* Modal de Registro/Edición */}
@@ -112,6 +130,37 @@ export default function Index({ auth, usuarios, roles, filters, nextId }) {
                                     className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors"
                                 >
                                     Aceptar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmación de Eliminación Masiva */}
+            {deleteMassiveConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 relative">
+                        <div className="text-center">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+                                <FiUserX className="h-8 w-8 text-red-600" />
+                            </div>
+                            <h3 className="text-2xl font-black text-gray-900 mb-2">Eliminar Múltiples Usuarios</h3>
+                            <p className="text-gray-500 mb-8">
+                                ¿Estás seguro de que deseas eliminar a <span className="font-bold text-gray-900">{selectedIds.length}</span> usuarios seleccionados? No podrás recuperar su acceso.
+                            </p>
+                            <div className="flex justify-center space-x-4">
+                                <button
+                                    onClick={() => setDeleteMassiveConfirm(false)}
+                                    className="px-6 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={confirmMassDelete}
+                                    className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors"
+                                >
+                                    Sí, Eliminar Todos
                                 </button>
                             </div>
                         </div>

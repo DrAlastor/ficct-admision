@@ -26,9 +26,10 @@ class Perfil extends Model
     ];
 
     /**
-     * Ejecuta la acción o procedimiento 'usuario' dentro del módulo.
+     * Relación de pertenencia con Usuario.
+     * Un perfil pertenece y detalla a un registro de usuario en específico.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function usuario()
     {
@@ -36,9 +37,10 @@ class Perfil extends Model
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'postulante' dentro del módulo.
+     * Relación uno a uno opcional con Postulante.
+     * Un perfil de rol 'Postulante' tiene un registro en la tabla postulante para guardar documentos.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function postulante()
     {

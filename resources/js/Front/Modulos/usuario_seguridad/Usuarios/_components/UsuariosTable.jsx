@@ -2,7 +2,7 @@ import React from 'react';
 import { FiEdit2, FiUserX, FiMail, FiShield } from 'react-icons/fi';
 import { router } from '@inertiajs/react';
 
-export default function UsuariosTable({ usuarios, openModal, handleDelete }) {
+export default function UsuariosTable({ usuarios, openModal, handleDelete, selectedIds, toggleSelectAll, toggleSelectOne }) {
     const getInitials = (name) => {
         return name ? name.charAt(0).toUpperCase() : '?';
     };
@@ -13,6 +13,14 @@ export default function UsuariosTable({ usuarios, openModal, handleDelete }) {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-white border-b border-gray-100">
+                            <th className="py-5 px-6 w-12 text-center">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-gray-300 text-[#07074E] focus:ring-[#07074E]"
+                                    onChange={() => toggleSelectAll(usuarios.data)}
+                                    checked={usuarios.data.length > 0 && selectedIds.length === usuarios.data.length}
+                                />
+                            </th>
                             <th className="py-5 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Nombre</th>
                             <th className="py-5 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">CI</th>
                             <th className="py-5 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Cargo</th>
@@ -29,7 +37,16 @@ export default function UsuariosTable({ usuarios, openModal, handleDelete }) {
                             </tr>
                         ) : (
                             usuarios.data.map((usuario) => (
-                                <tr key={usuario.id} className="hover:bg-gray-50/50 transition-colors group">
+                                <tr key={usuario.id} className={`hover:bg-gray-50/50 transition-colors group ${selectedIds.includes(usuario.id) ? 'bg-blue-50/30' : ''}`}>
+                                    {/* CHECKBOX */}
+                                    <td className="py-4 px-6 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-[#07074E] focus:ring-[#07074E]"
+                                            checked={selectedIds.includes(usuario.id)}
+                                            onChange={() => toggleSelectOne(usuario.id)}
+                                        />
+                                    </td>
                                     
                                     {/* NOMBRE */}
                                     <td className="py-4 px-6 whitespace-nowrap">

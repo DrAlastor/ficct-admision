@@ -822,6 +822,11 @@ class EstadisticaController extends Controller
         }
     }
 
+    /**
+     * Ejecuta la acción o procedimiento 'syncSequences' dentro del módulo.
+     *
+     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     */
     public function syncSequences()
     {
         try {

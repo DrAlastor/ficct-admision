@@ -14,9 +14,8 @@ class GeminiAIService
     protected $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     /**
-     * Ejecuta la acción o procedimiento '__construct' dentro del módulo.
-     *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * Constructor del servicio.
+     * Carga la clave de la API de Gemini desde las variables de entorno (GEMINI_API_KEY).
      */
     public function __construct()
     {

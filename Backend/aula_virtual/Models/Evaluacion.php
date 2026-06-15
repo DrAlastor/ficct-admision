@@ -19,9 +19,10 @@ class Evaluacion extends Model
     ];
 
     /**
-     * Ejecuta la acción o procedimiento 'inscripcion' dentro del módulo.
+     * Relación con el modelo de InscripcionCup.
+     * Una evaluación pertenece a un registro de inscripción específico.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function inscripcion()
     {

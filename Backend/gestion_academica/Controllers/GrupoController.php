@@ -61,9 +61,13 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'generar' dentro del módulo.
+     * Algoritmo de Generación de Grupos.
+     * Calcula la cantidad de grupos necesarios basándose en el total de inscritos y el cupo máximo.
+     * Crea automáticamente grupos para todas las materias distribuyéndolos en turnos: 
+     * Mañana (M), Tarde (T), Noche (N) y Virtual (V) si excede la capacidad física.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Petición HTTP.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function generar(Request $request)
     {
@@ -160,9 +164,12 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'toggleInscripciones' dentro del módulo.
+     * Activa o desactiva el periodo de inscripciones para la gestión actual.
+     * Modifica el estado 'inscripciones_abiertas' en la tabla de gestión, permitiendo o 
+     * bloqueando el acceso de los postulantes para auto-inscribirse a los grupos.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Petición HTTP.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function toggleInscripciones(Request $request)
     {
@@ -223,9 +230,10 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'descargarListaPdf' dentro del módulo.
+     * Genera y descarga la lista de alumnos de un grupo específico en formato PDF.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param string $nombre Nombre del grupo (ej. M001).
+     * @return \Illuminate\Http\Response
      */
     public function descargarListaPdf($nombre)
     {
@@ -233,9 +241,10 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'descargarListaCsv' dentro del módulo.
+     * Genera y descarga la lista de alumnos de un grupo específico en formato CSV.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param string $nombre Nombre del grupo (ej. M001).
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
     public function descargarListaCsv($nombre)
     {
@@ -243,9 +252,12 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'generarLista' dentro del módulo.
+     * Método interno reutilizable para construir la lista de alumnos de un grupo.
+     * Obtiene los datos del perfil (Nombres, Apellidos, CI) de cada postulante inscrito.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param string $nombre Nombre del grupo.
+     * @param string $format Formato solicitado ('pdf' o 'csv').
+     * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\StreamedResponse
      */
     private function generarLista($nombre, $format)
     {
@@ -310,9 +322,12 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'asignarAlumnosAleatoriamente' dentro del módulo.
+     * Asignación Aleatoria (Algoritmo de balanceo).
+     * Busca todos los postulantes habilitados que aún no se han inscrito y los distribuye
+     * automáticamente entre los grupos que aún tienen cupo disponible.
+     * Útil cuando cierra el periodo de inscripciones voluntarias.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function asignarAlumnosAleatoriamente()
     {
@@ -414,9 +429,13 @@ class GrupoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'inscribirPostulante' dentro del módulo.
+     * Permite a un postulante auto-inscribirse voluntariamente en un grupo determinado.
+     * Verifica que esté habilitado, que las inscripciones estén abiertas y que el grupo 
+     * seleccionado aún tenga cupos disponibles. Al inscribirse en un grupo (ej. M001), 
+     * se inscribe automáticamente en las 4 materias de dicho grupo.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el 'grupo_nombre'.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function inscribirPostulante(Request $request)
     {

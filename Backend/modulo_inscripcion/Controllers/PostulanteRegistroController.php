@@ -127,9 +127,12 @@ class PostulanteRegistroController extends Controller
     }
     
     /**
-     * Ejecuta la acción o procedimiento 'procesarPagoFicticio' dentro del módulo.
+     * Procesa una transferencia bancaria simulada o "ficticia".
+     * En este caso, el pago se registra automáticamente como "Completado" asumiendo 
+     * que la verificación de la transferencia bancaria se ha realizado externamente.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el código de la postulación.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function procesarPagoFicticio(Request $request)
     {
@@ -178,9 +181,12 @@ class PostulanteRegistroController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'iniciarInscripcion' dentro del módulo.
+     * Inicia el proceso de registro de un nuevo postulante al sistema.
+     * Crea un usuario, un perfil asociado (Postulante), guarda sus documentos subidos y
+     * genera una postulación inicial ligada a la gestión actual.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene datos personales, cuenta, documentos y carrera.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function iniciarInscripcion(Request $request)
     {
@@ -354,9 +360,11 @@ class PostulanteRegistroController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'consultarRegistro' dentro del módulo.
+     * Consulta el estado actual de una postulación utilizando el Carnet de Identidad (CI).
+     * Devuelve el estado general del trámite, si el pago ha sido validado o no, y otros datos.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el parámetro 'ci'.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function consultarRegistro(Request $request)
     {

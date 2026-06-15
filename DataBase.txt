@@ -48,7 +48,7 @@ CREATE TABLE USUARIO (
     ESTADO VARCHAR(20),
     ELIMINADO BOOLEAN DEFAULT FALSE
 );
--- ALTER TABLE USUARIO ADD COLUMN GESTION_ID INT REFERENCES GESTION(ID) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE USUARIO ADD COLUMN GESTION_ID INT REFERENCES GESTION(ID) ON DELETE CASCADE ON UPDATE CASCADE;
 
 CREATE TABLE TOKEN_RECUPERACION (
     ID SERIAL PRIMARY KEY,
@@ -650,7 +650,7 @@ INSERT INTO EVALUACIONES (INSCRIPCION_ID, NOTA_P1, NOTA_P2, NOTA_P3, PROMEDIO_FI
 -- =================================================================
 -- CONSULTAS SQL
 -- =================================================================
-
+/*
 -- 1. Listar todos los usuarios y su rol en el sistema.
 SELECT u.CODIGO_INICIO, p.NOMBRES, p.APELLIDO_PATERNO, r.NOMBRE AS ROL, u.ESTADO
 FROM USUARIO u
@@ -1048,39 +1048,48 @@ FOR EACH ROW
 EXECUTE FUNCTION FN_AUDITORIA_PASSWORD();
 
 -- =================================================================
--- PRUEBAS DE PROCEDIMIENTOS Y TRIGGERS (TESTS)
+-- PRUEBAS DE PROCEDIMIENTOS ALMACENADOS (TESTS)
 -- =================================================================
 
-/*
 -- PRUEBA 1: Pago y Habilitación (SP_REGISTRAR_PAGO_Y_HABILITAR)
 SELECT CODIGO, ESTADO FROM POSTULACION WHERE CODIGO = 15;
 CALL SP_REGISTRAR_PAGO_Y_HABILITAR(15, 'REC-999', 700.00, 'Transferencia', 3);
 SELECT CODIGO, ESTADO FROM POSTULACION WHERE CODIGO = 15; -- Ahora debe decir 'Habilitado'
 
--- PRUEBA 2: Inscripción de Grupo y Trigger Inicializador de Evaluaciones
+-- PRUEBA 2: Inscripción de Grupo (SP_INSCRIBIR_POSTULANTE_GRUPO)
 SELECT CODIGO, NOMBRE, INSCRITOS_ACTUALES FROM GRUPO WHERE CODIGO = 1;
 CALL SP_INSCRIBIR_POSTULANTE_GRUPO(15, 1);
 SELECT CODIGO, NOMBRE, INSCRITOS_ACTUALES FROM GRUPO WHERE CODIGO = 1; -- Debe haber sumado 1
--- Verificar el Trigger (Debe existir un casillero de evaluación para la nueva inscripción con puros 0)
-SELECT * FROM EVALUACIONES WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
 
--- PRUEBA 3: Examen, Promedios y Trigger de Validar Notas
--- Insertar nota de 75.50 al Parcial 1 (Llamará al promedio por dentro)
+-- PRUEBA 3: Registrar Intento de Examen (SP_REGISTRAR_INTENTO_EXAMEN)
+-- Insertar nota de 75.50 al Parcial 1 (Llamará al promedio internamente)
 CALL SP_REGISTRAR_INTENTO_EXAMEN(1, (SELECT MAX(ID) FROM INSCRIPCIONES_CUP), 75.50, 1);
 SELECT * FROM EVALUACIONES WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
--- ESTA CONSULTA FALLARÁ Y MOSTRARÁ ERROR (Dispara TRG_VALIDAR_NOTAS por intentar meter 150)
+
+
+-- =================================================================
+-- PRUEBAS DE TRIGGERS (DISPARADORES)
+-- =================================================================
+
+-- PRUEBA 4: Inicializador de Evaluaciones (TRG_INICIALIZAR_EVALUACIONES)
+-- Este trigger se disparó automáticamente tras la PRUEBA 2 al crear la inscripción.
+-- Verificamos que existe un casillero de evaluación para la nueva inscripción con puros 0.
+SELECT * FROM EVALUACIONES WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
+
+-- PRUEBA 5: Validar Notas (TRG_VALIDAR_NOTAS)
+-- ESTA CONSULTA FALLARÁ Y MOSTRARÁ ERROR (Dispara el trigger por intentar meter 150)
 -- UPDATE EVALUACIONES SET NOTA_P2 = 150 WHERE INSCRIPCION_ID = (SELECT MAX(ID) FROM INSCRIPCIONES_CUP);
 
--- PRUEBA 4: Borrado Lógico (TRG_BORRADO_LOGICO_USUARIO)
+-- PRUEBA 6: Borrado Lógico (TRG_BORRADO_LOGICO_USUARIO)
 SELECT ID, ESTADO, ELIMINADO FROM USUARIO WHERE ID = 5;
 DELETE FROM USUARIO WHERE ID = 5; -- Intentamos borrarlo físicamente
 SELECT ID, ESTADO, ELIMINADO FROM USUARIO WHERE ID = 5; -- Sigue existiendo, pero ELIMINADO=true y ESTADO=Inactivo
 
--- PRUEBA 5: Auditoría de Contraseña Automática (TRG_AUDITORIA_PASSWORD)
+-- PRUEBA 7: Auditoría de Contraseña Automática (TRG_AUDITORIA_PASSWORD)
 UPDATE USUARIO SET PASSWORD = 'new_hash_seguro' WHERE ID = 1;
 SELECT * FROM BITACORA ORDER BY FECHA_HORA DESC LIMIT 1; -- Se generó un log automático
 
--- PRUEBA 6: Limpieza de Perfiles (TRG_FORMATO_PERFIL)
+-- PRUEBA 8: Limpieza de Perfiles (TRG_FORMATO_PERFIL)
 -- Actualizamos con letras minúsculas y espacios feos
 UPDATE PERFIL SET NOMBRES = '   luis pablo  ', APELLIDO_PATERNO = '  torres ' WHERE ID = 6;
 -- Veremos que lo guardó perfectamente como 'LUIS PABLO' y 'TORRES'

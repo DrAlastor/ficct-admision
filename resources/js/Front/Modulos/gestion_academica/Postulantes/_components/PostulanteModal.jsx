@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useForm, router } from '@inertiajs/react';
-import { FiX, FiSave, FiUser, FiCalendar, FiMapPin, FiMail, FiPhone, FiCheckCircle } from 'react-icons/fi';
+import { FiX, FiSave, FiUser, FiCalendar, FiMapPin, FiMail, FiPhone, FiCheckCircle, FiFileText } from 'react-icons/fi';
 
 export default function PostulanteModal({ isOpen, onClose, postulante }) {
     const { data, setData, put, processing, errors, reset, clearErrors } = useForm({
@@ -285,6 +285,16 @@ export default function PostulanteModal({ isOpen, onClose, postulante }) {
 
                         {/* Footer / Botones */}
                         <div className="pt-6 mt-6 border-t border-gray-100 flex justify-end gap-3">
+                            <a
+                                href={`/postulantes/${postulante?.perfil_id}/documento`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-6 py-3 rounded-xl font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-center"
+                                title="Ver documento subido (Requisitos)"
+                            >
+                                <FiFileText className="mr-2" size={18} />
+                                Ver Documento
+                            </a>
                             {postulante?.estado === 'Pendiente' && (
                                 <button
                                     type="button"

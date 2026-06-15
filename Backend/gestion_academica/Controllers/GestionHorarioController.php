@@ -82,9 +82,10 @@ class GestionHorarioController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'generar' dentro del módulo.
+     * Genera automáticamente una matriz de horarios base para los grupos creados.
+     * Asigna bloques de horas en días de semana según la modalidad (Mañana, Tarde, Noche, Virtual).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function generar(Request $request)
     {

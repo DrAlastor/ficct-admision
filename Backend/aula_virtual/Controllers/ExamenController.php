@@ -312,9 +312,13 @@ class ExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'rendir' dentro del módulo.
+     * Inicia la prueba para el postulante.
+     * Valida que la contraseña proporcionada sea correcta, verifica si está dentro del plazo activo
+     * y obtiene aleatoriamente las preguntas asignadas para sus materias.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param int $id ID del examen global a rendir.
+     * @param Request $request Contiene la contraseña ingresada.
+     * @return \Illuminate\Http\RedirectResponse|\Inertia\Response
      */
     public function rendir($id, Request $request)
     {
@@ -400,9 +404,13 @@ class ExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'calificar' dentro del módulo.
+     * Procesa y califica las respuestas del postulante al terminar la prueba.
+     * Evalúa la cantidad de aciertos por materia, calcula la nota en escala de 100 y 
+     * pondera automáticamente el resultado para el Parcial 1 (30%), Parcial 2 (30%) o Final (40%).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param int $id ID del examen rendido.
+     * @param Request $request Contiene un arreglo de respuestas con id de pregunta y opción seleccionada.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function calificar($id, Request $request)
     {
@@ -503,12 +511,21 @@ class ExamenController extends Controller
                     $updateData['nota_p3'] = $notaPura100 * 0.40;
                 }
 
+                // =========================================================================
+                // Calculo del Promedio
+                // Aunque la base de datos tiene un Procedimiento Almacenado de respaldo 
+                // (SP_CALCULAR_PROMEDIO_MATERIA), el backend de Laravel realiza el 
+                // cálculo oficial y ponderado en tiempo real al calificar el examen.
+                // =========================================================================
                 $p1 = isset($updateData['nota_p1']) ? $updateData['nota_p1'] : $eval->nota_p1;
                 $p2 = isset($updateData['nota_p2']) ? $updateData['nota_p2'] : $eval->nota_p2;
                 $p3 = isset($updateData['nota_p3']) ? $updateData['nota_p3'] : $eval->nota_p3;
                 
+                // Sumatoria de las notas ponderadas para obtener la nota pura sobre 100
                 $promedioFinal = $p1 + $p2 + $p3;
                 $updateData['promedio_final'] = $promedioFinal;
+                
+                // Definición lógica del estado final (Aprobado >= 60 según sistema de la UAGRM)
                 $updateData['estado_materia'] = $promedioFinal >= 60 ? 'Aprobado' : 'Reprobado';
 
                 DB::table('evaluaciones')

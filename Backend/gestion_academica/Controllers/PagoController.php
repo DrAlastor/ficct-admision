@@ -54,9 +54,10 @@ class PagoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'guardarConcepto' dentro del módulo.
+     * Registra o actualiza un Concepto de Pago en el sistema (ej. Matrícula, Mensualidad).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene nombre, monto y tipo.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function guardarConcepto(Request $request)
     {
@@ -85,9 +86,10 @@ class PagoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'eliminarConcepto' dentro del módulo.
+     * Elimina un concepto de pago de la base de datos por su ID.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param int $id ID del concepto a eliminar.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function eliminarConcepto($id)
     {
@@ -96,9 +98,11 @@ class PagoController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'guardarMetodo' dentro del módulo.
+     * Habilita o deshabilita la disponibilidad de los métodos de pago (Stripe, Transferencia, PayPal).
+     * Actualiza el estado de las credenciales activas.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el ID del método y su nuevo estado (Habilitado/Deshabilitado).
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function guardarMetodo(Request $request)
     {

@@ -56,9 +56,10 @@ class GestionExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'preguntas' dentro del módulo.
+     * Muestra el banco de preguntas, separado por materias.
+     * Permite al administrador gestionar y ver todas las preguntas registradas en el sistema.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Inertia\Response
      */
     public function preguntas(Request $request)
     {
@@ -80,9 +81,11 @@ class GestionExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'storeExamen' dentro del módulo.
+     * Programa y almacena un nuevo examen global en la base de datos.
+     * Define las configuraciones de tiempo, tipo, contraseña y la cantidad de preguntas a extraer por materia.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene los datos del examen (turno, fechas, duración, materias, etc.).
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function storeExamen(Request $request)
     {
@@ -131,9 +134,10 @@ class GestionExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'storePregunta' dentro del módulo.
+     * Añade una nueva pregunta individual al banco de preguntas.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el enunciado, materia_id, opciones y la respuesta correcta.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function storePregunta(Request $request)
     {
@@ -152,9 +156,10 @@ class GestionExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'seederPreguntas' dentro del módulo.
+     * Genera automáticamente preguntas de prueba (Seeder) basándose en temarios predefinidos
+     * para materias como Matemáticas, Física, Inglés y Computación.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function seederPreguntas()
     {
@@ -280,9 +285,10 @@ class GestionExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'destroyPregunta' dentro del módulo.
+     * Elimina una pregunta específica del banco de preguntas.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param int $id ID de la pregunta a eliminar.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroyPregunta($id)
     {
@@ -291,9 +297,9 @@ class GestionExamenController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'clearPreguntas' dentro del módulo.
+     * Limpia o vacía por completo la tabla del banco de preguntas (TRUNCATE).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function clearPreguntas()
     {

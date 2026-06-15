@@ -132,9 +132,10 @@ class PostulanteController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'aceptar' dentro del módulo.
+     * Revisa una postulación pendiente y la marca como 'Habilitado'.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param int $id ID de la postulacion
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function aceptar($id)
     {
@@ -187,6 +188,42 @@ class PostulanteController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'Error al aceptar: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Muestra el documento (requisitos) subido por el postulante.
+     *
+     * @param int $id ID del postulante (perfil)
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function verDocumento($id)
+    {
+        $postulacion = Postulacion::where('postulante_id', $id)->orderBy('codigo', 'desc')->first();
+        if (!$postulacion) {
+            return back()->withErrors(['error' => 'No se encontró la postulación.']);
+        }
+
+        $documento = Documento::where('postulacion_codigo', $postulacion->codigo)->first();
+        if (!$documento || !$documento->url_archivo) {
+            return back()->withErrors(['error' => 'No se encontró el documento o no fue subido.']);
+        }
+
+        try {
+            // Intentar generar URL temporal de S3
+            $url = \Illuminate\Support\Facades\Storage::disk('s3_archivos')->temporaryUrl(
+                $documento->url_archivo,
+                now()->addMinutes(30)
+            );
+            return redirect($url);
+        } catch (\Exception $e) {
+            try {
+                // Si la configuración no permite temporaryUrl, usar la URL directa o de otro disco
+                $url = \Illuminate\Support\Facades\Storage::disk('s3_archivos')->url($documento->url_archivo);
+                return redirect($url);
+            } catch (\Exception $e2) {
+                return back()->withErrors(['error' => 'Error al obtener el documento: ' . $e2->getMessage()]);
+            }
         }
     }
 }

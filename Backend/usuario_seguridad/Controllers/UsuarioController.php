@@ -355,6 +355,78 @@ class UsuarioController extends Controller
                 $perfil->cargo = $userData['cargo'] ?? null;
                 $perfil->save();
 
+                // Crear Registros Específicos según el Rol
+                if ($userData['rol_id'] == 2) {
+                    // Docente
+                    DB::table('docente')->insert([
+                        'id' => $perfil->id,
+                        'profesion' => $userData['profesion'] ?? 'Ingeniero',
+                        'area_profesional' => $userData['area_profesional'] ?? 'Ciencias de la Computación',
+                        'grado_academico' => $userData['grado_academico'] ?? 'Licenciatura',
+                        'maestria' => $userData['maestria'] ?? false,
+                        'diplomado_educacion_superior' => $userData['diplomado_educacion_superior'] ?? false,
+                        'experiencia_anos' => $userData['experiencia_anos'] ?? 5,
+                        'grupos_maximos' => $userData['grupos_maximos'] ?? 4
+                    ]);
+                } elseif ($userData['rol_id'] == 4) {
+                    // Postulante
+                    DB::table('postulante')->insert([
+                        'id' => $perfil->id,
+                        'colegio_procedencia' => 'No especificado',
+                        'ciudad' => 'Santa Cruz'
+                    ]);
+
+                    // Postulación
+                    $nextPostulacionId = DB::table('postulacion')->max('codigo') + 1;
+                    DB::table('postulacion')->insert([
+                        'codigo' => $nextPostulacionId,
+                        'postulante_id' => $perfil->id,
+                        'gestion_id' => $gestionId,
+                        'fecha' => now()->toDateString(),
+                        'hora' => now()->toTimeString(),
+                        'estado' => 'Habilitado'
+                    ]);
+
+                    // Pago
+                    $nextPagoId = DB::table('pago')->max('id') + 1;
+                    DB::table('pago')->insert([
+                        'id' => $nextPagoId,
+                        'postulacion_codigo' => $nextPostulacionId,
+                        'nro_recibo' => 'REC-IMP-' . strtoupper(uniqid()),
+                        'monto' => 700.00,
+                        'metodo_pago' => 'Importación Masiva',
+                        'transaccion_id' => 'IMP_' . strtoupper(uniqid()),
+                        'estado' => 'Completado',
+                        'fecha' => now()->toDateString()
+                    ]);
+
+                    // Carreras
+                    $carrerasDisponibles = DB::table('carrera')->take(2)->pluck('codigo')->toArray();
+                    if (count($carrerasDisponibles) > 0) {
+                        DB::table('postulacion_carrera')->insert([
+                            'postulacion_codigo' => $nextPostulacionId,
+                            'carrera_codigo' => $carrerasDisponibles[0],
+                            'prioridad' => 1
+                        ]);
+                        if (count($carrerasDisponibles) > 1) {
+                            DB::table('postulacion_carrera')->insert([
+                                'postulacion_codigo' => $nextPostulacionId,
+                                'carrera_codigo' => $carrerasDisponibles[1],
+                                'prioridad' => 2
+                            ]);
+                        }
+                    }
+                }
+
+                // Enviar Correo
+                try {
+                    \Illuminate\Support\Facades\Mail::to($perfil->email)->send(
+                        new \App\Mail\CredencialesPostulanteMail($perfil->nombres, $usuario->codigo_inicio, $passwordRaw)
+                    );
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Error al enviar email a {$perfil->email}: " . $e->getMessage());
+                }
+
                 $nextUserId++;
                 $nextPerfilId++;
                 $insertedCount++;
@@ -378,6 +450,37 @@ class UsuarioController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Error crítico al importar usuarios: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Eliminación masiva de usuarios.
+     * Permite seleccionar múltiples usuarios y aplicarles el soft delete.
+     *
+     * @param Request $request Contiene los IDs a eliminar.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroyMassive(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:usuario,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+            
+            // Soft delete
+            Usuario::whereIn('id', $validated['ids'])->update(['eliminado' => true]);
+            
+            DB::commit();
+
+            AuditService::log('Eliminación Masiva', "Se eliminaron masivamente " . count($validated['ids']) . " usuarios.");
+
+            return back()->with('success', count($validated['ids']) . ' usuarios han sido eliminados correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Error al eliminar masivamente: ' . $e->getMessage()]);
         }
     }
 }

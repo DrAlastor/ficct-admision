@@ -17,9 +17,10 @@ class Funcion extends Model
     ];
 
     /**
-     * Ejecuta la acción o procedimiento 'modulo' dentro del módulo.
+     * Relación de pertenencia con Módulo.
+     * Una función pertenece a un módulo específico del sistema.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function modulo()
     {
@@ -27,9 +28,10 @@ class Funcion extends Model
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'roles' dentro del módulo.
+     * Relación muchos a muchos con Rol.
+     * Una función puede estar habilitada para múltiples roles (mediante rol_funcion).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
     public function roles()
     {

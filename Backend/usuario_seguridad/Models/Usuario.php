@@ -30,9 +30,10 @@ class Usuario extends Authenticatable
     ];
 
     /**
-     * Ejecuta la acción o procedimiento 'casts' dentro del módulo.
+     * Define la conversión de atributos o casteos de Eloquent.
+     * Encripta/Oculta la contraseña automáticamente y maneja los tokens como hashes.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return array<string, string>
      */
     protected function casts(): array
     {
@@ -42,9 +43,10 @@ class Usuario extends Authenticatable
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'perfil' dentro del módulo.
+     * Relación uno a uno con Perfil.
+     * Todo usuario tiene un único perfil con sus datos personales e imagen.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function perfil()
     {
@@ -52,9 +54,10 @@ class Usuario extends Authenticatable
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'rol' dentro del módulo.
+     * Relación de pertenencia con Rol.
+     * Un usuario pertenece o está asignado a un Rol específico (Admin, Docente, etc).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function rol()
     {

@@ -69,7 +69,14 @@ export default function ImportUsuariosModal({ isOpen, onClose, roles = [] }) {
                         telefono: row['telefono'] || row['celular'] ? String(row['telefono'] || row['celular']).trim() : '',
                         cargo: row['cargo'] ? String(row['cargo']).trim() : '',
                         rol_id: row['rol id'] || row['rol_id'] || row['rol'] ? String(row['rol id'] || row['rol_id'] || row['rol']).trim() : '',
-                        password: row['password'] || row['contraseña'] ? String(row['password'] || row['contraseña']).trim() : ''
+                        password: row['password'] || row['contraseña'] ? String(row['password'] || row['contraseña']).trim() : '',
+                        profesion: row['profesion'] ? String(row['profesion']).trim() : 'Ingeniero',
+                        area_profesional: row['area_profesional'] || row['area profesional'] ? String(row['area_profesional'] || row['area profesional']).trim() : 'Ciencias de la Computación',
+                        grado_academico: row['grado_academico'] || row['grado academico'] ? String(row['grado_academico'] || row['grado academico']).trim() : 'Licenciatura',
+                        maestria: row['maestria'] ? (String(row['maestria']).trim().toLowerCase() === 'si' || String(row['maestria']).trim().toLowerCase() === 'true' || String(row['maestria']).trim() === '1') : false,
+                        diplomado_educacion_superior: row['diplomado'] || row['diplomado_educacion_superior'] || row['diplomado educacion superior'] ? (String(row['diplomado'] || row['diplomado_educacion_superior'] || row['diplomado educacion superior']).trim().toLowerCase() === 'si' || String(row['diplomado'] || row['diplomado_educacion_superior'] || row['diplomado educacion superior']).trim().toLowerCase() === 'true' || String(row['diplomado'] || row['diplomado_educacion_superior'] || row['diplomado educacion superior']).trim() === '1') : false,
+                        experiencia_anos: row['experiencia'] || row['experiencia_anos'] || row['experiencia anos'] ? parseInt(row['experiencia'] || row['experiencia_anos'] || row['experiencia anos']) || 0 : 5,
+                        grupos_maximos: row['grupos'] || row['grupos_maximos'] || row['grupos maximos'] ? parseInt(row['grupos'] || row['grupos_maximos'] || row['grupos maximos']) || 4 : 4
                     };
                 }).filter(row => row.ci && row.nombres && row.apellido_paterno && row.email && row.rol_id);
 

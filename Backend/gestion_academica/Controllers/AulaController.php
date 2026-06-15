@@ -85,9 +85,11 @@ class AulaController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'getAulasDisponibles' dentro del módulo.
+     * Endpoint API para consultar las aulas que están libres en un rango de horas específico.
+     * Si la materia es "Computación", filtra para mostrar preferentemente Laboratorios (Piso 4).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene hora_inicio, hora_fin y nombre de la materia.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getAulasDisponibles(Request $request)
     {
@@ -135,9 +137,11 @@ class AulaController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'asignarAula' dentro del módulo.
+     * Asigna manualmente un aula específica a un grupo en un horario determinado.
+     * Valida que no haya choques o cruces de horario con otros grupos que ya usen el aula.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene grupo_nombre, materia, hora_inicio y aula_id.
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function asignarAula(Request $request)
     {
@@ -198,9 +202,13 @@ class AulaController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'autogenerar' dentro del módulo.
+     * Algoritmo de Autogeneración de Aulas.
+     * Distribuye y asigna aulas a todos los grupos de forma automatizada, garantizando que:
+     * - La capacidad del aula sea mayor o igual al número de inscritos del grupo.
+     * - La materia Computación reciba combinaciones de laboratorios y aulas normales.
+     * - No existan choques de horarios entre diferentes materias.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function autogenerar(Request $request)
     {

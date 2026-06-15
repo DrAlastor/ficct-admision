@@ -21,9 +21,11 @@ class PaymentController extends Controller
     // STRIPE
     // ==========================================
     /**
-     * Ejecuta la acción o procedimiento 'createPaymentIntent' dentro del módulo.
+     * Genera la intención de pago (PaymentIntent) para la pasarela de Stripe.
+     * Convierte el monto a centavos y retorna el client_secret para confirmar en frontend.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene código de postulación y monto.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function createPaymentIntent(Request $request)
     {
@@ -55,9 +57,11 @@ class PaymentController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'stripeWebhook' dentro del módulo.
+     * Webhook que recibe la notificación de Stripe cuando un pago se procesa correctamente.
+     * Verifica la firma de seguridad y si el evento es 'payment_intent.succeeded', registra el pago.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Petición enviada desde los servidores de Stripe.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function stripeWebhook(Request $request)
     {
@@ -97,9 +101,11 @@ class PaymentController extends Controller
     // PAYPAL
     // ==========================================
     /**
-     * Ejecuta la acción o procedimiento 'getPayPalAccessToken' dentro del módulo.
+     * Solicita y obtiene un Access Token válido desde la API de PayPal (OAuth2).
+     * Requerido para crear y capturar órdenes de cobro.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @return string Access Token de PayPal.
+     * @throws \Exception Si falla la autenticación con PayPal.
      */
     private function getPayPalAccessToken()
     {
@@ -125,9 +131,10 @@ class PaymentController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'createPayPalOrder' dentro del módulo.
+     * Crea una nueva Orden de cobro en PayPal convirtiendo el monto a dólares (USD).
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el código de postulación y el monto en bolivianos.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function createPayPalOrder(Request $request)
     {
@@ -171,9 +178,11 @@ class PaymentController extends Controller
     }
 
     /**
-     * Ejecuta la acción o procedimiento 'capturePayPalOrder' dentro del módulo.
+     * Captura (confirma y cobra) una Orden de PayPal una vez que el usuario la aprobó en la ventana emergente.
+     * Si la captura es COMPLETED, registra oficialmente el pago en la base de datos.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param Request $request Contiene el order_id devuelto por PayPal.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function capturePayPalOrder(Request $request)
     {
@@ -219,9 +228,14 @@ class PaymentController extends Controller
     // MÉTODO COMÚN PARA REGISTRAR PAGOS
     // ==========================================
     /**
-     * Ejecuta la acción o procedimiento 'registrarPagoExitoso' dentro del módulo.
+     * Centraliza el registro de un pago exitoso en la base de datos, evitando transacciones duplicadas.
+     * Genera un número de recibo ficticio e inserta el registro del pago.
      *
-     * @return \Illuminate\Http\Response|\Inertia\Response|mixed
+     * @param int $postulacionCodigo ID de la postulación.
+     * @param string $transaccionId ID único provisto por Stripe o PayPal.
+     * @param string $metodoNombre Nombre de la pasarela utilizada.
+     * @param float $monto Monto final cobrado.
+     * @return void
      */
     private function registrarPagoExitoso($postulacionCodigo, $transaccionId, $metodoNombre, $monto)
     {
