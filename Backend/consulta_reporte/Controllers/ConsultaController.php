@@ -173,7 +173,7 @@ class ConsultaController extends Controller
                         'pf.ci as CI',
                         DB::raw("CONCAT(pf.nombres, ' ', pf.apellido_paterno) as Postulante"),
                         'c.nombre as Carrera',
-                        DB::raw("(SELECT ROUND(AVG(e.promedio_final)::numeric, 2) FROM evaluaciones e JOIN inscripciones_cup ic ON e.inscripcion_id = ic.id WHERE ic.postulacion_codigo = p.codigo) as Promedio_General")
+                        DB::raw("(SELECT ROUND(AVG(e.promedio_final)::numeric, 2) FROM evaluaciones e JOIN inscripciones_cup ic ON e.inscripcion_id = ic.id WHERE ic.postulacion_codigo = p.codigo) as \"Promedio_General\"")
                     )
                     ->orderByDesc('Promedio_General')
                     ->get();
@@ -191,7 +191,7 @@ class ConsultaController extends Controller
                     ->select(
                         'g.nombre as Grupo',
                         'm.nombre as Materia',
-                        DB::raw("COUNT(*) as Total_Aprobados")
+                        DB::raw('COUNT(*) as "Total_Aprobados"')
                     )
                     ->groupBy('g.nombre', 'm.nombre')
                     ->orderByDesc('Total_Aprobados')
@@ -210,7 +210,7 @@ class ConsultaController extends Controller
                     ->select(
                         'g.nombre as Grupo',
                         'm.nombre as Materia',
-                        DB::raw("COUNT(*) as Total_Reprobados")
+                        DB::raw('COUNT(*) as "Total_Reprobados"')
                     )
                     ->groupBy('g.nombre', 'm.nombre')
                     ->orderByDesc('Total_Reprobados')
@@ -228,8 +228,8 @@ class ConsultaController extends Controller
                     ->where('pc.prioridad', 1)
                     ->select(
                         'c.nombre as Carrera',
-                        DB::raw("SUM(CASE WHEN p.estado = 'Aceptado' THEN 1 ELSE 0 END) as Total_Aceptados"),
-                        DB::raw("SUM(CASE WHEN p.estado LIKE 'Rechazado%' THEN 1 ELSE 0 END) as Total_Rechazados")
+                        DB::raw("SUM(CASE WHEN p.estado = 'Aceptado' THEN 1 ELSE 0 END) as \"Total_Aceptados\""),
+                        DB::raw("SUM(CASE WHEN p.estado LIKE 'Rechazado%' THEN 1 ELSE 0 END) as \"Total_Rechazados\"")
                     )
                     ->groupBy('c.nombre')
                     ->orderByDesc('Total_Aceptados')
@@ -248,10 +248,10 @@ class ConsultaController extends Controller
                     ->where('g.gestion_id', $gestionId)
                     ->select(
                         DB::raw("CONCAT(pf.nombres, ' ', pf.apellido_paterno) as Docente"),
-                        DB::raw("SUM(CASE WHEN e.estado_materia = 'Aprobado' THEN 1 ELSE 0 END) as Total_Aprobados"),
-                        DB::raw("SUM(CASE WHEN e.estado_materia = 'Reprobado' THEN 1 ELSE 0 END) as Total_Reprobados")
+                        DB::raw("SUM(CASE WHEN e.estado_materia = 'Aprobado' THEN 1 ELSE 0 END) as \"Total_Aprobados\""),
+                        DB::raw("SUM(CASE WHEN e.estado_materia = 'Reprobado' THEN 1 ELSE 0 END) as \"Total_Reprobados\"")
                     )
-                    ->groupBy('pf.nombres', 'pf.apellido_paterno')
+                    ->groupBy('pf.id', 'pf.nombres', 'pf.apellido_paterno')
                     ->orderByDesc('Total_Aprobados')
                     ->get();
                 break;
@@ -267,9 +267,9 @@ class ConsultaController extends Controller
                     ->select(
                         'g.nombre as Grupo',
                         'm.nombre as Materia',
-                        DB::raw("MAX(e.promedio_final) as Mejor_Nota"),
-                        DB::raw("MIN(e.promedio_final) as Peor_Nota"),
-                        DB::raw("ROUND(AVG(e.promedio_final)::numeric, 2) as Promedio_Grupo")
+                        DB::raw('MAX(e.promedio_final) as "Mejor_Nota"'),
+                        DB::raw('MIN(e.promedio_final) as "Peor_Nota"'),
+                        DB::raw('ROUND(AVG(e.promedio_final)::numeric, 2) as "Promedio_Grupo"')
                     )
                     ->groupBy('g.nombre', 'm.nombre')
                     ->orderByDesc('Promedio_Grupo')
