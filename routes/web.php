@@ -163,6 +163,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Gestión de Carga Horaria (CU26)
     Route::get('/carga-horaria', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'index'])->name('carga_horaria.index');
     Route::get('/carga-horaria/{id}/grupos', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'getGrupos']);
+    Route::post('/carga-horaria/autocargar', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'autocargar'])->name('carga_horaria.autocargar');
     Route::post('/carga-horaria/{id}', [\Backend\modulo_docencia\Controllers\CargaHorariaController::class, 'store'])->name('carga_horaria.store');
 
     // Consultas y Reportes - Estadísticas (CU27)

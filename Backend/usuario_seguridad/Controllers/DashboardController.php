@@ -5,6 +5,7 @@ namespace Backend\usuario_seguridad\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -33,7 +34,53 @@ class DashboardController extends Controller
         switch ($user->rol_id) {
             case 1:
             case 3:
-                $usuariosQuery = \Backend\usuario_seguridad\Models\Usuario::where('eliminado', false)->get();
+                // Obtener la gestión actual para filtrar las estadísticas solo de la gestión vigente
+                $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+                $gestionId = $gestionActual ? $gestionActual->id : null;
+
+                // Contador: Usuarios actualmente conectados (basado en el estado Activo en la tabla usuario)
+                $usuariosConectados = DB::table('usuario')
+                    ->where('estado', 'Activo')
+                    ->count();
+
+                // Contadores filtrados por Gestión Actual:
+                // Postulantes registrados en la gestión actual
+                $postulantesRegistrados = DB::table('usuario')
+                    ->where('rol_id', 4) // Postulantes
+                    ->when($gestionId, function ($query) use ($gestionId) {
+                        return $query->where('gestion_id', $gestionId);
+                    })
+                    ->count();
+
+                // Docentes registrados en la gestión actual
+                $docentesActivos = DB::table('usuario')
+                    ->where('rol_id', 2) // Docentes
+                    ->when($gestionId, function ($query) use ($gestionId) {
+                        return $query->where('gestion_id', $gestionId);
+                    })
+                    ->count();
+
+                // Administradores del sistema (Globales, sin importar la gestión)
+                $totalAdministradores = DB::table('usuario')
+                    ->where('rol_id', 1) // Administradores
+                    ->count();
+
+                // Coordinadores registrados en la gestión actual
+                $totalCoordinadores = DB::table('usuario')
+                    ->where('rol_id', 3) // Coordinadores
+                    ->when($gestionId, function ($query) use ($gestionId) {
+                        return $query->where('gestion_id', $gestionId);
+                    })
+                    ->count();
+
+                $query = \Backend\usuario_seguridad\Models\Usuario::where('eliminado', false);
+                if ($gestionId) {
+                    $query->where(function($q) use ($gestionId) {
+                        $q->where('gestion_id', $gestionId)
+                          ->orWhere('rol_id', 1); // Administradores son globales
+                    });
+                }
+                $usuariosQuery = $query->get();
                 
                 // Asegurarnos de que el usuario actual se marque y cuente como Activo (útil si se reinició la BD)
                 if ($user->estado !== 'Activo') {
@@ -52,6 +99,7 @@ class DashboardController extends Controller
                 $totalInactivos = $usuariosQuery->where('estado', 'Inactivo')->count();
                 $totalAdmins = $usuariosQuery->where('rol_id', 1)->count();
                 $totalDocentes = $usuariosQuery->where('rol_id', 2)->count();
+                $totalCoordinadores = $usuariosQuery->where('rol_id', 3)->count();
                 $totalPostulantes = $usuariosQuery->where('rol_id', 4)->count();
 
                 $bitacora = \Illuminate\Support\Facades\DB::table('bitacora')
@@ -65,11 +113,12 @@ class DashboardController extends Controller
                     'user' => $user, 
                     'stats' => [
                         'total' => $totalUsuarios,
-                        'online' => $totalActivos,
+                        'online' => $usuariosConectados,
                         'offline' => $totalInactivos,
-                        'admins' => $totalAdmins,
-                        'docentes' => $totalDocentes,
-                        'postulantes' => $totalPostulantes
+                        'admins' => $totalAdministradores,
+                        'docentes' => $docentesActivos,
+                        'coordinadores' => $totalCoordinadores,
+                        'postulantes' => $postulantesRegistrados
                     ],
                     'bitacoraReciente' => $bitacora
                 ]);

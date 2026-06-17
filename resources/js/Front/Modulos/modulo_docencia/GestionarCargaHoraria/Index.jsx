@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { FiClock, FiSearch } from 'react-icons/fi';
+import { FiClock, FiSearch, FiCpu } from 'react-icons/fi';
 import GestionarCargaModal from './_components/GestionarCargaModal';
+import axios from 'axios';
 
 export default function Index({ auth }) {
     const { docentes, filters } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDocente, setSelectedDocente] = useState(null);
+    const [isAutoCharging, setIsAutoCharging] = useState(false);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -21,6 +23,21 @@ export default function Index({ auth }) {
     const openGestionarModal = (docente) => {
         setSelectedDocente(docente);
         setIsModalOpen(true);
+    };
+
+    const handleAutoCargar = async () => {
+        if (!confirm('¿Estás seguro de auto-cargar horarios? Esto eliminará la carga horaria actual de esta gestión y reasignará los grupos a los docentes basándose en su perfil.')) return;
+        
+        setIsAutoCharging(true);
+        try {
+            const response = await axios.post(route('carga_horaria.autocargar'));
+            alert(response.data.message);
+            router.reload();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error al intentar auto-cargar los horarios.');
+        } finally {
+            setIsAutoCharging(false);
+        }
     };
 
     return (
@@ -52,6 +69,19 @@ export default function Index({ auth }) {
                             className="w-full md:w-80 border border-gray-300 rounded-xl pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                         />
                     </div>
+                    
+                    <button
+                        onClick={handleAutoCargar}
+                        disabled={isAutoCharging}
+                        className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        {isAutoCharging ? (
+                            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                            <FiCpu size={18} />
+                        )}
+                        {isAutoCharging ? 'Asignando...' : 'Auto-Cargar'}
+                    </button>
                 </div>
 
                 <div className="overflow-x-auto bg-white rounded-2xl border border-gray-200">

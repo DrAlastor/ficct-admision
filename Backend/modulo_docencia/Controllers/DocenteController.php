@@ -25,6 +25,10 @@ class DocenteController extends Controller
     {
         $search = $request->input('search');
         
+        // Obtener la gestión académica actual
+        $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+        $gestionId = $gestionActual ? $gestionActual->id : null;
+        
         $docentes = Docente::with(['perfil.usuario'])
             ->when($search, function($query, $search) {
                 $query->whereHas('perfil', function($q) use ($search) {
@@ -32,6 +36,12 @@ class DocenteController extends Controller
                       ->orWhere('apellido_paterno', 'ilike', "%{$search}%")
                       ->orWhere('apellido_materno', 'ilike', "%{$search}%")
                       ->orWhere('ci', 'ilike', "%{$search}%");
+                });
+            })
+            // Filtrar para mostrar únicamente a los docentes asignados a la gestión actual
+            ->when($gestionId, function($query, $gestionId) {
+                $query->whereHas('perfil.usuario', function($q) use ($gestionId) {
+                    $q->where('gestion_id', $gestionId);
                 });
             })
             ->get()

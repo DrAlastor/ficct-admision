@@ -20,6 +20,10 @@ class CargaHorariaController extends Controller
     {
         $search = $request->input('search');
         
+        // Obtener la gestión académica activa
+        $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+        $gestionId = $gestionActual ? $gestionActual->id : null;
+
         $docentes = Docente::with(['perfil.usuario'])
             ->when($search, function($query, $search) {
                 $query->whereHas('perfil', function($q) use ($search) {
@@ -27,6 +31,12 @@ class CargaHorariaController extends Controller
                       ->orWhere('apellido_paterno', 'ilike', "%{$search}%")
                       ->orWhere('apellido_materno', 'ilike', "%{$search}%")
                       ->orWhere('ci', 'ilike', "%{$search}%");
+                });
+            })
+            // Restricción: Filtrar la lista de docentes para que sólo se muestren aquellos de la gestión en curso
+            ->when($gestionId, function($query, $gestionId) {
+                $query->whereHas('perfil.usuario', function($q) use ($gestionId) {
+                    $q->where('gestion_id', $gestionId);
                 });
             })
             ->get()
@@ -155,6 +165,125 @@ class CargaHorariaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Error al guardar la carga horaria: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Algoritmo Heurístico para asignar grupos a los docentes de la gestión actual
+     * basado de forma inteligente en la compatibilidad de su profesión y área profesional con las materias requeridas.
+     */
+    public function autocargar(Request $request)
+    {
+        // 1. Verificar existencia de gestión activa
+        $gestionActual = DB::table('gestion')->orderByDesc('id')->first();
+        if (!$gestionActual) {
+            return response()->json(['message' => 'No hay una gestión activa.'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Obtener todos los docentes de la gestión actual
+            $docentes = Docente::whereHas('perfil.usuario', function($q) use ($gestionActual) {
+                $q->where('gestion_id', $gestionActual->id);
+            })->get();
+
+            // 2. Obtener grupos de la gestión actual con su materia_id
+            $grupos = DB::table('grupo')
+                ->where('gestion_id', $gestionActual->id)
+                ->get();
+
+            // 3. Obtener todas las materias y clasificarlas por ID
+            // Según la bd de prueba:
+            // 1: Computación (INF100)
+            // 2: Matemáticas (MAT100)
+            // 3: Física (FIS100)
+            // 4: Inglés (LIN100)
+            $materias = DB::table('materia')->get()->keyBy('id');
+
+            // 4. Limpiar todas las asignaciones de carga horaria para los grupos de esta gestión
+            $gruposCodigo = $grupos->pluck('codigo')->toArray();
+            if (!empty($gruposCodigo)) {
+                DB::table('carga_horaria')->whereIn('grupo_codigo', $gruposCodigo)->delete();
+            }
+
+            $insertData = [];
+
+            // 5. Diccionario heurístico de palabras clave por materia (Usaremos IDs fijos o nombres)
+            // Mapearemos materia_id a una expresión regular o conjunto de palabras
+            $materiaKeywords = [
+                'Computación' => ['informátic', 'sistem', 'computaci', 'programaci', 'software', 'redes'],
+                'Matemáticas' => ['matemátic', 'exactas', 'ingenier', 'financier'],
+                'Física' => ['físic', 'mecánic', 'civil'],
+                'Inglés' => ['idioma', 'inglés', 'linguístic', 'letras']
+            ];
+
+            // Rastrear cuántos grupos tiene asignados cada docente temporalmente
+            $docenteGruposCount = [];
+            foreach ($docentes as $d) {
+                $docenteGruposCount[$d->id] = 0;
+            }
+
+            foreach ($grupos as $grupo) {
+                $materia = $materias->get($grupo->materia_id);
+                if (!$materia) continue;
+
+                $materiaNombre = $materia->nombre;
+                $keywords = $materiaKeywords[$materiaNombre] ?? [];
+
+                // Buscar un docente apto y con capacidad
+                $docenteAsignado = null;
+                foreach ($docentes as $docente) {
+                    if ($docenteGruposCount[$docente->id] >= $docente->grupos_maximos) {
+                        continue;
+                    }
+
+                    // Verificar aptitud
+                    $perfilTexto = mb_strtolower($docente->profesion . ' ' . $docente->area_profesional);
+                    $esApto = false;
+
+                    // Si no tiene palabras clave configuradas para la materia, o es una materia genérica, asume que cualquiera puede dictar (fallback).
+                    // Para mayor precisión, sólo permitiremos que dicte si coincide una keyword.
+                    if (empty($keywords)) {
+                        $esApto = true;
+                    } else {
+                        foreach ($keywords as $kw) {
+                            if (str_contains($perfilTexto, $kw)) {
+                                $esApto = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($esApto) {
+                        $docenteAsignado = $docente;
+                        break;
+                    }
+                }
+
+                // Asignar
+                if ($docenteAsignado) {
+                    $insertData[] = [
+                        'docente_id' => $docenteAsignado->id,
+                        'grupo_codigo' => $grupo->codigo
+                    ];
+                    $docenteGruposCount[$docenteAsignado->id]++;
+                }
+            }
+
+            // Guardar nuevas asignaciones
+            if (!empty($insertData)) {
+                DB::table('carga_horaria')->insert($insertData);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Carga horaria asignada automáticamente con éxito. ' . count($insertData) . ' grupos asignados.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error al auto-cargar: ' . $e->getMessage()], 500);
         }
     }
 }

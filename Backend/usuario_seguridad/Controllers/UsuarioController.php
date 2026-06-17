@@ -470,14 +470,43 @@ class UsuarioController extends Controller
         try {
             DB::beginTransaction();
             
-            // Soft delete
-            Usuario::whereIn('id', $validated['ids'])->update(['eliminado' => true]);
+            $ids = $validated['ids'];
+
+            // 1. Obtener todos los perfiles a partir de los IDs de usuario provistos por la vista
+            $perfiles = DB::table('perfil')->whereIn('usuario_id', $ids)->get();
+            $perfilIds = $perfiles->pluck('id')->toArray();
+
+            if (!empty($perfilIds)) {
+                // 2. Limpieza Física en Cascada: Dependencias de Docentes
+                DB::table('carga_horaria')->whereIn('docente_id', $perfilIds)->delete();
+                DB::table('sesion_asistencia')->whereIn('docente_id', $perfilIds)->delete();
+                DB::table('docente')->whereIn('id', $perfilIds)->delete();
+
+                // 3. Limpieza Física en Cascada: Dependencias de Postulantes
+                $postulacionCodigos = DB::table('postulacion')->whereIn('postulante_id', $perfilIds)->pluck('codigo')->toArray();
+                if (!empty($postulacionCodigos)) {
+                    DB::table('pago')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                    DB::table('inscripciones_cup')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                    DB::table('evaluaciones')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                    DB::table('postulacion_carrera')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                    DB::table('registro_asistencia')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                    DB::table('postulacion')->whereIn('postulante_id', $perfilIds)->delete();
+                }
+                DB::table('postulante')->whereIn('id', $perfilIds)->delete();
+
+                // 4. Limpieza del perfil de cada usuario
+                DB::table('perfil')->whereIn('id', $perfilIds)->delete();
+            }
+
+            // 5. Hard Delete Final: Eliminar todo rastro de los usuarios y su bitácora en la BD
+            DB::table('bitacora')->whereIn('usuario_id', $ids)->delete();
+            DB::table('usuario')->whereIn('id', $ids)->delete();
             
             DB::commit();
 
-            AuditService::log('Eliminación Masiva', "Se eliminaron masivamente " . count($validated['ids']) . " usuarios.");
+            AuditService::log('Eliminación Masiva', "Se eliminaron masivamente y físicamente " . count($ids) . " usuarios y sus dependencias.");
 
-            return back()->with('success', count($validated['ids']) . ' usuarios han sido eliminados correctamente.');
+            return back()->with('success', count($ids) . ' usuarios han sido eliminados completamente del sistema.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Error al eliminar masivamente: ' . $e->getMessage()]);

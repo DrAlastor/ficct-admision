@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { ListFilter } from 'lucide-react';
 
 const PREDEFINED_QUERIES = [
-    { id: 'alumnos_aprobados', label: 'Alumnos Aprobados', icon: '✅' },
-    { id: 'alumnos_reprobados', label: 'Alumnos Reprobados', icon: '❌' },
-    { id: 'docentes_inasistencias', label: 'Inasistencias Docentes', icon: '👨‍🏫' },
-    { id: 'postulantes_rechazados_cupo', label: 'Rechazados sin Cupo', icon: '⚠️' },
-    { id: 'ingresos_stripe_paypal', label: 'Pagos Stripe/PayPal', icon: '💳' },
+    { id: 'alumnos_aprobados', label: 'Lista de Alumnos Aprobados', icon: '✅' },
+    { id: 'alumnos_reprobados', label: 'Lista de Alumnos Reprobados', icon: '❌' },
+    { id: 'pagos_stripe_paypal', label: 'Pagos Stripe/Paypal', icon: '💳' },
+    { id: 'aceptados_promedio_carrera', label: 'Lista de Aceptados con su promedio y carrera', icon: '🎓' },
+    { id: 'grupos_mayor_aprobados', label: 'Grupos con mayor aprobados', icon: '📈' },
+    { id: 'grupos_mayor_reprobados', label: 'Grupo con mayor reprobados', icon: '📉' },
+    { id: 'carreras_aceptados_rechazados', label: 'Carreras con mayor aceptados y rechazados', icon: '📊' },
+    { id: 'docentes_aprobados_reprobados', label: 'Docente con mayor aprobados y reprobados', icon: '👨‍🏫' },
+    { id: 'grupos_mejores_peores_notas', label: 'Grupos con mejores y peores notas', icon: '📝' },
 ];
 
 export default function QuickQueries({ gestiones, selectedGestion, setSelectedGestion, onSelectQuery, loading }) {
@@ -27,8 +31,8 @@ export default function QuickQueries({ gestiones, selectedGestion, setSelectedGe
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                <div className="w-full md:w-64">
+            <div className="flex flex-col gap-4">
+                <div className="w-full">
                     <select
                         value={selectedGestion}
                         onChange={(e) => setSelectedGestion(e.target.value)}
@@ -41,16 +45,19 @@ export default function QuickQueries({ gestiones, selectedGestion, setSelectedGe
                     </select>
                 </div>
 
-                <div className="flex-1 flex flex-wrap gap-2">
+                <div className="flex flex-col gap-2 w-full max-h-[500px] overflow-y-auto pr-2">
                     {PREDEFINED_QUERIES.map(q => (
                         <button
                             key={q.id}
                             onClick={() => onSelectQuery(q.id, selectedGestion)}
                             disabled={!selectedGestion || loading}
-                            className="px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold shadow-sm hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-4 py-3 w-full text-left bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
                         >
-                            <span>{q.icon}</span>
-                            {q.label}
+                            <div className="flex items-center gap-3">
+                                <span className="text-lg">{q.icon}</span>
+                                <span>{q.label}</span>
+                            </div>
+                            <span className="text-gray-400 text-xs font-normal">Ejecutar →</span>
                         </button>
                     ))}
                 </div>

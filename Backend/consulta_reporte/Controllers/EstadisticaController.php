@@ -422,13 +422,41 @@ class EstadisticaController extends Controller
 
         DB::beginTransaction();
         try {
-            // Borrar postulantes importados para esta gestión (cascada limpia postulacion, pago, etc.)
-            DB::table('usuario')
-                ->where('gestion_id', $gestionId)
-                ->where('rol_id', 4) // Postulante
-                ->delete();
+            // 1. Obtener todos los IDs de usuarios importados/asociados a esta gestión (sin discriminar rol)
+            $userIds = DB::table('usuario')->where('gestion_id', $gestionId)->pluck('id')->toArray();
 
-            // Borrar grupos importados (cascada limpia horarios, carga_horaria de docentes, etc.)
+            if (!empty($userIds)) {
+                // 2. Obtener los perfiles asociados para poder erradicar las tablas hijas
+                $perfilIds = DB::table('perfil')->whereIn('usuario_id', $userIds)->pluck('id')->toArray();
+
+                if (!empty($perfilIds)) {
+                    // Limpieza Física en Cascada: Docentes
+                    DB::table('carga_horaria')->whereIn('docente_id', $perfilIds)->delete();
+                    DB::table('sesion_asistencia')->whereIn('docente_id', $perfilIds)->delete();
+                    DB::table('docente')->whereIn('id', $perfilIds)->delete();
+
+                    // Limpieza Física en Cascada: Postulantes
+                    $postulacionCodigos = DB::table('postulacion')->whereIn('postulante_id', $perfilIds)->pluck('codigo')->toArray();
+                    if (!empty($postulacionCodigos)) {
+                        DB::table('pago')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                        DB::table('inscripciones_cup')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                        DB::table('evaluaciones')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                        DB::table('postulacion_carrera')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                        DB::table('registro_asistencia')->whereIn('postulacion_codigo', $postulacionCodigos)->delete();
+                        DB::table('postulacion')->whereIn('postulante_id', $perfilIds)->delete();
+                    }
+                    DB::table('postulante')->whereIn('id', $perfilIds)->delete();
+
+                    // Eliminación definitiva de Perfiles
+                    DB::table('perfil')->whereIn('id', $perfilIds)->delete();
+                }
+
+                // Eliminación definitiva de Usuarios y Bitácora (Hard Delete integral)
+                DB::table('bitacora')->whereIn('usuario_id', $userIds)->delete();
+                DB::table('usuario')->whereIn('id', $userIds)->delete();
+            }
+
+            // Borrar grupos asociados a la gestión para no dejar registros huérfanos
             DB::table('grupo')
                 ->where('gestion_id', $gestionId)
                 ->delete();
@@ -553,15 +581,19 @@ class EstadisticaController extends Controller
             foreach ($registros as $idx => $row) {
                 $ci = $row['ci'];
                 
-                // 1. OBTENER O CREAR CARRERA
-                $carreraKey = \Illuminate\Support\Str::slug(trim($row['carrera']));
-                $carreraId = null;
-                if (isset($carreras[$carreraKey])) {
-                    $carreraId = $carreras[$carreraKey]->codigo;
-                } elseif (isset($carrerasSigla[$carreraKey])) {
-                    $carreraId = $carrerasSigla[$carreraKey]->codigo;
+                // 1. OBTENER CARRERA (Mapping inteligente por palabras clave)
+                $csvCarrera = mb_strtolower(trim($row['carrera']));
+                $carreraId = 1; // Fallback por defecto (Informática)
+                
+                // Mapeamos a las 4 carreras oficiales basándonos en palabras clave comunes
+                if (str_contains($csvCarrera, 'sistem')) {
+                    $carreraId = 2; // Ingeniería en Sistemas
+                } elseif (str_contains($csvCarrera, 'redes') || str_contains($csvCarrera, 'telecomunicacion')) {
+                    $carreraId = 3; // Ingeniería en Redes y Telecomunicaciones
+                } elseif (str_contains($csvCarrera, 'robotic') || str_contains($csvCarrera, 'robótic')) {
+                    $carreraId = 4; // Ingeniería Robótica
                 } else {
-                    $carreraId = $carreras->first()->codigo ?? 1;
+                    $carreraId = 1; // Ingeniería Informática
                 }
 
                 // 2. OBTENER O CREAR MATERIA

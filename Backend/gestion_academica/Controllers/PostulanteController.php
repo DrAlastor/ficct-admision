@@ -43,6 +43,7 @@ class PostulanteController extends Controller
             })
             ->leftJoin('carrera as c2', 'pc2.carrera_codigo', '=', 'c2.codigo');
 
+        // Filtro estricto: Mostrar únicamente los postulantes que corresponden a la gestión actual
         if ($gestionActual) {
             $postulantesQuery->where('postulacion.gestion_id', $gestionActual->id);
         }

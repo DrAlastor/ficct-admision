@@ -45,7 +45,7 @@ export default function AdminDashboard({ stats, bitacoraReciente = [] }) {
             </div>
 
             {/* Tarjetas de Estadísticas Estilo Premium */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
                     <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-gray-900 pointer-events-none">
                         <FiMonitor size={100} />
@@ -98,6 +98,19 @@ export default function AdminDashboard({ stats, bitacoraReciente = [] }) {
                     <div className="relative z-10">
                         <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Administradores</div>
                         <div className="text-3xl font-black text-gray-800 leading-none">{stats?.admins || 0}</div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 transition-transform duration-500 text-amber-900 pointer-events-none">
+                        <FiShield size={100} />
+                    </div>
+                    <div className="bg-gradient-to-br from-amber-100 to-amber-200 p-4 rounded-2xl text-amber-600 mr-5 group-hover:scale-110 transition-transform shadow-inner relative z-10">
+                        <FiShield size={28} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Coordinadores</div>
+                        <div className="text-3xl font-black text-gray-800 leading-none">{stats?.coordinadores || 0}</div>
                     </div>
                 </div>
             </div>
