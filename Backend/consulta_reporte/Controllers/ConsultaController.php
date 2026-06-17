@@ -243,15 +243,18 @@ class ConsultaController extends Controller
                 $resultados = DB::table('carga_horaria as ch')
                     ->join('perfil as pf', 'ch.docente_id', '=', 'pf.id')
                     ->join('grupo as g', 'ch.grupo_codigo', '=', 'g.codigo')
+                    ->join('materia as m', 'g.materia_id', '=', 'm.id')
                     ->join('inscripciones_cup as ic', 'g.codigo', '=', 'ic.grupo_codigo')
                     ->join('evaluaciones as e', 'ic.id', '=', 'e.inscripcion_id')
                     ->where('g.gestion_id', $gestionId)
                     ->select(
                         DB::raw("CONCAT(pf.nombres, ' ', pf.apellido_paterno) as Docente"),
+                        'm.nombre as Materia',
+                        'g.nombre as Grupo',
                         DB::raw("SUM(CASE WHEN e.estado_materia = 'Aprobado' THEN 1 ELSE 0 END) as \"Total_Aprobados\""),
                         DB::raw("SUM(CASE WHEN e.estado_materia = 'Reprobado' THEN 1 ELSE 0 END) as \"Total_Reprobados\"")
                     )
-                    ->groupBy('pf.id', 'pf.nombres', 'pf.apellido_paterno')
+                    ->groupBy('pf.id', 'pf.nombres', 'pf.apellido_paterno', 'm.nombre', 'g.nombre')
                     ->orderByDesc('Total_Aprobados')
                     ->get();
                 break;
